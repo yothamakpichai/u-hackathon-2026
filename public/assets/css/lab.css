@@ -51,7 +51,9 @@
     "trade"
     "portfolio"
     "mine"
-    "news";
+    "news"
+    "flow"
+    "chain";
   gap: var(--sp-4);
 }
 
@@ -62,6 +64,8 @@
 .lab-portfolio { grid-area: portfolio; }
 .lab-mine { grid-area: mine; }
 .lab-news { grid-area: news; }
+.lab-flow { grid-area: flow; }
+.lab-chain { grid-area: chain; }
 
 .lab .card {
   padding: var(--sp-4);
@@ -79,8 +83,9 @@
       "top top top"
       "coins chart trade"
       "coins chart portfolio"
-      "coins news mine";
-    grid-template-rows: auto auto auto 1fr;
+      "coins news mine"
+      "coins flow chain";
+    grid-template-rows: auto auto auto auto 1fr;
     align-items: start;
   }
 
@@ -960,3 +965,284 @@
     top: var(--sp-4);
   }
 }
+
+/* ---- block explorer --------------------------------------------------------------------------- */
+
+[data-route="explorer"] .app-main {
+  max-width: 64rem;
+}
+
+.explorer-screen {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.explorer-screen > .btn {
+  justify-self: start;
+}
+
+.explorer__summary {
+  color: var(--ink-700);
+  font-weight: 600;
+}
+
+.explorer {
+  display: grid;
+  gap: var(--sp-4);
+  align-items: start;
+}
+
+.explorer__side {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+@media (min-width: 900px) {
+  .explorer {
+    grid-template-columns: 20rem minmax(0, 1fr);
+  }
+
+  .explorer__side {
+    position: sticky;
+    top: var(--sp-4);
+  }
+}
+
+.tamper {
+  display: grid;
+  gap: var(--sp-3);
+  border-color: var(--amber-400);
+  background: var(--amber-50);
+}
+
+.tamper__title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-lg);
+}
+
+.tamper__hint {
+  color: var(--ink-700);
+  font-weight: 600;
+}
+
+.lesson-mini {
+  display: grid;
+  gap: var(--sp-1);
+  padding: var(--sp-4);
+  font-size: var(--fs-sm);
+}
+
+.lesson-mini__title {
+  font-size: var(--fs-md);
+}
+
+.chain {
+  display: grid;
+  gap: var(--sp-3);
+  padding: 0;
+  list-style: none;
+}
+
+.block {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+}
+
+.block.is-broken {
+  border-color: var(--loss-600);
+  background: var(--loss-50);
+}
+
+.block__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.block__title {
+  font-size: var(--fs-lg);
+}
+
+.block__meta {
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.block__hashes {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px var(--sp-3);
+  font-size: var(--fs-sm);
+}
+
+.block__hashes dt {
+  color: var(--ink-500);
+}
+
+.block__hashes dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.hash {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+.block .btn {
+  justify-self: start;
+}
+
+.chip--ok {
+  background: var(--gain-50);
+  color: var(--gain-700);
+}
+
+.chip svg {
+  flex: none;
+}
+
+.tx-list {
+  display: grid;
+  gap: 2px;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+}
+
+.tx {
+  display: grid;
+  grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) auto;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.tx:nth-child(odd) {
+  background: var(--surface-2);
+}
+
+.tx__who {
+  font-weight: 600;
+}
+
+.tx__gas {
+  color: var(--ink-500);
+}
+
+.tx.is-player {
+  background: var(--primary-50);
+}
+
+.tx.is-tampered {
+  background: var(--loss-50);
+  color: var(--loss-700);
+  font-weight: 700;
+}
+
+.tx--more {
+  display: block;
+  color: var(--ink-500);
+}
+
+@media (max-width: 599px) {
+  .tx {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .tx__what {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+/* ---- Basic / Advanced (desktop only) ----------------------------------------------------------- */
+
+.segmented.lab-mode {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .segmented.lab-mode {
+    display: grid;
+    max-width: 16rem;
+    margin-top: var(--sp-2);
+  }
+}
+
+.lab-flow__note {
+  margin: calc(-1 * var(--sp-2)) 0 var(--sp-3);
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+}
+
+.flow {
+  display: grid;
+  gap: var(--sp-2);
+  padding: 0;
+  list-style: none;
+}
+
+.flow__row {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  grid-template-areas:
+    "who bar"
+    "who amounts";
+  gap: 2px var(--sp-3);
+  align-items: center;
+  font-size: var(--fs-sm);
+}
+
+.flow__who {
+  grid-area: who;
+  font-weight: 700;
+}
+
+.flow__bar {
+  grid-area: bar;
+  display: flex;
+  gap: 2px;
+  height: 10px;
+}
+
+.flow__buy,
+.flow__sell {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+}
+
+.flow__buy { background: var(--gain-500); }
+.flow__sell { background: var(--loss-500); }
+
+.flow__amounts {
+  grid-area: amounts;
+  color: var(--ink-500);
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-2);
+  color: var(--ink-700);
+  font-size: var(--fs-xs);
+}
+
+.legend-key {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend-key--real { background: rgb(24 168 103 / 0.35); }
+.legend-key--wash { margin-left: var(--sp-2); background: var(--amber-500); }

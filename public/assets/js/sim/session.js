@@ -40,6 +40,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
   const coins = []; // every coin in the market, in a fixed order
   const byId = new Map();
   const fired = [];
+  const txs = [];
   const listeners = { event: [], close: [] };
   const pf = {
     cash: startCash,
@@ -128,8 +129,9 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     }
   }
 
-  // Every trade in the market goes through here: NPCs, arbitrage and the player.
-  function execSwap(c, side, amount, wash = false) {
+  // Every trade in the market goes through here: NPCs, arbitrage and the player. Each one is logged
+  // as a transaction for the block explorer (BRIEF §7); `who` is the archetype, 'issuer' or 'player'.
+  function execSwap(c, side, amount, wash = false, who = 'issuer') {
     let coinsMoved, L;
     if (side === 'buy') {
       const out = buy(c.pool, amount);
@@ -162,6 +164,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     k.close = p;
     if (p > k.high) k.high = p;
     if (p < k.low) k.low = p;
+    txs.push({ t: now, coin: c.id, side, coins: coinsMoved, L, who });
     return { coins: coinsMoved, L };
   }
 
@@ -182,7 +185,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
       L = Math.min(L, a.cash);
       if (!(L >= MIN_ORDER_L) || c.rugged) return 0; // nobody buys into a pulled pool
 
-      const r = execSwap(c, 'buy', L, wash);
+      const r = execSwap(c, 'buy', L, wash, a.type);
       a.cash -= L;
       a.coins += r.coins;
       return r.coins;
@@ -190,7 +193,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     sell(a, c, q, wash = false) {
       q = Math.min(q, a.coins);
       if (!(q > 0)) return 0;
-      const r = execSwap(c, 'sell', q, wash);
+      const r = execSwap(c, 'sell', q, wash, a.type);
       a.coins -= q;
       a.cash += r.L;
       return r.L;
@@ -199,11 +202,11 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     arb(c, side, amount) {
       if (!(amount > 0)) return;
       if (side === 'buy') {
-        const r = execSwap(c, 'buy', amount);
+        const r = execSwap(c, 'buy', amount, false, 'arb');
         c.supply -= r.coins;
       } else {
         c.supply += amount;
-        execSwap(c, 'sell', amount);
+        execSwap(c, 'sell', amount, false, 'arb');
       }
     },
   };
@@ -276,7 +279,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
       case 'depeg_scare': {
         // A rush of scared holders sells PEG until it trades near fx.price.
         const { side, amount } = tradeToPrice(c.pool, fx.price);
-        if (side === 'sell') execSwap(c, 'sell', amount);
+        if (side === 'sell') execSwap(c, 'sell', amount, false, 'panic');
         break;
       }
       default:
@@ -536,12 +539,12 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     let r;
     if (side === 'buy') {
       const L = Math.min(amount, pf.cash);
-      r = execSwap(c, 'buy', L);
+      r = execSwap(c, 'buy', L, false, 'player');
       pf.cash = Math.max(0, pf.cash - L);
       pf.holdings[coinId] = held + r.coins;
     } else {
       const q = Math.min(amount, held);
-      r = execSwap(c, 'sell', q);
+      r = execSwap(c, 'sell', q, false, 'player');
       pf.cash += r.L;
       const left = held - q;
       if (left > held * 1e-9) pf.holdings[coinId] = left;
@@ -737,5 +740,8 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     emit('close', getState());
   }
 
-  return { tick, swap, quote, createCoin, getState, on, finish };
+  // Transactions from index `from` on (copies), for the block explorer and the order-flow panel.
+  const getTransactions = (from = 0) => txs.slice(Math.max(0, from)).map((x) => ({ ...x }));
+
+  return { tick, swap, quote, createCoin, getState, getTransactions, on, finish };
 }

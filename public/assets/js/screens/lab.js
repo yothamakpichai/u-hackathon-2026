@@ -11,6 +11,7 @@ import {
 } from '../vendor/lightweight-charts/lightweight-charts.standalone.production.mjs';
 import { createSession } from '../sim/session.js';
 import { bangkokDate, dailySeed } from '../sim/prng.js';
+import { BLOCK_TICKS } from '../sim/chain.js';
 import {
   animate, announce, celebrate, delta, getJSON, h, icon, money, number, penny, price, questionCard, resultPanel,
   stateView, trend,
@@ -22,6 +23,22 @@ let dataPromise = null;
 
 // The open market for this tier, for the Create screen (null when the Lab hasn't opened one).
 export const currentMarket = (tier) => (live && live.tier === tier ? live : null);
+
+// Who made a trade, in kids' words (transaction `who`: an agent archetype, 'issuer' or 'player').
+export const WHO = {
+  player: 'You',
+  retail: 'Everyday trader',
+  momentum: 'Trend follower',
+  value: 'Bargain hunter',
+  whale: 'Whale',
+  panic: 'Nervous seller',
+  insider: 'Insider',
+  hype: 'Hype buyer',
+  arb: 'Arbitrage bot',
+  rugger: 'Coin creator',
+  wash: 'Wash-trading bot',
+  issuer: 'New coins (miners and rewards)',
+};
 
 // 24 original geometric coin glyphs on a 24 px grid, white on the coin colour (BRIEF §10).
 // iconId indexes this list; 0 to 6 are the roster's (VAULT, EDUU, PEG, FUEL, ORBIT, ZOOMZ, BLOOP).
@@ -152,6 +169,10 @@ const FALLBACK_EVENTS = {
   copycat_rug: {
     headline: 'The copycat was rug pulled',
     narration: 'The look-alike’s creator pulled the money out of its pool. Everyone who bought the copycat lost their money. Your real coin is still trading.',
+  },
+  wash_volume: {
+    headline: 'Most of FUEL’s volume is fake',
+    narration: 'See the amber bars? A wash-trading bot buys FUEL and sells it straight back to itself, so the volume looks huge while the price barely moves. Real demand means many different buyers, not one bot trading with itself.',
   },
 };
 
@@ -314,6 +335,10 @@ export function mount(root, ctx) {
       h('p', { class: 'screen-eyebrow', text: `${tierInfo.name} · Ages ${tierInfo.ages}` }),
       h('h1', { class: 'screen-title', text: 'Today’s market' }),
     ]);
+    const modeButtons = [false, true].map((adv) =>
+      h('button', { class: 'segmented__btn', type: 'button', onClick: () => setMode(adv) }, adv ? 'Advanced' : 'Basic'),
+    );
+    const modeToggle = h('div', { class: 'segmented lab-mode', role: 'group', 'aria-label': 'Lab view' }, modeButtons);
 
     if (market.closed) {
       view.replaceChildren(h('div', { class: 'screen' }, [head, closedPanel(session.getState())]));
@@ -323,6 +348,11 @@ export function mount(root, ctx) {
     // ---- clock: day, time left, pause and finish ----------------------------------------
     let timer = 0;
     const pauses = new Set(); // 'user' | 'event' | 'hidden' | 'closed'
+
+    // Basic / Advanced (BRIEF §3): desktop only. Advanced never renders below 1024 px, whatever was saved.
+    const wide = matchMedia('(min-width: 1024px)');
+    if (market.advanced === undefined) market.advanced = store.get().labAdvanced === true;
+    const advancedOn = () => market.advanced && wide.matches;
     if (market.userPaused) pauses.add('user');
     const dayText = h('p', { class: 'lab-clock__day' });
     const leftText = h('p', { class: 'lab-clock__left' });
@@ -426,9 +456,16 @@ export function mount(root, ctx) {
     const chartPrice = h('p', { class: 'lab-chart__price' });
     const chartChips = h('div', { class: 'lab-chart__chips' });
     const chartBadge = h('span', { class: 'lab-chart__badge' });
+    const washLegend = h('p', { class: 'lab-chart__legend', hidden: true }, [
+      h('span', { class: 'legend-key legend-key--real', 'aria-hidden': 'true' }),
+      'Real volume',
+      h('span', { class: 'legend-key legend-key--wash', 'aria-hidden': 'true' }),
+      'Wash volume (a bot trading with itself)',
+    ]);
     const chartCard = h('div', { class: 'card lab-chart' }, [
       h('div', { class: 'lab-chart__head' }, [chartBadge, h('div', { class: 'lab-chart__label' }, [chartTitle, chartChips]), chartPrice]),
       chartBox,
+      washLegend,
       h('p', { class: 'lab-chart__credit' }, [
         'Chart by ',
         h('a', { href: CHART_CREDIT, target: '_blank', rel: 'noopener noreferrer', text: 'TradingView Lightweight Charts™' }),
@@ -502,12 +539,27 @@ export function mount(root, ctx) {
       else chart.timeScale().scrollToRealTime();
     }
 
+    // Builder, Advanced: wash volume drawn over the total, so the fake share of each bar shows.
+    const amber = token('--amber-500', '#F5A524');
+    const toWash = (k) => ({ time: toTime(k.t), value: k.washVolume, color: amber });
+    let washSeries = null;
+
     function renderChart(st) {
       const c = st.coins[market.selected];
       const ks = c.candles;
+      const washOn = advancedOn() && tier === 'builder' && c.totalWashVolume > 0;
+      if (washOn && !washSeries) {
+        washSeries = chart.addSeries(HistogramSeries, { priceScaleId: '', priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false });
+        washSeries.setData(ks.map(toWash));
+      } else if (!washOn && washSeries) {
+        chart.removeSeries(washSeries);
+        washSeries = null;
+      }
+      washLegend.hidden = !washOn;
       if (chartCoin !== c.id) {
         candleSeries.setData(ks.map(toBar));
         volumeSeries.setData(ks.map(toVolume));
+        washSeries?.setData(ks.map(toWash));
         keepInView(ks.length);
         chartCoin = c.id;
         chartBadge.replaceChildren(badge(c));
@@ -516,6 +568,7 @@ export function mount(root, ctx) {
         for (let i = Math.max(0, chartCount - 1); i < ks.length; i++) {
           candleSeries.update(toBar(ks[i]));
           volumeSeries.update(toVolume(ks[i]));
+          washSeries?.update(toWash(ks[i]));
         }
         if (ks.length !== chartCount) keepInView(ks.length);
       }
@@ -773,6 +826,89 @@ export function mount(root, ctx) {
       );
     }
 
+    // ---- Advanced (desktop): who is trading the selected coin over the last sim day -----------
+    const flowTitle = h('h2', { class: 'lab-card__title' });
+    const flowList = h('ul', { class: 'flow' });
+    const flowCard = h('div', { class: 'card lab-flow', hidden: true }, [
+      flowTitle,
+      h('p', { class: 'lab-flow__note', text: 'Every trade in the last market day, by type of trader.' }),
+      flowList,
+    ]);
+    let txIndex = 0;
+    let recent = [];
+
+    function renderFlow(st) {
+      flowCard.hidden = !advancedOn();
+      if (flowCard.hidden) return;
+      const fresh = session.getTransactions(txIndex);
+      txIndex += fresh.length;
+      recent = recent.concat(fresh).filter((x) => x.t >= st.t - st.ticksPerDay);
+      const c = st.coins[market.selected];
+      const by = new Map();
+      for (const x of recent) {
+        if (x.coin !== c.id) continue;
+        const r = by.get(x.who) || { buy: 0, sell: 0 };
+        r[x.side] += x.L;
+        by.set(x.who, r);
+      }
+      const rows = [...by.entries()].sort((a, b) => b[1].buy + b[1].sell - (a[1].buy + a[1].sell));
+      flowTitle.textContent = `Who’s trading ${c.ticker}`;
+      if (!rows.length) {
+        flowList.replaceChildren(h('li', { class: 'lab-news__empty', text: 'No trades in the last market day.' }));
+        return;
+      }
+      const top = rows[0][1].buy + rows[0][1].sell;
+      flowList.replaceChildren(
+        ...rows.slice(0, 8).map(([who, r]) => {
+          const barBuy = h('span', { class: 'flow__buy' });
+          const barSell = h('span', { class: 'flow__sell' });
+          barBuy.style.width = `${(r.buy / top) * 100}%`;
+          barSell.style.width = `${(r.sell / top) * 100}%`;
+          return h('li', { class: 'flow__row' }, [
+            h('span', { class: 'flow__who', text: WHO[who] || who }),
+            h('span', { class: 'flow__bar', 'aria-hidden': 'true' }, [barBuy, barSell]),
+            h('span', { class: 'flow__amounts', text: `↑ ${money(r.buy, 0)} bought · ↓ ${money(r.sell, 0)} sold` }),
+          ]);
+        }),
+      );
+    }
+
+    // ---- blockchain card (13+ everywhere, and in Advanced) ---------------------------------------
+    const chainText = h('p', { class: 'lab-mine__text' });
+    const chainCard = h('div', { class: 'card lab-chain', hidden: true }, [
+      h('h2', { class: 'lab-card__title', text: 'Blockchain' }),
+      chainText,
+      h('button', { class: 'btn btn--block', type: 'button', onClick: () => navigate('/explorer') }, ['Open the block explorer', icon('blocks', { size: 20 })]),
+    ]);
+
+    function renderChainCard(st) {
+      chainCard.hidden = !(tierInfo.rank >= 1 || advancedOn());
+      if (chainCard.hidden) return;
+      const sealed = Math.floor(st.t / BLOCK_TICKS);
+      chainText.textContent = `Every trade is a transaction. ${sealed} ${sealed === 1 ? 'block' : 'blocks'} sealed so far, with a new one every 5 seconds.`;
+    }
+
+    function setMode(adv) {
+      market.advanced = adv;
+      store.set({ labAdvanced: adv });
+      render();
+    }
+
+    function renderMode() {
+      modeButtons[0].setAttribute('aria-pressed', String(!market.advanced));
+      modeButtons[1].setAttribute('aria-pressed', String(market.advanced));
+    }
+
+    // The wash-volume lesson plays once, the first time a Builder sees the overlay (BRIEF §5 events).
+    function maybeWashLesson(st) {
+      const c = st.coins[market.selected];
+      if (market.washSeen || market.closed || dialog.open || !advancedOn() || tier !== 'builder' || !(c.totalWashVolume > 0)) return;
+      market.washSeen = true;
+      const e = { id: 'wash_volume', coinId: c.id, t: st.t };
+      market.news.push(e);
+      openEvent(e);
+    }
+
     const newsList = h('ol', { class: 'lab-news__list' });
     const newsCard = h('div', { class: 'card lab-news' }, [h('h2', { class: 'lab-card__title', text: 'Market news' }), newsList]);
 
@@ -896,9 +1032,15 @@ export function mount(root, ctx) {
         portfolioCard,
         mineCard,
         newsCard,
+        flowCard,
+        chainCard,
       ]),
       dialog,
     );
+    head.append(modeToggle);
+    const onWide = () => render();
+    wide.addEventListener('change', onWide);
+    cleanup.push(() => wide.removeEventListener('change', onWide));
 
     function render() {
       const st = session.getState();
@@ -908,6 +1050,10 @@ export function mount(root, ctx) {
       renderTrade(st);
       renderPortfolio(st);
       renderMine(st);
+      renderMode();
+      renderFlow(st);
+      renderChainCard(st);
+      maybeWashLesson(st);
     }
 
     function step() {

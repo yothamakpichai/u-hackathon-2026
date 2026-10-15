@@ -108,6 +108,18 @@ The sim records raw data; it does not compute the score.
   - These fire the events `copycat` and `copycat_rug` (Builder only). Their narration comes from `events.json`, or from the Lab's fallback copy. Exposure is in `events[]`, like the BLOOP rug.
 - **Outcome explained.** `designNotes()` turns a design into plain-language notes: scarcity, insider share, team selling, hype, pool lock and vesting. They show in the preview before launch, and in the Lab's "Your coin" card after it. That card also shows the price since launch, holders, curve progress or graduation day, and the copycat.
 
+## Block explorer and Advanced view (slice J4)
+
+- **Transactions.** Every swap (NPC, issuer, arbitrage, player) is logged as `{ t, coin, side, coins, L, who }`. `session.getTransactions(from)` returns the log from an index.
+- **Blocks.** `sim/chain.js` groups transactions into blocks of 50 ticks (5 s of market time); a block still forming is left out. Each block's hash is `SHA-256(prevHash + height + timestamp + txs)`, computed with Web Crypto. Gas is shown per transaction (L$0.01, up to 4x in busy blocks) and clearly labelled as not charged.
+- **`#/explorer`.** The chain, newest first. Each block opens to its first 40 transactions. The tamper demo changes the player's first trade (or the day's first trade) to 1,000x its amount; that block and every later one turn red with a text label, and Undo restores them. Short cards cover wallets and keys (concept only), confirmations and gas. The market pauses while the explorer is open, as it does on `#/create`.
+- **Basic / Advanced.** Desktop only: the toggle is hidden below 1024 px, and Advanced renders only when the screen is at least 1024 px wide. The phone Lab is unchanged except for the blockchain card (13+, below the news). Advanced adds:
+  - "Who's trading <coin>": buys and sells by trader type over the last market day.
+  - For Builder, the wash-volume overlay (amber over the total, with a legend), and Penny's `wash_volume` lesson the first time it shows.
+  - The blockchain card, for Explorer too.
+
+  The choice is saved as `store.labAdvanced`.
+
 ## Config location
 
 - The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.
