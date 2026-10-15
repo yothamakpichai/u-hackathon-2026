@@ -1521,3 +1521,188 @@ body.has-ask .app-footer {
   flex: 1;
   min-width: 0;
 }
+
+/* Birth-year gate (BRIEF §15, Y9) */
+
+.gate {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.gate__title {
+  font-size: var(--fs-xl);
+  text-align: center;
+}
+
+.cake-box {
+  display: grid;
+  place-items: center;
+}
+
+.cake {
+  width: min(100%, 15rem);
+  height: auto;
+  overflow: visible;
+}
+
+.cake__plate {
+  fill: var(--surface-2);
+}
+
+.cake__base {
+  fill: var(--amber-400);
+}
+
+.cake__top {
+  fill: var(--amber-100);
+}
+
+.cake__icing {
+  fill: var(--primary-200);
+}
+
+.cake__age {
+  fill: var(--ink-900);
+  font-family: var(--font-head);
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.cake__candle rect {
+  fill: var(--pal-sky);
+}
+
+.cake__candle--1 rect {
+  fill: var(--pal-pink);
+}
+
+.cake__candle--2 rect {
+  fill: var(--pal-violet);
+}
+
+.cake__candle--3 rect {
+  fill: var(--pal-gold);
+}
+
+.cake__flame {
+  fill: var(--amber-500);
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: flicker 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes flicker {
+  from {
+    transform: scale(1, 1);
+  }
+  to {
+    transform: scale(0.82, 1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cake__flame {
+    animation: none;
+  }
+}
+
+.gate__label {
+  font-family: var(--font-head);
+  font-weight: 800;
+}
+
+.year-select {
+  min-height: var(--tap);
+  padding: 0 var(--sp-3);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink-900);
+  font: inherit;
+  font-size: var(--fs-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+.year-select:focus-visible {
+  border-color: var(--primary-500);
+}
+
+.gate__age,
+.gate__lead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.gate__age {
+  color: var(--ink-700);
+}
+
+.gate__lead {
+  font-family: var(--font-head);
+  font-weight: 800;
+}
+
+.gate__outcome,
+.gate__adults,
+.gate__message {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.gate__tier {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--primary-50);
+}
+
+.gate__blurb {
+  color: var(--ink-700);
+}
+
+.gate__message {
+  gap: var(--sp-1);
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--amber-50);
+}
+
+.adult-cards {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adult-card {
+  display: grid;
+  gap: var(--sp-1);
+  padding: var(--sp-4);
+}
+
+.adult-card__title {
+  font-size: var(--fs-md);
+}
+
+.gate__try {
+  margin-top: var(--sp-2);
+  font-size: var(--fs-lg);
+}
+
+.gate__tier[data-level="explorer"] {
+  --choice: var(--tier-explorer);
+}
+
+.gate__tier[data-level="trader"] {
+  --choice: var(--tier-trader);
+}
+
+.gate__tier[data-level="builder"] {
+  --choice: var(--tier-builder);
+}
