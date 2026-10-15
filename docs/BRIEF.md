@@ -9,7 +9,7 @@ Single source of truth for this repo. Read all of it before doing anything.
 - Submission: public GitHub repo, a demo website that shows the real product (not a landing page), and a pitch deck.
 - Judging: App execution 40%, Practicality 40%, Usability & design 10% (intuitive navigation, clear flow, readable design, helpful errors, accessibility), Innovation & ecosystem 5% (partner: ElevenLabs), U-Bot integration 5%.
 - First-round judges review the submitted links **without us present**, probably on a phone, possibly hours after submission. The worst moment of the demo sets the score. Every path must work, every state must explain itself, and no feature may be half-finished. Delete unfinished features instead of disabling them.
-- Production URL: `https://uh26.cenedury.com`. sv1 is Plesk with PHP 8.3. Plesk Git auto-deploys `main` on every push. The document root is `public/`.
+- Production URL: `https://u-hackathon-2026.cenedury.com`. sv1 is Plesk with PHP 8.3. Plesk Git auto-deploys `main` on every push. The document root is `public/`.
 
 ## 1. Product
 
@@ -31,12 +31,12 @@ Every note becomes a data point. The evidence board shows quality accumulating o
 - Vanilla PHP 8.3 (no framework), vanilla JS (ES modules, no build step, no npm runtime dependencies), vanilla CSS. Google Fonts: **IBM Plex Sans Thai** for body text, **Baloo 2** for the wordmark only.
 - Brand: education green `#0DA678` as primary, plus one amber "spark" accent (pick a hex that passes WCAG AA where used as text; record it in DECISIONS.md). Light theme first; dark theme only if time allows.
 - **No database.** The server is a stateless PHP API with a file cache. Client state, meaning the visitor's own notes, lives in `localStorage` wrapped in try/catch. Seeded demo data ships as JSON in the repo. Reason: fewer moving parts at judging time.
-- Secrets and writable state live **outside the repo** in a sibling directory named `uh26-private/`, resolved as `dirname(REPO_ROOT) . '/uh26-private'`:
-  - Production: `/var/www/vhosts/cenedury.com/uh26-private/`
-  - Local (Yotha): `C:\Users\yotha-hack\code\uh26-private\`
+- Secrets and writable state live **outside the repo** in a sibling directory named `u-hackathon-2026-private/`, resolved as `dirname(REPO_ROOT) . '/u-hackathon-2026-private'`:
+  - Production: `/var/www/vhosts/cenedury.com/u-hackathon-2026-private/`
+  - Local (Yotha): `C:\Users\yotha-hack\code\u-hackathon-2026-private\`
   - Contents: `.env` (keys), `cache/`, `ratelimit/`. Create missing subdirectories at runtime with mode 0700.
 - `.env` keys: `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `claude-sonnet-5-5`), `ELEVENLABS_API_KEY`, `DAILY_AI_CAP` (default 400), `APP_ENV` (`local`|`production`). Commit `.env.example` with names only.
-- The repo is **public forever**. No secrets, no personal data, no real teacher data in commits. A `.gitignore` covering `.env*` (except `.env.example`), `uh26-private/`, `node_modules/`, OS junk must be in the first code commit.
+- The repo is **public forever**. No secrets, no personal data, no real teacher data in commits. A `.gitignore` covering `.env*` (except `.env.example`), `u-hackathon-2026-private/`, `node_modules/`, OS junk must be in the first code commit.
 - Local dev server: `php -S 127.0.0.1:8000 -t public`.
 
 ## 3. Repo layout and ownership
@@ -160,7 +160,7 @@ Until the API is live, the frontend uses `assets/mock/*.json` when the URL has `
   - `X-Content-Type-Options: nosniff`;
   - `Referrer-Policy: strict-origin-when-cross-origin`;
   - `Permissions-Policy: microphone=(self)`.
-  Also: no stack traces in production responses; log to `uh26-private/logs/`.
+  Also: no stack traces in production responses; log to `u-hackathon-2026-private/logs/`.
 
 ## 7. Data: ว.PA indicators (verify before shipping)
 
@@ -198,7 +198,7 @@ Each indicator also gets an English label. The demo teacher is fictional (a grad
   - Save;
   - Export;
   - TH/EN toggle.
-  It must work on `https://uh26.cenedury.com` from a phone. Then STOP and write `docs/STATUS.md`.
+  It must work on `https://u-hackathon-2026.cenedury.com` from a phone. Then STOP and write `docs/STATUS.md`.
 - **Phase B — voice and polish (overnight → Fri 10:00).** Includes:
   - transcribe with ElevenLabs;
   - mic recording;
