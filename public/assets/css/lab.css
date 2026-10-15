@@ -1,0 +1,572 @@
+/* Market Lab screens (Joewee): today's market. Mobile first; three columns from 1024 px. */
+
+[data-route="lab"] .app-main {
+  max-width: var(--lab-max);
+}
+
+/* Coin colours: one class per palette id (config.js COIN_COLORS). */
+.coin--mint { --coin: var(--pal-mint); }
+.coin--teal { --coin: var(--pal-teal); }
+.coin--cyan { --coin: var(--pal-cyan); }
+.coin--sky { --coin: var(--pal-sky); }
+.coin--blue { --coin: var(--pal-blue); }
+.coin--indigo { --coin: var(--pal-indigo); }
+.coin--violet { --coin: var(--pal-violet); }
+.coin--magenta { --coin: var(--pal-magenta); }
+.coin--pink { --coin: var(--pal-pink); }
+.coin--coral { --coin: var(--pal-coral); }
+.coin--orange { --coin: var(--pal-orange); }
+.coin--gold { --coin: var(--pal-gold); }
+
+.coin-badge {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--coin, var(--ink-400));
+  color: #FFFFFF;
+  font-family: var(--font-head);
+  font-size: var(--fs-md);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.coin-badge--cash {
+  background: var(--surface-2);
+  color: var(--ink-700);
+  font-size: var(--fs-xs);
+}
+
+/* ---- layout ------------------------------------------------------------------------------ */
+
+.lab {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "top"
+    "coins"
+    "chart"
+    "trade"
+    "portfolio"
+    "news";
+  gap: var(--sp-4);
+}
+
+.lab-top { grid-area: top; display: grid; gap: var(--sp-3); }
+.lab-coins { grid-area: coins; }
+.lab-chart { grid-area: chart; }
+.lab-trade { grid-area: trade; }
+.lab-portfolio { grid-area: portfolio; }
+.lab-news { grid-area: news; }
+
+.lab .card {
+  padding: var(--sp-4);
+}
+
+.lab-card__title {
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-lg);
+}
+
+@media (min-width: 1024px) {
+  .lab {
+    grid-template-columns: 15rem minmax(0, 1fr) 21rem;
+    grid-template-areas:
+      "top top top"
+      "coins chart trade"
+      "coins chart portfolio"
+      "coins news portfolio";
+    grid-template-rows: auto auto auto 1fr;
+    align-items: start;
+  }
+
+  .lab-top {
+    grid-template-columns: 1fr minmax(0, 32rem);
+    align-items: center;
+  }
+
+  .lab-chart {
+    grid-row: 2 / 4;
+  }
+}
+
+/* ---- clock --------------------------------------------------------------------------------- */
+
+.lab-clock {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.lab-clock__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-3);
+}
+
+.lab-clock__day {
+  font-family: var(--font-head);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+}
+
+.lab-clock__left {
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-clock__bar {
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.lab-clock__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary-500);
+  transform: scaleX(var(--p, 0));
+  transform-origin: left center;
+}
+
+.lab-clock__actions,
+.lab-confirm__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.lab-clock__actions .btn,
+.lab-confirm__actions .btn {
+  flex: 1 1 8rem;
+}
+
+.lab-confirm {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.lab-confirm__text {
+  font-weight: 600;
+}
+
+/* ---- coin list: a swipeable strip on phones, a column on desktop ------------------------- */
+
+.lab-coins__list {
+  display: flex;
+  gap: var(--sp-2);
+  margin: 0 calc(-1 * var(--sp-1));
+  padding: 0 var(--sp-1) var(--sp-2);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+}
+
+.coin-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "badge name"
+    "badge meta";
+  align-items: center;
+  column-gap: var(--sp-3);
+  row-gap: 2px;
+  flex: 0 0 auto;
+  min-width: 11rem;
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink-900);
+  text-align: left;
+  scroll-snap-align: start;
+  transition: border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out);
+}
+
+.coin-row .coin-badge { grid-area: badge; }
+
+.coin-row:hover {
+  border-color: var(--ink-300);
+}
+
+.coin-row[aria-pressed="true"] {
+  border-color: var(--primary-600);
+  background: var(--primary-50);
+}
+
+.coin-row__name {
+  grid-area: name;
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.coin-row__ticker {
+  font-family: var(--font-head);
+  font-weight: 900;
+}
+
+.coin-row__full {
+  overflow: hidden;
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coin-row__meta {
+  grid-area: meta;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 var(--sp-2);
+}
+
+.coin-row__price {
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.coin-row__change {
+  font-size: var(--fs-sm);
+}
+
+@media (min-width: 1024px) {
+  .lab-coins__list {
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .coin-row {
+    min-width: 0;
+  }
+}
+
+/* ---- chart --------------------------------------------------------------------------------- */
+
+.lab-chart {
+  display: grid;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.lab-chart__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "badge label"
+    "price price";
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.lab-chart__badge { grid-area: badge; }
+.lab-chart__label { grid-area: label; display: grid; gap: var(--sp-1); min-width: 0; }
+
+.lab-chart__title {
+  font-size: var(--fs-lg);
+}
+
+.lab-chart__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.chip--loss {
+  background: var(--loss-50);
+  color: var(--loss-700);
+}
+
+.lab-chart__price {
+  grid-area: price;
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+}
+
+.lab-chart__value {
+  font-size: var(--fs-2xl);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.lab-chart__canvas {
+  position: relative;
+  height: 15rem;
+  min-width: 0;
+}
+
+.lab-chart__credit {
+  color: var(--ink-500);
+  font-size: var(--fs-xs);
+}
+
+.lab-chart__credit a {
+  color: inherit;
+}
+
+@media (min-width: 600px) {
+  .lab-chart__head {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "badge label price";
+  }
+
+  .lab-chart__canvas {
+    height: 20rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lab-chart__canvas {
+    height: 26rem;
+  }
+}
+
+/* ---- trade panel ----------------------------------------------------------------------------- */
+
+.trade {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.trade__label {
+  font-family: var(--font-head);
+  font-weight: 800;
+}
+
+.trade__field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 52px;
+  padding-inline: var(--sp-3);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.trade__field:focus-within {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px rgb(31 99 224 / 0.25);
+}
+
+.trade__input {
+  width: 100%;
+  min-width: 0;
+  padding: var(--sp-2) 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink-900);
+  font: 600 var(--fs-xl) / 1.2 var(--font-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.trade__unit {
+  color: var(--ink-500);
+  font-family: var(--font-head);
+  font-weight: 800;
+}
+
+.trade__quick {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-2);
+}
+
+.trade__preview {
+  min-height: 2.6em;
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+}
+
+.trade__preview.is-problem {
+  color: var(--warning-700);
+}
+
+.trade__error,
+.trade__done {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.trade__error {
+  background: var(--loss-50);
+  color: var(--loss-700);
+}
+
+.trade__done {
+  background: var(--gain-50);
+  color: var(--gain-700);
+}
+
+/* ---- portfolio ------------------------------------------------------------------------------ */
+
+.lab-portfolio__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.lab-portfolio__total {
+  font-size: var(--fs-2xl);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.lab-portfolio__note {
+  flex-basis: 100%;
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+}
+
+.lab-portfolio__rows {
+  display: grid;
+  gap: var(--sp-2);
+  padding: 0;
+  list-style: none;
+}
+
+.pf-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto 3rem;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: var(--tap);
+}
+
+.pf-row__name {
+  display: grid;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.pf-row__ticker {
+  font-family: var(--font-head);
+  font-weight: 900;
+}
+
+.pf-row__coins {
+  overflow: hidden;
+  color: var(--ink-500);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-row__value,
+.pf-row__share {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.pf-row__share {
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+}
+
+.pf-empty,
+.lab-news__empty {
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+}
+
+/* ---- news -------------------------------------------------------------------------------------- */
+
+.lab-news__list {
+  display: grid;
+  gap: var(--sp-2);
+  padding: 0;
+  list-style: none;
+}
+
+.lab-news__item {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: var(--sp-3);
+}
+
+.lab-news__day {
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-news__text {
+  font-weight: 600;
+}
+
+/* ---- Penny's event dialog: a bottom sheet on phones, centred on wider screens ------------ */
+
+.lab-dialog {
+  width: min(34rem, calc(100vw - 2 * var(--sp-4)));
+  max-width: none;
+  margin: auto; /* base.css resets margins; a modal dialog centres with auto margins */
+  max-height: calc(100dvh - 2 * var(--sp-4));
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  color: var(--ink-900);
+  box-shadow: var(--shadow-lg);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.lab-dialog::backdrop {
+  background: rgb(15 28 23 / 0.5);
+}
+
+.lab-dialog__body {
+  position: relative;
+  display: grid;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+}
+
+.lab-dialog__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.lab-dialog__title {
+  font-size: var(--fs-xl);
+}
+
+.lab-dialog__say .narration__text {
+  font-size: var(--fs-md);
+  line-height: var(--lh-body);
+}
+
+@media (max-width: 599px) {
+  .lab-dialog {
+    width: 100%;
+    max-height: 92dvh;
+    margin: auto 0 0;
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+  }
+
+  .lab-dialog__body {
+    padding: var(--sp-5) var(--sp-4) max(var(--sp-5), env(safe-area-inset-bottom));
+  }
+}

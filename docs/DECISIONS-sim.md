@@ -71,6 +71,23 @@ The sim records raw data; it does not compute the score.
 - **`portfolio.trades`**: each trade with `t`, `holdingBefore` and `holdingAfter`.
 - **`events[]`**: `negative`, plus `playerCoins` and `playerValue` at the moment the event fired, so exposure to BLOOP at `rug_pull` is visible.
 
+## Lab screen (slice J2)
+
+- **Clock.** The market runs only while `#/lab` is open and the tab is visible. It also pauses while Penny's event popup is open and when the player taps Pause. The live session sits in `lab.js` module state, so a trip to `#/create` (J3) and back resumes it; a page reload restarts today's market from Day 1.
+- **Events.** Each event opens Penny's popup. Step 1 shows the headline and captioned narration; step 2 is the question (`ui.questionCard`), so the two audio clips never talk over each other.
+  - **Content.** Read from `public/data/events.json` as `events[eventId][tier]` (or `events[tier][eventId]`) = `{ headline, narration, question: { prompt, options[3], answerIndex, explain? } }`. If an entry is missing, the Lab shows a short built-in headline and narration with no question, so the judge path never breaks before Y3.
+  - **Audio ids.** `event-<eventId>-<tier>` for the narration, and `event-<eventId>-<tier>-question` (plus `-explain`) for the question.
+- **For the report card (Y4).** When the market closes (time up, or Finish now), `store.lab[tier]` holds:
+  - `date`, `seed`, `tier`, `t`, `ticks`, `finishedEarly`
+  - `value`, `startValue`, `cash`, `holdings: { id: { coins, value } }`
+  - `risk`, `history`, `trades` (the last 200), `created`, `events`
+  - `quiz: [{ id, correct }]` for the event questions
+  - `at`
+
+  The popup then offers "See my report card" (`#/report`) and "Replay today's market".
+- **Chart.** TradingView Lightweight Charts 5.2.1 is vendored in `public/assets/js/vendor/lightweight-charts/` with its LICENSE and NOTICE. Its built-in attribution logo injects a `<style>` element, which the CSP blocks, so it is off. A text credit linking to tradingview.com sits under the chart instead. Each candle is 6 sim hours, the axis shows "Day N", and candles fill the chart from the left.
+- **Coin colours.** `colorId` in `coins.json` indexes `config.COIN_COLORS`, and the Lab maps it to `--pal-<name>`. The roster matches the `--coin-*` tokens.
+
 ## Config location
 
 - The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.
