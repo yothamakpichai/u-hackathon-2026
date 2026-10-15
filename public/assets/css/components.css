@@ -1354,3 +1354,170 @@
   display: grid;
   gap: var(--sp-3);
 }
+
+/* Ask Penny (BRIEF §9): floating button and chat sheet */
+
+.ask-fab {
+  position: fixed;
+  right: var(--gutter);
+  bottom: max(var(--sp-4), env(safe-area-inset-bottom));
+  z-index: var(--z-toast);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  padding: var(--sp-1) var(--sp-4) var(--sp-1) var(--sp-1);
+  border: 2px solid var(--primary-600);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  color: var(--primary-800);
+  font-family: var(--font-head);
+  font-weight: 800;
+  transition: transform var(--dur-1) var(--ease-out);
+}
+
+.ask-fab:hover {
+  transform: translateY(-1px);
+}
+
+body.has-ask .app-footer {
+  padding-bottom: calc(var(--tap) + var(--sp-8));
+}
+
+.tutor {
+  width: min(100% - 2 * var(--gutter), 32rem);
+  margin: auto; /* the global margin reset would pin the dialog to the top left */
+  max-height: min(88dvh, 44rem);
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  color: var(--ink-900);
+  box-shadow: var(--shadow-lg);
+}
+
+.tutor[open] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+}
+
+.tutor::backdrop {
+  background: rgb(15 23 20 / 0.45);
+}
+
+.tutor__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.tutor__titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.tutor__title {
+  font-size: var(--fs-lg);
+}
+
+.tutor__sub,
+.tutor__privacy {
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+}
+
+.tutor__log {
+  display: grid;
+  align-content: start;
+  gap: var(--sp-2);
+  min-height: 8rem;
+  padding: var(--sp-4);
+  overflow-y: auto;
+}
+
+.tutor-msg {
+  max-width: 88%;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-lg);
+  line-height: var(--lh-body);
+  overflow-wrap: anywhere;
+}
+
+.tutor-msg--penny {
+  justify-self: start;
+  border-bottom-left-radius: var(--r-xs);
+  background: var(--primary-50);
+}
+
+.tutor-msg--you {
+  justify-self: end;
+  border-bottom-right-radius: var(--r-xs);
+  background: var(--surface-2);
+}
+
+.tutor-msg.is-thinking {
+  color: var(--ink-500);
+  font-style: italic;
+}
+
+.tutor__chips {
+  display: flex;
+  scrollbar-width: none;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-4) var(--sp-3);
+  overflow-x: auto;
+}
+
+.tutor__chip {
+  flex: none;
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  border: 2px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink-800);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tutor__chip:hover {
+  border-color: var(--primary-500);
+}
+
+.tutor__form {
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+  border-top: 1px solid var(--line-soft);
+}
+
+.tutor__input {
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink-900);
+  font: inherit;
+  resize: none;
+}
+
+.tutor__input:focus-visible {
+  border-color: var(--primary-500);
+}
+
+.tutor__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.tutor__privacy {
+  flex: 1;
+  min-width: 0;
+}

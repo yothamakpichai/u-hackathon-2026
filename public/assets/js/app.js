@@ -3,7 +3,7 @@ import * as config from './config.js';
 import { createStore } from './state.js';
 import { createAudio } from './audio.js';
 import { createRouter } from './router.js';
-import { h, icon } from './ui.js';
+import { h, icon, penny } from './ui.js';
 
 const store = createStore();
 const audio = createAudio({ store });
@@ -42,6 +42,25 @@ audio.hasAny().then((any) => {
   render();
   document.querySelector('.app-header__actions')?.append(button);
 });
+
+// "Ask Penny" (BRIEF §9) floats over every screen once a level is chosen.
+const askButton = h('button', { class: 'ask-fab', type: 'button', hidden: true, onClick: openTutor }, [
+  penny('happy', { size: 32, className: 'ask-fab__penny' }),
+  h('span', { text: 'Ask Penny' }),
+]);
+document.body.append(askButton);
+const renderAsk = () => {
+  askButton.hidden = !store.get().tier;
+  document.body.classList.toggle('has-ask', !askButton.hidden);
+};
+store.subscribe(renderAsk);
+renderAsk();
+
+function openTutor() {
+  import('./screens/tutor.js')
+    .then((m) => m.openTutor({ store, config }))
+    .catch(() => {}); // offline: the button simply does nothing until the page can load the module
+}
 
 const router = createRouter({
   root: document.getElementById('main'),
