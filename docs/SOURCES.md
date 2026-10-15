@@ -27,3 +27,7 @@
 - [unverified] SET Total Return Index long-run returns; Thai deposit and government bond yields.
 - [unverified] Gold Traders Association of Thailand: 96.5% bar gold, 1 baht-weight = 15.244 g.
 - [unverified] CryptoKitties congestion (Dec 2017); Axie Infinity collapse and Ronin bridge hack (Mar 2022); TerraUSD depeg (May 2022).
+## Future You (J10: constants in public/data/future_th.json)
+- [unverified] Long-run nominal return (about 7% a year) and volatility (about 16% a year) of broad global equity indices in US dollars.
+- [unverified] Correlation between Thai and global stock returns (about 0.6).
+- [unverified] Yearly market changes used as shock scenarios: SET index 1997 about −55%, 2020 about −8%, 2022 about +1%; US/global stocks 1997 about +31%, 2020 about +16%, 2022 about −18%; baht against the US dollar 1997 from about 25 to about 47 after the July float, 2020 roughly unchanged, 2022 about 4% weaker; Thai CPI 1997 about 5.6%, 2020 about −0.8%, 2022 about 6.1%.

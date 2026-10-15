@@ -167,6 +167,22 @@ The sim records raw data; it does not compute the score.
 - **Gallery.** It sits at the top of `#/explorer`, works even before a market opens, and has an empty state. Each card shows the badge, how it was earned, when it was minted, the mint transaction's hash, and "Soulbound · no price". An NFT lesson card sits next to it.
 - **No trading.** Badges have no price, no trade or transfer controls, and no market. All badge art is original SVG drawn in `badges.js`.
 
+## Avatar and Future You (slices J10a and J10, BRIEF §16)
+
+- **Avatar.** `public/js/avatar.js` exports `render(character, age)`, which returns an SVG string, plus `dataUri()`, `OPTIONS`, `LABELS` and `AGES`.
+  - `character = { skin, hairStyle, hairColor, outfit, glasses }`, with no gender field. Every value is looked up in fixed tables, so caller text never reaches the SVG, and it uses no style attributes.
+  - Ages snap to 25, 40, 60 or 80. Hair greys and thins, and lines appear on the forehead and around the eyes and mouth.
+- **Future maths.** `sim/future.js` `project(data, plan)` runs a monthly, seeded Monte Carlo of at least 500 paths. The seed is a hash of the inputs, so the same inputs always give the same fan.
+  - Four assets (cash, Thai bonds, Thai stocks, global stocks in USD), with correlated stocks.
+  - A price index with an inflation scenario (low, target or high), and a THB/USD path (steady or weak baht).
+  - Optional 12-month shocks for 1997, 2020 or 2022, as economic variables only.
+  - Contributions are in today's baht and rise with prices, and every output is real (nominal ÷ price index). With spending after the goal, it reports the share of paths that last to the life-expectancy basis, or to 90.
+- **Data.** Every constant is in `public/data/future_th.json` with its source and retrieval date (2026-10-16); a test enforces this. Values that `docs/SOURCES.md` doesn't verify are marked [unverified] in both files.
+- **Screen.** `#/future` has Quick (age, saving, goal age), Standard (adds savings so far, mix and inflation) and Pro (adds a custom mix, baht, historical shock, life-expectancy basis with "plan to 90", and spending).
+  - Your avatar now and at the goal age, the P10/P50/P90 fan with a table fallback, and "Projection, not prediction" always visible.
+  - Amounts are shown as "THB", because the ฿ sign is in the Thai Unicode block that `bin/check.mjs` rejects.
+  - Inputs persist in `store.future`.
+
 ## Config location
 
 - The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.

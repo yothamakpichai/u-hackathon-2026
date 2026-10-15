@@ -1794,3 +1794,161 @@
   background: var(--amber-50);
   font-weight: 700;
 }
+
+/* ---- Future You (BRIEF §16) -------------------------------------------------------------------- */
+
+[data-route="future"] .app-main {
+  max-width: 72rem;
+}
+
+.future-screen {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.future-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  justify-self: start;
+  margin-top: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-pill);
+  background: var(--amber-50);
+  color: var(--amber-800);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.future {
+  display: grid;
+  gap: var(--sp-4);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .future {
+    grid-template-columns: 24rem minmax(0, 1fr);
+  }
+
+  .future-why {
+    grid-column: 1 / -1;
+  }
+}
+
+.future-inputs,
+.future-out,
+.future-form {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.future-faces {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+}
+
+.future-face {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-1);
+  margin: 0;
+  font-weight: 700;
+}
+
+.future-face img {
+  width: 7rem;
+  height: 7rem;
+}
+
+.future-arrow {
+  color: var(--ink-400);
+}
+
+.future-summary {
+  display: grid;
+  gap: var(--sp-2);
+  min-height: 6rem;
+}
+
+.future-big {
+  font-size: var(--fs-xl);
+}
+
+.future-big strong {
+  font-size: var(--fs-2xl);
+  font-variant-numeric: tabular-nums;
+}
+
+.future-working {
+  color: var(--ink-500);
+}
+
+.future-lasts {
+  display: flex;
+  align-items: start;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  font-weight: 700;
+}
+
+.future-lasts.is-good { background: var(--gain-50); color: var(--gain-700); }
+.future-lasts.is-risk { background: var(--warning-50); color: var(--warning-700); }
+
+.fan {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.fan__grid { stroke: var(--line-soft); stroke-width: 1; }
+.fan__axis { fill: var(--ink-500); font-size: 12px; }
+.fan__band { fill: rgb(13 166 120 / 0.2); stroke: none; }
+.fan__mid { fill: none; stroke: var(--primary-600); stroke-width: 3; stroke-linejoin: round; }
+.fan__goal { stroke: var(--amber-600); stroke-width: 2; stroke-dasharray: 4 4; }
+.fan__note { fill: var(--amber-800); font-size: 12px; font-weight: 700; }
+
+.future-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-2);
+  color: var(--ink-700);
+  font-size: var(--fs-xs);
+}
+
+.future-key--band { background: rgb(13 166 120 / 0.2); }
+.future-key--mid { margin-left: var(--sp-2); height: 4px; background: var(--primary-600); }
+
+.future-table summary,
+.future-why summary {
+  min-height: var(--tap);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.future-numbers {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.future-numbers th,
+.future-numbers td {
+  padding: var(--sp-1) var(--sp-2);
+  border-bottom: 1px solid var(--line-soft);
+  text-align: right;
+}
+
+.future-numbers th:first-child {
+  text-align: left;
+}
+
+.future-why {
+  display: grid;
+  gap: var(--sp-2);
+}
