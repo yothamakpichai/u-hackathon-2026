@@ -1,71 +1,107 @@
 {
   "explorer": [
     {
-      "id": "choose",
-      "prompt": "You have L$10. A snack costs L$4 and a toy costs L$8. What can you buy?",
-      "options": ["Both of them", "Just one of them", "Nothing at all"],
+      "id": "two-wants",
+      "prompt": "You have L$50. A toy costs L$30 and a game costs L$40. You can't buy both. How do you choose well?",
+      "options": [
+        "Pick the first thing you see, right away",
+        "Pick whichever you will enjoy most and for longest",
+        "Pick the one your friend picked"
+      ],
       "answerIndex": 1,
-      "explain": "L$4 plus L$8 is L$12. That is more than L$10, so you pick one. Choosing is a big part of money."
+      "explain": "Money is limited, so every choice means giving something up. Thinking about which want matters most to you, and for how long, helps you choose well."
     },
     {
-      "id": "save",
-      "prompt": "You save L$2 every week. How much do you have after 5 weeks?",
-      "options": ["L$7", "L$25", "L$10"],
+      "id": "save-wait",
+      "prompt": "A bike costs L$40. You save L$10 every week and spend none of it. When can you buy the bike?",
+      "options": [
+        "After 2 weeks",
+        "After 10 weeks",
+        "After 4 weeks"
+      ],
       "answerIndex": 2,
-      "explain": "2 + 2 + 2 + 2 + 2 = 10. Small amounts saved often grow into something bigger."
+      "explain": "L$10 each week adds up: L$10, L$20, L$30, then L$40 after four weeks. Waiting and saving a little at a time lets you afford bigger things."
     },
     {
-      "id": "scarcity",
-      "prompt": "A town has only 3 golden stickers, and lots of kids want one. What usually happens to their price?",
-      "options": ["It usually goes up", "It usually goes down", "It drops to zero"],
+      "id": "scarce-stickers",
+      "prompt": "A club makes only 100 special stickers. Then it prints 1,000,000 more just like them. What usually happens to each sticker's worth?",
+      "options": [
+        "It goes down, because they are no longer rare",
+        "It goes up, because there are more stickers",
+        "It stays exactly the same"
+      ],
       "answerIndex": 0,
-      "explain": "When many people want something rare, they offer more for it. Rare and wanted usually means a higher price."
+      "explain": "When something is rare, people value it more. Make lots more, and each one is worth less. That is why VAULT has a hard cap on how many can ever exist."
     }
   ],
   "trader": [
     {
-      "id": "one-basket",
-      "prompt": "You put all your savings into one coin. What is the biggest risk?",
-      "options": ["You will earn too much", "If that coin falls, all your savings fall with it", "Nothing. One coin is always safer"],
-      "answerIndex": 1,
-      "explain": "Spreading money across different things means one bad drop can't wipe you out. That is called diversification."
-    },
-    {
-      "id": "supply",
-      "prompt": "A game suddenly makes 10 times more of a rare skin. What usually happens to its price?",
-      "options": ["It usually rises", "It stays exactly the same", "It usually falls"],
+      "id": "spread-risk",
+      "prompt": "You have L$1,000. One of your coins might suddenly crash to nearly zero. Which setup would hurt the least?",
+      "options": [
+        "All L$1,000 in the one coin you like most",
+        "L$800 in one coin and L$200 kept in L$",
+        "L$300 in each of three coins, L$100 in L$"
+      ],
       "answerIndex": 2,
-      "explain": "More supply with the same demand means each one is worth less. Being rare was part of the price."
+      "explain": "If one coin crashes, you only lose what you put in it. Here the most you could lose is L$300. Putting too much in one place is called concentration risk."
     },
     {
-      "id": "hype",
-      "prompt": "A coin's price doubled in one day because everyone online is talking about it. What is the smartest first step?",
-      "options": ["Check why it rose and what could make it fall", "Buy right away before it goes higher", "Borrow money to buy more"],
+      "id": "more-buyers",
+      "prompt": "A coin's price is steady. Twice as many people suddenly want to buy it, but the number for sale stays the same. What happens?",
+      "options": [
+        "The price tends to rise",
+        "The price tends to fall",
+        "The price tends to stay the same"
+      ],
       "answerIndex": 0,
-      "explain": "Hype can push prices up fast and drop them just as fast. Find out what is real before you act."
+      "explain": "When more people want something and the supply for sale stays the same, buyers compete. That pushes the price up. This is supply and demand."
+    },
+    {
+      "id": "hype-reason",
+      "prompt": "Which reason for buying a coin is hype?",
+      "options": [
+        "I read how its supply works and it fits",
+        "Everyone is buying it, so I must hurry",
+        "I kept some L$ aside and spread my money"
+      ],
+      "answerIndex": 1,
+      "explain": "Hype means buying because everyone else is buying. A rush like that can lift a price fast, and it usually fades just as fast. Having your own reasons keeps you steady."
     }
   ],
   "builder": [
     {
-      "id": "unlock",
-      "prompt": "A token's team will unlock 30% of all its coins next week. What often happens to the price around an unlock?",
-      "options": ["It must go up", "Extra coins for sale can push it down", "Unlocks never change anything"],
-      "answerIndex": 1,
-      "explain": "Unlocked coins can be sold. More coins reaching the market at once often means sell pressure."
-    },
-    {
-      "id": "liquidity",
-      "prompt": "A new coin's creator holds all of its liquidity, and it is not locked. What is the risk?",
-      "options": ["None. Liquidity does not affect the price", "The coin is safer than average", "They can pull the pool and the price can crash"],
-      "answerIndex": 2,
-      "explain": "If the creator removes the pool, holders may have nobody to sell to. That is a rug pull. Locked liquidity is one of the first things to check."
-    },
-    {
-      "id": "wash",
-      "prompt": "A coin shows huge trading volume, but the price barely moves and a few wallets keep trading with each other. What might this be?",
-      "options": ["Wash trading that fakes popularity", "Proof that the coin is safe", "A halving"],
+      "id": "unlock-effect",
+      "prompt": "A coin will unlock a quarter of its locked team coins tomorrow, with the rest vesting slowly. What is the main thing to think about?",
+      "options": [
+        "More coins can be sold, and some insiders may sell",
+        "Unlocked coins are destroyed, so each coin becomes rarer",
+        "Nothing changes, because those coins already existed"
+      ],
       "answerIndex": 0,
-      "explain": "Bots trading with themselves inflate volume without real demand. High volume alone does not mean real interest."
+      "explain": "An unlock raises the circulating supply. If some insiders sell, that extra selling can push the price down. Vesting spreads the release out so it hits the market more gently."
+    },
+    {
+      "id": "rug-flags",
+      "prompt": "A new coin's creator holds 60% of its coins, and its pool is not locked. What does this combination mean?",
+      "options": [
+        "The coin will trade more slowly but safely",
+        "The creator could pull the pool money and crash it",
+        "The creator's coins will be burned to protect holders"
+      ],
+      "answerIndex": 1,
+      "explain": "A huge creator share and an unlocked pool are both red flags. The creator could remove the money from the pool and sell, leaving holders unable to sell for anything near what they paid."
+    },
+    {
+      "id": "fake-volume",
+      "prompt": "A coin's trading volume spikes, but its price barely moves. The same trader appears on both sides of many trades. What is likely going on?",
+      "options": [
+        "Real demand from many new buyers",
+        "The pool has been locked for safety",
+        "Wash trading, which makes volume look busy without real demand"
+      ],
+      "answerIndex": 2,
+      "explain": "Wash trading is one trader buying from and selling to itself. Volume looks busy, but there is no real demand, so the price barely moves. Busy volume alone does not prove interest."
     }
   ]
 }

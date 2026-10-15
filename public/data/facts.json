@@ -1,0 +1,33 @@
+{
+  "about": "Canonical facts the content generator must not contradict (BRIEF §8). bin/generate-content.mjs sends them with every prompt, then checks the output against them before writing.",
+  "facts": [
+    { "id": "simulation", "text": "The lab is a simulation. No real money or real cryptocurrency is used. Prices are in L$ (Lab Dollars) and every player starts with L$1,000." },
+    { "id": "vault_cap", "text": "VAULT has a hard cap of 21,000,000 coins. No more can ever be made." },
+    { "id": "halving", "text": "A halving cuts the number of new coins made in half. In the real-world design VAULT copies, this happens roughly every 4 years. In the lab it happens once, on a fixed day. It does not change how many coins anyone already holds." },
+    { "id": "amm", "text": "Each coin trades in a pool against L$ that follows x · y = k: the L$ in the pool times the coins in the pool stays constant (plus a 0.3% fee). Price = L$ in the pool ÷ coins in the pool. Big trades move the price more than small ones (price impact)." },
+    { "id": "stablecoin", "text": "PEG is a stablecoin that aims to stay at L$1.00, backed 1:1. Stablecoins can depeg: in the lab, scared selling pushes PEG to about L$0.96, then traders who can swap PEG back for L$1 buy the cheap coins and pull it back to L$1.00." },
+    { "id": "unlock", "text": "An unlock releases coins that the team and early investors were holding back. Unlocks increase the circulating supply, and some insiders sell, which can push the price down. ORBIT unlocks 25% of its locked coins at once, then the rest little by little (vesting)." },
+    { "id": "wash", "text": "Wash trading is one trader buying from and selling to itself. It inflates trading volume without any real demand, so the volume looks busy while the price barely moves. In the lab only an NPC bot does it, on FUEL." },
+    { "id": "rug_pull", "text": "A rug pull is when a coin's creators remove the liquidity (the money) from its pool and sell their coins. The price crashes and holders can't sell for anything close to what they paid. BLOOP's creator holds 60% of its coins and its pool is not locked: both are red flags. In the lab only an NPC does this." },
+    { "id": "hype", "text": "Hype is buying because everyone else is buying. ZOOMZ launches on a bonding curve: its price rises as people buy, and once enough L$ is in, it moves to a normal pool. Hype can push a price up fast, and it usually fades just as fast." },
+    { "id": "whale", "text": "A whale is one holder with a huge amount. When a whale sells a big pile at once, the price drops fast even though nothing about the coin changed. Selling everything right after a scary drop often locks in the loss." },
+    { "id": "fuel", "text": "FUEL makes new coins all the time and burns (destroys) a tiny part of every trade. Net supply change = new coins made − coins burned." },
+    { "id": "eduu", "text": "EDUU is Cenedury's official coin in the lab. It has a fixed maximum supply of 100,000,000 and releases coins to a learner rewards pool on a public schedule. Never say real students receive EDUU today." },
+    { "id": "copycat", "text": "In the Builder level, if a player's coin has an unlocked pool, an NPC may list a look-alike coin with 'Official' in its name, hype it, then pull its pool. The player's own coin is always honest." },
+    { "id": "score", "text": "The Money Health Score (0–100) rewards wisdom, not profit: Knowledge 30, Risk management 25 (no coin above half of your money for most of the market, and at least 10% kept in L$ or PEG), Scam avoidance 20, Composure 15 (no selling everything within 10 seconds of bad news), Returns 10." },
+    { "id": "players", "text": "Players can never rug pull, wash trade or trick anyone. Scams in the lab are done only by NPC agents, so players learn to spot them." }
+  ],
+  "rules": [
+    "English only. Short sentences and concrete examples.",
+    "Call the product \"the lab\", never by its name, so renaming it stays a one-line change.",
+    "No fear-mongering and no hype language.",
+    "Never name a real coin, token, company, exchange or person. Only the lab coins VAULT, EDUU, PEG, FUEL, ORBIT, ZOOMZ and BLOOP exist.",
+    "Never say 'you should buy' or 'you should sell', and never give advice about real assets or real money.",
+    "Never mention wallets to download, exchanges, sign-ups or buying real crypto."
+  ],
+  "banned": {
+    "words": ["Market Lab", "Bitcoin", "Ethereum", "Ether", "Tether", "Solana", "Ripple", "Dogecoin", "Shiba", "Cardano", "Polkadot", "Polygon", "Litecoin", "Stellar", "Avalanche", "Binance", "Coinbase", "Uniswap", "MetaMask", "pump.fun", "Elon", "Musk", "UTOPIA"],
+    "tickers": ["BTC", "ETH", "USDT", "USDC", "BNB", "SOL", "XRP", "DOGE", "SHIB", "PEPE", "AVAX", "TON", "ADA", "TRX", "LINK", "DOT", "MATIC", "LTC", "BCH", "XLM"],
+    "phrases": ["you should buy", "you should sell", "to the moon", "lambo", "100x", "1000x", "get rich", "risk-free", "easy money", "can't lose", "can’t lose", "sure thing", "guaranteed profit", "guaranteed return", "YOLO", "HODL", "FOMO", "diamond hands", "ape in", "seed phrase", "real crypto", "terrifying", "devastating", "nightmare"]
+  }
+}

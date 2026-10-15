@@ -3,182 +3,222 @@
     "title": "Why rare things cost more",
     "cards": [
       {
-        "title": "Money is a swap tool",
-        "body": "Money lets you swap without trading your toys for snacks. You earn it, then choose: spend some, save some, share some.",
-        "interaction": {
-          "type": "choice",
-          "prompt": "You earn L$10. Which plan saves something?",
-          "options": ["Spend all L$10 today", "Spend L$6, save L$3, share L$1"],
-          "answerIndex": 1,
-          "explain": "Saving a little every time adds up. Spending everything leaves nothing for later."
-        }
-      },
-      {
-        "title": "More pieces, less each",
-        "body": "When there is more of something, each piece is worth less. Slide to cut the same L$12 pizza into more slices.",
-        "interaction": {
-          "type": "slider",
-          "label": "Slices",
-          "min": 1,
-          "max": 12,
-          "step": 1,
-          "start": 2,
-          "formula": "divide",
-          "constant": 12,
-          "resultLabel": "Each slice is worth",
-          "unit": "L$"
-        }
-      },
-      {
-        "title": "Rare and wanted",
-        "body": "Things that are rare and wanted usually cost more. A rare sticker that nobody wants is still cheap.",
+        "title": "Rare means hard to get",
+        "body": "Think of stickers. A plain sticker is easy to find. A shiny gold one is rare. Kids will swap many plain stickers for one gold one. Rare things are worth more swaps.",
         "interaction": {
           "type": "reveal",
-          "prompt": "Tap to see how VAULT stays rare",
-          "reveal": "Only 21 million VAULT can ever exist. Nobody can print more, so it stays scarce."
+          "prompt": "Why is the gold sticker worth more?",
+          "reveal": "There are very few gold ones. When something is hard to get, people give more to get it."
         }
       },
       {
-        "title": "Waiting can pay",
-        "body": "Saving means choosing later over now. Small amounts can grow into something bigger.",
+        "title": "Make more, worth less",
+        "body": "Say a pot holds L$120 of value. All the coins share it equally. Slide to make more coins. Watch what each coin is worth.",
+        "interaction": {
+          "type": "slider",
+          "label": "Number of coins made",
+          "min": 2,
+          "max": 10,
+          "step": 2,
+          "start": 4,
+          "formula": "divide",
+          "constant": 120,
+          "resultLabel": "Worth of each coin",
+          "unit": "L$",
+          "valueUnit": ""
+        }
+      },
+      {
+        "title": "VAULT has a cap",
+        "body": "VAULT can never go past 21,000,000 coins. No more can ever be made. That keeps it rare. Tap to compare keeping the cap with making lots more.",
         "interaction": {
           "type": "toggle",
-          "prompt": "Pick a plan",
+          "prompt": "What happens to each coin?",
           "options": [
-            { "label": "Spend now", "result": "One L$5 snack today." },
-            { "label": "Save 4 weeks", "result": "L$5 a week for 4 weeks is L$20 for something bigger." }
+            {
+              "label": "Keep the cap",
+              "result": "Coins stay rare, so nobody can shrink their worth by making more."
+            },
+            {
+              "label": "Make many more",
+              "result": "↓ Coins are easier to get, so each is worth less."
+            }
           ]
+        }
+      },
+      {
+        "title": "Rare needs fans too",
+        "body": "Rare is only half the story. A rare thing nobody wants is not worth much. People must want it too. Rare and wanted together make a higher price.",
+        "interaction": {
+          "type": "choice",
+          "prompt": "Is every rare thing worth a lot?",
+          "options": [
+            "Yes, rare always means valuable",
+            "No, people must also want it"
+          ],
+          "answerIndex": 1,
+          "explain": "Worth comes from being rare and wanted. A rare thing nobody wants stays cheap."
         }
       }
     ],
     "quiz": {
       "id": "quiz",
-      "prompt": "A game suddenly makes many more gold coins. What happens to the value of each coin?",
-      "options": ["It goes up", "It goes down", "It stays the same"],
+      "prompt": "VAULT can never go past 21,000,000 coins. What would happen if someone could suddenly make millions more?",
+      "options": [
+        "Each coin would be worth more",
+        "Each coin would likely be worth less",
+        "Nothing would change at all"
+      ],
       "answerIndex": 1,
-      "explain": "More coins for the same things means each coin buys less."
+      "explain": "When more coins exist and the same people want them, each coin is easier to get. That makes each one worth less. The cap keeps VAULT rare."
     }
   },
   "trader": {
-    "title": "Spread your risk",
+    "title": "Spread your risk, spot the hype",
     "cards": [
       {
-        "title": "Buyers and sellers",
-        "body": "Prices move when buyers and sellers push against each other. More eager buyers lift the price. More eager sellers drop it.",
+        "title": "One basket is risky",
+        "body": "Imagine your L$1,000 sits in one coin. If that coin drops, your whole pile drops with it. This is called concentration risk. One coin carries all the weight.",
         "interaction": {
-          "type": "toggle",
-          "prompt": "Who is in a hurry?",
-          "options": [
-            { "label": "More buyers", "result": "↑ The price rises until enough people want to sell." },
-            { "label": "More sellers", "result": "↓ The price falls until enough people want to buy." }
-          ]
+          "type": "reveal",
+          "prompt": "What does a drop in that coin do?",
+          "reveal": "All of your L$1,000 feels it. Nothing else in your pile is there to soften the fall."
         }
       },
       {
-        "title": "All eggs in one basket",
-        "body": "If most of your money sits in one coin, one bad day can hurt a lot. Slide to see what a 50% drop would cost you.",
+        "title": "Spreading your money",
+        "body": "Spreading means keeping money in several places, including L$ or PEG. Slide to put more into one coin. See how much is left for everything else.",
         "interaction": {
           "type": "slider",
-          "label": "Share of your L$1,000 in one coin",
-          "min": 0,
+          "label": "Share of money in one coin",
+          "min": 10,
           "max": 100,
           "step": 10,
-          "start": 80,
-          "valueUnit": "%",
-          "formula": "multiply",
-          "constant": 5,
-          "resultLabel": "A 50% drop would cost you",
-          "unit": "L$"
+          "start": 50,
+          "formula": "subtract",
+          "constant": 100,
+          "resultLabel": "Share left in other places",
+          "unit": "%",
+          "valueUnit": "%"
         }
       },
       {
         "title": "The hype cycle",
-        "body": "Hype is when people buy because everyone else is buying. Prices can rocket, then crash when new buyers run out.",
-        "interaction": {
-          "type": "reveal",
-          "prompt": "Tap to see the usual shape of hype",
-          "reveal": "A slow rise, a sudden spike, then a long slide as early buyers sell to late ones."
-        }
-      },
-      {
-        "title": "Unlocks add coins",
-        "body": "Some coins are locked for the team at first. When they unlock, more coins can be sold.",
-        "interaction": {
-          "type": "choice",
-          "prompt": "Lots of team coins unlock next week. What could happen?",
-          "options": ["More coins for sale, so the price may fall", "There will be fewer coins"],
-          "answerIndex": 0,
-          "explain": "Unlocks raise the number of coins that can be sold. That can mean sell pressure."
-        }
-      }
-    ],
-    "quiz": {
-      "id": "quiz",
-      "prompt": "Why keep part of your money in L$ or PEG?",
-      "options": ["So one crash can't wipe you out", "Because cash always grows fastest", "Because coins can never fall"],
-      "answerIndex": 0,
-      "explain": "A safe slice means a bad day hurts less, and you still have cash to use later."
-    }
-  },
-  "builder": {
-    "title": "Anatomy of a launch",
-    "cards": [
-      {
-        "title": "How a pool sets the price",
-        "body": "A pool holds L$ and a coin. Price is the L$ in the pool divided by the coins in it. The pool keeps x · y = k, so every buy lifts the price.",
-        "interaction": {
-          "type": "reveal",
-          "prompt": "Tap to see what one big buy does",
-          "reveal": "It adds L$ and removes coins, so the price jumps. That jump is called price impact."
-        }
-      },
-      {
-        "title": "Who holds the liquidity?",
-        "body": "The creator often provides a coin's first liquidity. If it is not locked, they can take it back at any moment.",
+        "body": "Hype is buying because everyone else is buying. A coin like ZOOMZ can climb fast this way. But the crowd moves on. Tap to see both halves of the cycle.",
         "interaction": {
           "type": "toggle",
-          "prompt": "Flip the lock",
+          "prompt": "What is the crowd doing?",
           "options": [
-            { "label": "LP locked", "result": "The pool stays for the whole lock period. Holders can always sell." },
-            { "label": "LP unlocked", "result": "The creator can pull the pool. The price can crash to almost zero." }
+            {
+              "label": "Crowd rushing in",
+              "result": "↑ Lots of buyers at once, so the price climbs fast."
+            },
+            {
+              "label": "Crowd moves on",
+              "result": "↓ Fewer new buyers arrive, so the price slides back."
+            }
           ]
         }
       },
       {
-        "title": "Who owns the coins?",
-        "body": "Check the allocation. If insiders hold a big share, they can sell into everyone else.",
-        "interaction": {
-          "type": "slider",
-          "label": "Team and creator share",
-          "min": 0,
-          "max": 80,
-          "step": 5,
-          "start": 40,
-          "valueUnit": "%",
-          "formula": "subtract",
-          "constant": 100,
-          "resultLabel": "Left for everyone else",
-          "unit": "%"
-        }
-      },
-      {
-        "title": "Fake volume",
-        "body": "Volume is how much was traded. Bots can trade with themselves to make a coin look popular.",
+        "title": "Crowds are not proof",
+        "body": "A busy crowd tells you people are excited. It does not tell you the coin is sound. Ask what the coin does and who holds it. Then decide how much to risk.",
         "interaction": {
           "type": "choice",
-          "prompt": "Volume is huge, the price is flat and the same wallets trade back and forth. What is it?",
-          "options": ["Wash trading", "Real demand"],
+          "prompt": "Everyone is buying a coin. Is that enough reason?",
+          "options": [
+            "No, hype fades; check the coin itself",
+            "Yes, crowds are always right"
+          ],
           "answerIndex": 0,
-          "explain": "Wash trading inflates volume without real demand. Always ask who is really buying."
+          "explain": "Hype can lift a price fast and fade just as fast. The coin's idea and holders matter more."
         }
       }
     ],
     "quiz": {
       "id": "quiz",
-      "prompt": "Which is the biggest red flag in a new coin?",
-      "options": ["The coin has a fixed supply", "The creator can remove all the liquidity", "Team coins unlock slowly over two years"],
-      "answerIndex": 1,
-      "explain": "Unlocked liquidity lets the creator pull the pool. That is how a rug pull works."
+      "prompt": "A player puts L$900 of L$1,000 into ZOOMZ because everyone is buying it. What is the main risk?",
+      "options": [
+        "None, because hype lasts forever",
+        "Only the trading fee matters",
+        "Too much in one hyped coin"
+      ],
+      "answerIndex": 2,
+      "explain": "Putting most money in one coin is concentration risk, and hype tends to fade. Spreading money across several places, including L$ or PEG, softens a fall."
+    }
+  },
+  "builder": {
+    "title": "Launch anatomy and rug pulls",
+    "cards": [
+      {
+        "title": "Anatomy of a launch",
+        "body": "Every launch has the same parts. Creators make the coins, keep a share, and open a pool with some L$. Then they promote it. Four quick checks show whether a launch could hide a rug pull.",
+        "interaction": {
+          "type": "reveal",
+          "prompt": "Tap to see the four checks",
+          "reveal": "Who holds the coins, is the pool locked, when do locked coins unlock, and is the volume real?"
+        }
+      },
+      {
+        "title": "Who holds the coins",
+        "body": "BLOOP's creator holds 60% of its coins. Slide the creator's share. Here we pretend all the coins together are worth L$1,000. See what the creator could dump at once.",
+        "interaction": {
+          "type": "slider",
+          "label": "Creator's share of coins",
+          "min": 0,
+          "max": 100,
+          "step": 10,
+          "start": 60,
+          "formula": "multiply",
+          "constant": 10,
+          "resultLabel": "The creator's coins are worth",
+          "unit": "L$",
+          "valueUnit": "%"
+        }
+      },
+      {
+        "title": "Locked or unlocked pool",
+        "body": "The pool holds the L$ and coins that people trade against. A rug pull means creators pull that money out and sell their coins. Only an unlocked pool allows it. Tap to compare.",
+        "interaction": {
+          "type": "toggle",
+          "prompt": "Is the pool locked?",
+          "options": [
+            {
+              "label": "Pool locked",
+              "result": "Creators cannot remove the money, so a pull is blocked."
+            },
+            {
+              "label": "Pool unlocked",
+              "result": "↓ Creators can pull the pool, and holders get little back."
+            }
+          ]
+        }
+      },
+      {
+        "title": "The Official look-alike",
+        "body": "A coin with Official in its name, loud hype and an unlocked pool is a pattern. Names cost nothing to copy. Check holders and the pool lock, not the label.",
+        "interaction": {
+          "type": "choice",
+          "prompt": "A hyped coin says Official. What is the best first step?",
+          "options": [
+            "Check holder share and pool lock",
+            "Join fast before the hype ends"
+          ],
+          "answerIndex": 0,
+          "explain": "A name proves nothing. Holder share and pool lock show whether a rug pull is possible."
+        }
+      }
+    ],
+    "quiz": {
+      "id": "quiz",
+      "prompt": "Which launch has the most rug pull warning signs?",
+      "options": [
+        "Creator holds 60%, pool unlocked, heavy hype",
+        "Pool locked, many holders, unlocks released slowly",
+        "Small team share and a public unlock schedule"
+      ],
+      "answerIndex": 0,
+      "explain": "A huge creator share plus an unlocked pool lets creators drain the money and sell, while hype brings in buyers. The other launches limit what creators can do."
     }
   }
 }

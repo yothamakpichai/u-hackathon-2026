@@ -1,0 +1,116 @@
+{
+  "explorer": [
+    {
+      "id": "real-coins",
+      "question": "Can I use this to get real coins?",
+      "answer": "This lab is a game. Nothing here is real money. I can't tell you what to do with real money. Ask a trusted grown-up about that. Here you can practise safely with pretend L$.",
+      "source": "claude"
+    },
+    {
+      "id": "what-is-l-dollar",
+      "question": "What are L$ and coins?",
+      "answer": "L$ means Lab Dollars. It is pretend money. You start with L$1,000. A coin is a pretend token you can own. You swap L$ for coins, and coins back for L$.",
+      "source": "claude"
+    },
+    {
+      "id": "why-prices-move",
+      "question": "Why do prices go up and down?",
+      "answer": "Every coin has a pool of L$ and coins. When people buy, coins leave the pool. The price goes up. When people sell, it goes down. Big trades move the price more than small ones.",
+      "source": "claude"
+    },
+    {
+      "id": "make-more",
+      "question": "What if a coin makes more coins?",
+      "answer": "Imagine a pizza. Cut it into more slices. Each slice gets smaller. Coins can work like that too. If many more coins are made and people do not want more of them, each one is worth less.",
+      "source": "claude"
+    },
+    {
+      "id": "vault-cap",
+      "question": "Why does VAULT have a limit?",
+      "answer": "VAULT has a cap of 21,000,000 coins. No more can ever be made. On one fixed day, a halving cuts new coins in half. You keep every coin you already own.",
+      "source": "claude"
+    },
+    {
+      "id": "health-score",
+      "question": "How does the Money Health Score work?",
+      "answer": "It goes from 0 to 100. It rewards smart choices, not big wins. You earn points for learning, spreading your money across coins, spotting scams, and staying calm. Profit counts only a little.",
+      "source": "claude"
+    }
+  ],
+  "trader": [
+    {
+      "id": "real-money-advice",
+      "question": "Should I put my savings into real coins?",
+      "answer": "I can't give advice about real money or real coins. This lab is a simulation, so nothing here is real. It's a safe place to practise how risk works. For real money choices, talk with a trusted adult.",
+      "source": "claude"
+    },
+    {
+      "id": "what-is-l-dollar",
+      "question": "What are L$ and coins in the lab?",
+      "answer": "L$ are Lab Dollars, the pretend money for every price. You start with L$1,000. A coin is a pretend digital token. Each coin trades in a pool against L$. Price is the L$ in the pool divided by the coins in the pool.",
+      "source": "claude"
+    },
+    {
+      "id": "why-prices-move",
+      "question": "Why do prices move?",
+      "answer": "Buying takes coins out of a pool and pushes the price up. Selling does the opposite. More demand than supply lifts price, and the reverse lowers it. Big trades cause more price impact than small ones. Each trade also pays a 0.3% fee.",
+      "source": "claude"
+    },
+    {
+      "id": "all-in-one",
+      "question": "Why is one coin risky for all my money?",
+      "answer": "That's concentration risk. If most of your money is in one coin, one bad event hits you hard. A whale selling a big pile can drop a price even when the coin itself hasn't changed. Spreading your money softens that.",
+      "source": "claude"
+    },
+    {
+      "id": "hype-cycle",
+      "question": "Why does ZOOMZ shoot up and then fade?",
+      "answer": "Hype is buying because everyone else is buying. ZOOMZ starts on a bonding curve, so its price rises as people buy. Buyers who join late see the crowd, not a reason. Hype can lift a price fast, and it usually fades just as fast.",
+      "source": "claude"
+    },
+    {
+      "id": "health-score",
+      "question": "How is the Money Health Score worked out?",
+      "answer": "It scores wisdom out of 100, not profit. Knowledge is 30 points, risk management 25, scam avoidance 20, composure 15, and returns just 10. Composure means not selling everything within 10 seconds of bad news.",
+      "source": "claude"
+    }
+  ],
+  "builder": [
+    {
+      "id": "real-tokens",
+      "question": "Can I use this to pick real tokens?",
+      "answer": "I can't give advice about real money or real tokens. This lab is a simulation with fictional coins. It's a safe place to practise reading risk and spotting traps. For real money questions, ask a trusted adult.",
+      "source": "claude"
+    },
+    {
+      "id": "what-is-a-coin",
+      "question": "What is a coin, and what is L$?",
+      "answer": "L$ are Lab Dollars, the pretend money for every price. You start with L$1,000. A lab coin trades in a pool against L$ that follows x times y equals k. Price is L$ in the pool divided by coins in the pool. Trades also pay a 0.3% fee.",
+      "source": "claude"
+    },
+    {
+      "id": "why-prices-move",
+      "question": "What really moves a coin's price?",
+      "answer": "Every trade shifts the pool. Buyers push the price up, sellers push it down, and thin pools move more. Speculation means buying for a future price, not for use. Busy volume with a flat price can be wash trading, and the real vs wash volume overlay shows it.",
+      "source": "claude"
+    },
+    {
+      "id": "launch-anatomy",
+      "question": "What should I look at in a new launch?",
+      "answer": "Look at the whole anatomy. Who holds the supply? Is the pool locked? Are there team or investor coins that unlock later? Does the coin have a use, or only a story? Each answer changes how much risk a launch carries.",
+      "source": "claude"
+    },
+    {
+      "id": "spot-rug-pull",
+      "question": "How do I recognise a rug pull?",
+      "answer": "Look for red flags together. BLOOP's creator holds 60% of the coins, and its pool isn't locked. That lets the creator remove the L$ and sell. A look-alike coin with Official in its name, pushed by hype, is another warning sign.",
+      "source": "claude"
+    },
+    {
+      "id": "health-score",
+      "question": "How does the Money Health Score work?",
+      "answer": "It rewards wisdom, not profit. Knowledge is 30 points and risk management 25. Scam avoidance is 20, composure 15, and returns 10. Risk management means no coin above half your money for most of the market, and at least 10% kept in L$ or PEG.",
+      "source": "claude"
+    }
+  ]
+}

@@ -1,0 +1,258 @@
+{
+  "hype_wave": {
+    "trader": {
+      "headline": "Hype buyers rush into ZOOMZ",
+      "narration": "Hype buyers are starting to rush into ZOOMZ. Many are buying just because others are buying. Its price may climb fast for about half a minute. Then early buyers may take profit, and the price may fade. Hype can push a price up fast, and it usually fades just as fast.",
+      "question": {
+        "prompt": "ZOOMZ is climbing and everyone is buying. Which reaction fits a calm player in the lab?",
+        "options": [
+          "Put all L$1,000 in before the climb ends",
+          "Ask why it is rising and limit your risk",
+          "Assume the climb will last forever"
+        ],
+        "answerIndex": 1,
+        "explain": "Hype is buying because others buy. A calm player checks the reason and limits risk, because hype usually fades about as fast as it rises."
+      }
+    },
+    "builder": {
+      "headline": "ZOOMZ hype wave is starting",
+      "narration": "ZOOMZ launched on a bonding curve, so each purchase pushes its price up automatically. Hype buyers are rushing in, and the climb may run for about half a minute. Early buyers may then take profit, and the price may fade. A price rising from buying alone is not the same as value being built.",
+      "question": {
+        "prompt": "On a bonding curve, why does the ZOOMZ price rise as hype buyers pile in?",
+        "options": [
+          "The ZOOMZ team votes to raise it every minute",
+          "ZOOMZ becomes more useful with every new buyer",
+          "The curve raises the price with each purchase"
+        ],
+        "answerIndex": 2,
+        "explain": "A bonding curve sets price by how much has been bought. More buying moves it up, whether or not anything about the coin improved."
+      }
+    }
+  },
+  "halving": {
+    "explorer": {
+      "headline": "VAULT now makes fewer new coins",
+      "narration": "VAULT just had a halving. Now it makes half as many new coins. That means fewer new coins to sell. Nothing jumps right away. Nobody loses coins they hold. Fewer new coins can make each coin rarer over time.",
+      "question": {
+        "prompt": "You hold 10 VAULT when the halving happens. How many do you hold right after?",
+        "options": [
+          "10 VAULT",
+          "5 VAULT",
+          "20 VAULT"
+        ],
+        "answerIndex": 0,
+        "explain": "A halving only slows down new coins being made. The coins you already hold stay yours, so you still have 10."
+      }
+    },
+    "trader": {
+      "headline": "VAULT halving cuts new coin supply",
+      "narration": "VAULT's halving just started. New coin creation is cut in half. The hard cap of 21,000,000 is unchanged, but supply now grows more slowly. Miners have fewer new coins to sell, so selling pressure may ease slowly. Watch for a gradual change, not a jump. Coins you hold stay the same.",
+      "question": {
+        "prompt": "What is the most likely effect of the halving on VAULT's selling pressure?",
+        "options": [
+          "The price jumps the same moment",
+          "Every holder loses half of their coins",
+          "Fewer new coins arrive, so pressure may ease slowly"
+        ],
+        "answerIndex": 2,
+        "explain": "A halving slows new supply. Miners have less to sell, so the effect builds slowly. It never takes coins away from holders."
+      }
+    },
+    "builder": {
+      "headline": "VAULT reward for new coins halves",
+      "narration": "The reward for making new VAULT coins just halved. New issuance shrinks, but the 21,000,000 cap and every existing balance are unchanged. Because the date was public, traders may have priced it in already. Watch for a slow change in selling pressure, not an instant jump.",
+      "question": {
+        "prompt": "The halving date was known long ago. Why might the price not jump the moment it happens?",
+        "options": [
+          "Traders may have already priced in the expected change",
+          "A halving only affects coins held by miners",
+          "A halving removes coins from holders over time"
+        ],
+        "answerIndex": 0,
+        "explain": "When an event is scheduled and public, buyers and sellers often act early. Also, a halving only slows new supply, so its effect builds gradually."
+      }
+    }
+  },
+  "unlock": {
+    "trader": {
+      "headline": "ORBIT insiders unlock a quarter of coins",
+      "narration": "A quarter of ORBIT's locked team and investor coins just unlocked. Some insiders sold at once, so the drop is already on the chart. ORBIT may recover part of the way. Then watch for more coins vesting little by little, which may press the price down slowly. More coins in circulation means more supply that can be sold.",
+      "question": {
+        "prompt": "Why can an unlock push a price down when the project itself did not change?",
+        "options": [
+          "Unlocks destroy coins held by buyers",
+          "More coins can be sold, and some insiders sell",
+          "Unlocks shrink the L$ in the pool"
+        ],
+        "answerIndex": 1,
+        "explain": "An unlock adds to circulating supply. When insiders sell some of it, extra supply meets the same demand, and the price can fall."
+      }
+    },
+    "builder": {
+      "headline": "ORBIT unlock adds coins to supply",
+      "narration": "ORBIT's team and investors held locked coins. A quarter of that pile just unlocked at once, and some insiders sold, so the drop is already on the chart. The rest vests gradually. Watch for a partial bounce, then steady pressure as each release arrives. Checking an unlock schedule is part of reading a launch.",
+      "question": {
+        "prompt": "ORBIT has 1,000,000 locked coins. A quarter unlocks at once. How many join circulating supply now?",
+        "options": [
+          "250,000 coins",
+          "25,000 coins",
+          "750,000 coins"
+        ],
+        "answerIndex": 0,
+        "explain": "A quarter of 1,000,000 is 250,000. The other 750,000 stay locked and vest little by little, so more supply may arrive later."
+      }
+    }
+  },
+  "whale_dump": {
+    "explorer": {
+      "headline": "Whale sells a big pile of VAULT",
+      "narration": "One whale just sold a huge pile of VAULT. A whale is one holder with lots of coins. The price dropped fast. VAULT itself did not change. The price may come back part of the way. Selling everything in a scare can make a loss real.",
+      "question": {
+        "prompt": "The VAULT price fell after a whale sold. VAULT itself did not change. What does a calm player do?",
+        "options": [
+          "Sell every coin right away",
+          "Take a breath and look at why it fell",
+          "Tell all your friends to panic"
+        ],
+        "answerIndex": 1,
+        "explain": "The coin did not change, only one big seller moved the price. A calm look first helps you avoid turning a drop into a real loss."
+      }
+    },
+    "trader": {
+      "headline": "Whale dumps a huge pile of VAULT",
+      "narration": "One whale just sold a huge pile of VAULT in one go, so the drop is already on the chart. A big trade moves the pool price a lot. Nothing about VAULT changed. The price may recover part of the way. Panic sellers who dump everything lock in the loss. One big holder is concentration risk.",
+      "question": {
+        "prompt": "VAULT dropped after a whale sold, and nothing about VAULT changed. Why can selling everything now hurt?",
+        "options": [
+          "The whale refunds anyone who sells after them",
+          "Pool prices are always wrong after a drop",
+          "It turns a dip into a real loss"
+        ],
+        "answerIndex": 2,
+        "explain": "The drop came from one large trade, not from a problem with VAULT. Selling everything in a panic turns a dip into a real loss, and the price may still recover part of the way."
+      }
+    },
+    "builder": {
+      "headline": "Whale sells large VAULT position",
+      "narration": "A whale just sold a large VAULT position into the pool in one trade. Under x times y equals k, a big sale moves the price far, so the drop is already on the chart. VAULT's design did not change. The price may recover part of the way. Selling everything right after the drop can lock in the loss.",
+      "question": {
+        "prompt": "Why does one big sale move the pool price more than many small sales?",
+        "options": [
+          "The pool fee grows with the size of each sale",
+          "It changes the pool's balance more in one step",
+          "Whales are given a worse price by the pool"
+        ],
+        "answerIndex": 1,
+        "explain": "Price is L$ in the pool divided by coins in the pool. A large sale changes that balance a lot in one step, which is price impact."
+      }
+    }
+  },
+  "rug_pull": {
+    "builder": {
+      "headline": "BLOOP creator pulls the pool",
+      "narration": "BLOOP's NPC creator is pulling almost all the L$ out of its pool and selling their bag. When the market restarts, the price falls almost to zero. Holders cannot sell for anything close to what they paid. The red flags were visible: the creator held 60% of the coins, the pool was not locked, and hype pumped the price first.",
+      "question": {
+        "prompt": "Which pair of facts was a red flag on BLOOP before the pool was pulled?",
+        "options": [
+          "The pool followed x times y equals k",
+          "BLOOP was a meme coin with a short name",
+          "The creator held 60% and the pool was not locked"
+        ],
+        "answerIndex": 2,
+        "explain": "A creator with most of the coins and an unlocked pool can drain the pool at any time. Every coin's pool follows the same price rule, so that is no warning sign."
+      }
+    }
+  },
+  "depeg_scare": {
+    "explorer": {
+      "headline": "PEG dips below L$1.00",
+      "narration": "Scared holders sold PEG. It is at about L$0.96 now. PEG aims to stay at L$1.00. Watch what happens next. Traders who can swap PEG for L$1 may buy the cheap coins. That may bring PEG back to L$1.00 soon.",
+      "question": {
+        "prompt": "PEG is at about L$0.96. Why may traders want to buy it?",
+        "options": [
+          "They can swap each PEG for L$1",
+          "Cheap coins always keep falling",
+          "PEG will turn into VAULT"
+        ],
+        "answerIndex": 0,
+        "explain": "If one PEG can be swapped for L$1, buying it at about L$0.96 is a bargain. That buying pushes the price back up."
+      }
+    },
+    "trader": {
+      "headline": "PEG dips below L$1.00",
+      "narration": "PEG is a stablecoin that aims for L$1.00, backed 1:1. Scared holders just sold, and it sits at about L$0.96. Traders who can swap PEG back for L$1 may buy the cheap coins. Watch PEG drift back toward L$1.00 within about 15 seconds. Stablecoins can depeg, and backing is what pulls them back.",
+      "question": {
+        "prompt": "PEG sits at about L$0.96, and traders can swap each PEG for L$1. What may their buying do?",
+        "options": [
+          "Push PEG even lower",
+          "Leave PEG's price unchanged",
+          "Push PEG back toward L$1.00"
+        ],
+        "answerIndex": 2,
+        "explain": "Buying cheap PEG that can be swapped for L$1 adds demand. That demand lifts the price until the gap closes."
+      }
+    },
+    "builder": {
+      "headline": "PEG slips under its L$1.00 target",
+      "narration": "Fear selling pushed PEG to about L$0.96, below its L$1.00 target. A peg holds through arbitrage: anyone who can swap PEG for L$1 profits by buying it cheap. That buying may close the gap within about 15 seconds. A peg is only as strong as its backing and its swap route.",
+      "question": {
+        "prompt": "What mechanism pulls PEG back toward L$1.00?",
+        "options": [
+          "Traders buy cheap PEG and swap it for L$1",
+          "The pool rule forbids prices below L$1.00",
+          "Holders vote on the price every few seconds"
+        ],
+        "answerIndex": 0,
+        "explain": "The gap between about L$0.96 and L$1.00 is a profit for traders who can swap. Their buying lifts the price and closes the gap."
+      }
+    }
+  },
+  "wash_volume": {
+    "builder": {
+      "headline": "FUEL volume looks busy but is not",
+      "narration": "Look at the real and wash volume overlay. An NPC bot is trading FUEL with itself all session. Wash trading means one trader buys from and sells to itself. The volume bars look busy, but the price barely moves because no real buyer is behind that volume. Watch real volume and price, not just bar height.",
+      "question": {
+        "prompt": "FUEL's volume bars are tall, but its price barely moves. What is the best explanation?",
+        "options": [
+          "Many new buyers each bought a tiny amount",
+          "A bot may be trading with itself",
+          "FUEL's burn is hiding the real volume"
+        ],
+        "answerIndex": 1,
+        "explain": "Real demand moves price. Tall bars with a flat price suggest wash trading: one trader on both sides, adding volume but no new buyers."
+      }
+    }
+  },
+  "copycat": {
+    "builder": {
+      "headline": "A look-alike of your coin appears",
+      "narration": "An NPC just listed a look-alike of your coin with Official in its name, at the same price, and it is hyping it. Look-alikes borrow trust they have not earned. Your coin is the original and stays honest. Watch whether the copycat's pool stays in place. A name does not prove a coin is real.",
+      "question": {
+        "prompt": "A coin with Official in its name copies yours and is loudly hyped. What is the best check?",
+        "options": [
+          "See who made it and whether its pool is locked",
+          "Trust it because Official is in its name",
+          "Trust it because the price matches yours"
+        ],
+        "answerIndex": 0,
+        "explain": "Anyone can type Official in a name or copy a price. The creator and the pool lock show whether the money can be pulled out."
+      }
+    }
+  },
+  "copycat_rug": {
+    "builder": {
+      "headline": "The copycat coin's pool was pulled",
+      "narration": "The copycat's creator just pulled its pool. People who bought the copycat cannot sell it for anything close to what they paid. Your own coin keeps trading. Watch for the lesson: a matching price and a trusted-sounding name do not make a coin real.",
+      "question": {
+        "prompt": "Why can copycat buyers not sell near what they paid?",
+        "options": [
+          "Your coin's pool took the copycat's coins",
+          "The creator removed the L$ from its pool",
+          "Lab trading stops for copycat coins after 30 seconds"
+        ],
+        "answerIndex": 1,
+        "explain": "Prices come from the L$ and coins in a pool. With the L$ pulled out, nothing is left to pay sellers, so the price collapses."
+      }
+    }
+  }
+}
