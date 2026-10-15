@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "quote": "L$",
+  "fee": 0.003,
+  "coins": [
+    {
+      "id": "VAULT",
+      "name": "Vault",
+      "class": "store_of_value",
+      "iconId": 0,
+      "colorId": 1,
+      "market": { "kind": "amm", "price": 120, "liquidityL": 150000 },
+      "supply": { "initial": 19950000, "max": 21000000 },
+      "issuance": { "perTick": 0.12, "sellShare": 0.5, "minOrderL": 20 },
+      "agents": { "retail": 40, "momentum": 6, "value": 8, "whale": 1, "panic": 10, "hype": 5 },
+      "params": { "retail": { "buyBias": 0.05 } }
+    },
+    {
+      "id": "EDUU",
+      "name": "Eduu",
+      "class": "official",
+      "iconId": 1,
+      "colorId": 0,
+      "market": { "kind": "amm", "price": 2, "liquidityL": 80000 },
+      "supply": { "initial": 40000000, "max": 100000000 },
+      "issuance": { "perTick": 6, "sellShare": 0.2, "minOrderL": 10, "pool": 10000000 },
+      "agents": { "retail": 30, "momentum": 4, "value": 6, "panic": 4 },
+      "params": { "retail": { "buyBias": 0.03 } }
+    },
+    {
+      "id": "PEG",
+      "name": "Peg",
+      "class": "stablecoin",
+      "iconId": 2,
+      "colorId": 2,
+      "safe": true,
+      "peg": 1,
+      "market": { "kind": "amm", "price": 1, "liquidityL": 1000000 },
+      "supply": { "initial": 50000000 },
+      "agents": { "retail": 30, "panic": 8, "arb": 1 },
+      "params": { "retail": { "momentumBias": 0 }, "panic": { "holdL": [500, 1500] } }
+    },
+    {
+      "id": "FUEL",
+      "name": "Fuel",
+      "class": "utility",
+      "iconId": 3,
+      "colorId": 3,
+      "burnRate": 0.0005,
+      "market": { "kind": "amm", "price": 4, "liquidityL": 60000 },
+      "supply": { "initial": 300000000 },
+      "issuance": { "perTick": 0.6, "sellShare": 0.5, "minOrderL": 10 },
+      "agents": { "retail": 30, "momentum": 6, "value": 5, "panic": 5, "wash": 1 },
+      "params": { "retail": { "buyBias": 0.02 } }
+    },
+    {
+      "id": "ORBIT",
+      "name": "Orbit",
+      "class": "project",
+      "iconId": 4,
+      "colorId": 4,
+      "market": { "kind": "amm", "price": 0.8, "liquidityL": 60000 },
+      "supply": { "initial": 1000000, "max": 2000000 },
+      "vesting": { "locked": 1000000, "cliffShare": 0.25, "linearTicks": 2500, "sellShare": 0.04 },
+      "agents": { "retail": 30, "momentum": 5, "value": 6, "panic": 6 },
+      "params": { "retail": { "buyBias": 0.02 } }
+    },
+    {
+      "id": "ZOOMZ",
+      "name": "Zoomz",
+      "class": "meme",
+      "iconId": 5,
+      "colorId": 5,
+      "market": { "kind": "curve", "curveCoins": 10000000, "virtualL": 25000, "startRealL": 20000, "graduateAtL": 60000 },
+      "supply": { "initial": 10000000, "max": 10000000 },
+      "agents": { "retail": 30, "momentum": 3, "value": 3, "hype": 20 },
+      "params": {
+        "retail": { "holdL": [100, 500] },
+        "momentum": { "holdL": [200, 800] },
+        "value": { "holdL": [200, 800] },
+        "hype": { "actProb": 0.15, "exitProb": 0.02 }
+      }
+    },
+    {
+      "id": "BLOOP",
+      "name": "Bloop",
+      "class": "meme",
+      "iconId": 6,
+      "colorId": 6,
+      "lpLocked": false,
+      "hypeFloor": 0.45,
+      "market": { "kind": "amm", "price": 0.05, "liquidityL": 20000 },
+      "supply": { "initial": 10000000, "max": 10000000 },
+      "rugger": { "bagCoins": 6000000 },
+      "agents": { "retail": 20, "momentum": 4, "hype": 8, "panic": 6 },
+      "params": { "retail": { "holdL": [100, 400] }, "hype": { "cashL": [500, 1500] }, "panic": { "holdL": [100, 300] } }
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "tickMs": 100,
+  "ticks": 2400,
+  "ticksPerDay": 80,
+  "candleTicks": 20,
+  "startCash": 1000,
+  "risk": { "maxShare": 0.5, "minSafeShare": 0.1 },
+  "tiers": {
+    "explorer": { "coins": ["VAULT", "EDUU", "PEG"] },
+    "trader": { "coins": ["VAULT", "EDUU", "PEG", "FUEL", "ORBIT", "ZOOMZ"] },
+    "builder": { "coins": ["VAULT", "EDUU", "PEG", "FUEL", "ORBIT", "ZOOMZ", "BLOOP"] }
+  },
+  "events": [
+    {
+      "id": "hype_wave",
+      "coin": "ZOOMZ",
+      "at": 35,
+      "tiers": ["trader", "builder"],
+      "negative": false,
+      "effect": { "hype": 1 }
+    },
+    {
+      "id": "halving",
+      "coin": "VAULT",
+      "at": 70,
+      "tiers": ["explorer", "trader", "builder"],
+      "negative": false,
+      "effect": { "issuanceFactor": 0.5, "hype": 0.3 }
+    },
+    { "id": "unlock", "coin": "ORBIT", "at": 105, "tiers": ["trader", "builder"], "negative": true, "effect": { "fear": 0.5 } },
+    {
+      "id": "whale_dump",
+      "coin": "VAULT",
+      "at": 140,
+      "tiers": ["explorer", "trader", "builder"],
+      "negative": true,
+      "effect": { "poolShare": 0.12, "ticks": 30, "fear": 1 }
+    },
+    {
+      "id": "rug_pull",
+      "coin": "BLOOP",
+      "at": 175,
+      "tiers": ["builder"],
+      "negative": true,
+      "effect": { "removeShare": 0.99, "ticks": 10, "fear": 1 }
+    },
+    {
+      "id": "depeg_scare",
+      "coin": "PEG",
+      "at": 205,
+      "tiers": ["explorer", "trader", "builder"],
+      "negative": true,
+      "effect": { "price": 0.96, "fear": 1 }
+    },
+    { "id": "wash_volume", "coin": "FUEL", "at": null, "tiers": ["builder"], "negative": false }
+  ],
+  "userCoin": {
+    "max": 1,
+    "iconCount": 24,
+    "colorCount": 12,
+    "minSupply": 1000,
+    "maxSupply": 1000000000000,
+    "minPublic": 20,
+    "defaultAllocation": { "you": 10, "team": 10, "public": 80 },
+    "defaultHype": 0.4,
+    "virtualL": 3000,
+    "graduateAtL": 9000,
+    "teamVestTicks": 600,
+    "teamSellShare": 0.5,
+    "trust": {
+      "fairInsiderShare": 0.2,
+      "insiderPenalty": 1.2,
+      "maxPenalty": 0.8,
+      "lpUnlockedPenalty": 0.3,
+      "vestingBonus": 0.1,
+      "min": 0.1,
+      "max": 1.1
+    },
+    "agents": { "retail": 12, "momentum": 3, "hype": 12 },
+    "params": {
+      "retail": { "holdL": [0, 0], "cashL": [300, 1000] },
+      "momentum": { "holdL": [0, 0], "cashL": [500, 1500] },
+      "hype": { "cashL": [200, 800] }
+    }
+  }
+}

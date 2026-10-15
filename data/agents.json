@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "hypeHalfLifeTicks": 150,
+  "fearHalfLifeTicks": 60,
+  "archetypes": {
+    "retail": {
+      "tradeProb": 0.03,
+      "sizeL": [10, 150],
+      "buyBias": 0,
+      "momentumBias": 0.06,
+      "lookback": 30,
+      "cashL": [1500, 4000],
+      "holdL": [1000, 3000]
+    },
+    "momentum": { "actProb": 0.04, "lookback": 60, "threshold": 0.015, "sizeL": [40, 300], "cashL": [3000, 8000], "holdL": [2000, 5000] },
+    "value": { "actProb": 0.03, "window": 300, "band": 0.03, "sizeL": [60, 400], "cashL": [8000, 15000], "holdL": [5000, 10000] },
+    "whale": { "tradeProb": 0.0004, "sizeL": [1500, 5000], "cashL": [40000, 60000], "holdL": [30000, 40000] },
+    "panic": {
+      "actProb": 0.06,
+      "sellFrac": [0.2, 0.6],
+      "reentryProb": 0.003,
+      "sizeL": [30, 200],
+      "cashL": [200, 600],
+      "holdL": [400, 1200]
+    },
+    "insider": { "sellTicks": 80, "minOrderL": 5 },
+    "hype": { "actProb": 0.1, "sizeL": [30, 300], "exitHype": 0.25, "exitProb": 0.01, "exitFrac": [0.2, 0.6], "cashL": [1000, 4000] },
+    "arb": { "strength": 0.02, "deadband": 0.0005 },
+    "rugger": {},
+    "wash": { "tradeProb": 0.8, "sizeL": [150, 600], "cashL": [40000, 40000] }
+  }
+}
