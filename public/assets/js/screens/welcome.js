@@ -57,7 +57,7 @@ export function mount(root, ctx) {
         h('p', {
           text: `${config.PRODUCT_NAME} is a practice market. Every coin, price and trader is simulated: no real money, no real crypto and no link to any exchange. Children learn to spot hype and scams; only the computer traders ever try them.`,
         }),
-        h('p', { text: 'No sign-up, no personal data, no cookies and no ads. Progress is saved only on this device.' }),
+        h('p', { text: 'No sign-up, no personal data, no cookies and no ads. Progress stays on this device. A score added to the leaderboard shares only a random nickname, the level, the score and the date.' }),
         h('p', {
           class: 'note__small',
           text: 'On our roadmap, not in this app: a path to real markets, only once a learner reaches legal adulthood (20 in Thailand).',

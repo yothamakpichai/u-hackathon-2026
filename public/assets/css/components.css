@@ -1112,3 +1112,245 @@
 .welcome__levels-title {
   font-size: var(--fs-xl);
 }
+
+/* Report card (BRIEF §3 step 6, §6) */
+
+.report-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-items: center;
+  column-gap: var(--sp-4);
+  row-gap: var(--sp-2);
+  text-align: center;
+  overflow: hidden;
+}
+
+.report-hero > :not(.confetti) {
+  position: relative;
+  z-index: 1;
+}
+
+.report-hero__band,
+.report-hero__note,
+.report-hero__money {
+  grid-column: 1 / -1;
+}
+
+.report-hero__band {
+  font-family: var(--font-head);
+  font-size: var(--fs-xl);
+  font-weight: 900;
+  color: var(--primary-800);
+}
+
+.report-hero__note {
+  color: var(--ink-700);
+}
+
+.report-hero__money {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.score-ring {
+  --p: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  width: 8.5rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, var(--surface) 80%, transparent 81% 100%),
+    conic-gradient(var(--primary-500) calc(var(--p) * 1%), var(--surface-2) 0);
+}
+
+.score-ring__num {
+  font-family: var(--font-head);
+  font-size: 2.75rem;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-900);
+}
+
+.score-ring__max {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--ink-500);
+}
+
+.report-section__title {
+  margin-bottom: var(--sp-3);
+  font-size: var(--fs-lg);
+}
+
+.parts,
+.learned,
+.board__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.parts {
+  gap: var(--sp-4);
+}
+
+.part {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.part__top {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  font-family: var(--font-head);
+  font-weight: 800;
+}
+
+.part__points {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.part__why {
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+}
+
+.meter {
+  display: block;
+  height: 0.625rem;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.meter__fill {
+  display: block;
+  width: var(--w, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary-500);
+}
+
+.learned {
+  gap: var(--sp-3);
+}
+
+.learned__item {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  align-items: start;
+  gap: var(--sp-3);
+}
+
+.learned__num {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--primary-100);
+  color: var(--primary-800);
+  font-family: var(--font-head);
+  font-weight: 900;
+}
+
+.board {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.board .report-section__title {
+  margin-bottom: 0;
+}
+
+.board__note,
+.board__more,
+.board__privacy {
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+}
+
+.board__list {
+  gap: var(--sp-1);
+}
+
+.board__row {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto 2.5rem;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-md);
+}
+
+.board__row:nth-child(odd) {
+  background: var(--surface-2);
+}
+
+.board__row.is-me {
+  background: var(--primary-50);
+  box-shadow: inset 0 0 0 2px var(--primary-500);
+}
+
+.board__rank {
+  color: var(--ink-500);
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.board__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.board__you {
+  grid-column: 3;
+  padding: 0.125rem var(--sp-2);
+  border-radius: var(--r-pill);
+  background: var(--primary-100);
+  color: var(--primary-800);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+}
+
+.board__score {
+  grid-column: 4;
+  text-align: right;
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.board__status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: 600;
+}
+
+.board__status--error {
+  color: var(--loss-700);
+}
+
+.board__me {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.report-actions {
+  display: grid;
+  gap: var(--sp-3);
+}
