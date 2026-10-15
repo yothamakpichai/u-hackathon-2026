@@ -1,1 +1,1 @@
-# u-hackathon-2026
+Team Cenedury: Yotha Makpichai, Joewee Loke, Aphatcha Poolphol
