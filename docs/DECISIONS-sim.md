@@ -120,6 +120,28 @@ The sim records raw data; it does not compute the score.
 
   The choice is saved as `store.labAdvanced`.
 
+## Lab tools and mission metrics (slice J5, BRIEF §14)
+
+- **Indicators.** `sim/indicators.js` provides `sma(values, n)` and `rsi(values, 14)` (Wilder smoothing), computed on candle closes.
+- **Chart tools.** Each tool is a chip under the chart with an ⓘ explainer saying what it shows and what it can't tell you:
+
+  | Tool | Who gets it |
+  |---|---|
+  | Volume | Everyone |
+  | SMA 7 / 25 | 13+ |
+  | RSI 14 (own pane, 30/70 lines) | 16+, or in desktop Advanced |
+
+  A tool is on by default when the tier has it, so Explorer starts with volume only. RSI needs 15 candles, so its pane is empty for about the first 30 s.
+- **Price impact.** The trade preview reads "Buying L$X moves the price about Y%", or "Selling N COIN moves the price about Y%", before every trade, with an ⓘ.
+- **Portfolio.** For every tier: an allocation bar (cash and each coin in its colour), total profit or loss, and each holding's profit or loss at average cost.
+- **Metrics.** At close, `store.lab[tier].metrics` = `runMetrics(final, quiz)` from `sim/metrics.js`, with exactly the §14 keys:
+  - `maxSingleExposurePct` and `minCashPct`: the per-tick maximum single-coin share and minimum L$ cash share, as percentages with 1 decimal.
+  - `panicSellsAfterNegativeEvents`: sells of a whole position within 10 s (100 ticks) of a negative event.
+  - `heldBloopAtRug`: the player held BLOOP when `rug_pull` fired.
+  - `coinLaunched`: `{ lpLocked, outcome }`, where `outcome` is `'graduated'`, `'rose'` or `'fell'`; `null` when no coin was launched.
+  - `quizCorrect` and `quizTotal`: the event questions answered in the Lab.
+  - `finalValue`: rounded to cents.
+
 ## Config location
 
 - The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.

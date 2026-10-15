@@ -47,7 +47,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     holdings: {},
     trades: [],
     created: [],
-    risk: { ticks: 0, overExposedTicks: 0, lowSafeTicks: 0 },
+    risk: { ticks: 0, overExposedTicks: 0, lowSafeTicks: 0, maxShare: 0, minCashShare: 1 },
     history: [],
   };
 
@@ -307,6 +307,8 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     }
     const r = pf.risk;
     r.ticks++;
+    r.maxShare = Math.max(r.maxShare, max / v);
+    r.minCashShare = Math.min(r.minCashShare, pf.cash / v);
     if (max / v > scenario.risk.maxShare) r.overExposedTicks++;
     if (safe / v < scenario.risk.minSafeShare) r.lowSafeTicks++;
     if (t % C === 0) pf.history.push({ t, value: v, maxShare: max / v, safeShare: safe / v });

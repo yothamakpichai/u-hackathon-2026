@@ -7,11 +7,14 @@ import {
   CandlestickSeries,
   ColorType,
   HistogramSeries,
+  LineSeries,
   createChart,
 } from '../vendor/lightweight-charts/lightweight-charts.standalone.production.mjs';
 import { createSession } from '../sim/session.js';
 import { bangkokDate, dailySeed } from '../sim/prng.js';
 import { BLOCK_TICKS } from '../sim/chain.js';
+import { rsi, sma } from '../sim/indicators.js';
+import { runMetrics } from '../sim/metrics.js';
 import {
   animate, announce, celebrate, delta, getJSON, h, icon, money, number, penny, price, questionCard, resultPanel,
   stateView, trend,
@@ -178,6 +181,49 @@ const FALLBACK_EVENTS = {
 
 const CHART_CREDIT = 'https://www.tradingview.com/';
 
+// ⓘ explainers (BRIEF §14): what a tool shows and what it can't tell you. One text panel per card.
+const explainer = (id) => ({ el: h('p', { class: 'tool-explainer', id, hidden: true }), owners: [] });
+function infoButton(label, text, panel) {
+  const btn = h('button', { class: 'info-btn', type: 'button', 'aria-expanded': 'false', 'aria-controls': panel.el.id, title: `About ${label}` }, [
+    h('span', { 'aria-hidden': 'true', text: 'i' }),
+    h('span', { class: 'visually-hidden', text: `About ${label}` }),
+  ]);
+  btn.addEventListener('click', () => {
+    const open = btn.getAttribute('aria-expanded') !== 'true';
+    for (const other of panel.owners) other.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-expanded', String(open));
+    panel.el.hidden = !open;
+    panel.el.textContent = open ? text : '';
+  });
+  panel.owners.push(btn);
+  return btn;
+}
+
+const INFO = {
+  volume: 'Volume bars show how much was traded in each 6-hour bar. Tall bars mean busy trading. They can’t tell you whether buyers or sellers were in charge, or whether the trading was real.',
+  sma: 'The blue line is the average price of the last 7 bars and the pink line of the last 25, so the noise is smoothed out. When the short line crosses the long one, the trend may be changing. Averages always lag behind the price, so they can’t predict the next move.',
+  rsi: 'RSI (0 to 100) shows how strongly the price has moved up or down lately. Above 70 people call it “overbought”, below 30 “oversold”. It can’t tell you what a coin is really worth, and prices can stay above 70 or below 30 for a long time.',
+  impact: 'Price impact is how much your own trade moves the price, because the pool has to rebalance. Big trades in small pools move it more. It can’t tell you where the price goes next: other traders move it too.',
+  allocation: 'This shows where your money is now, and how much each coin has gained or lost since you bought it. A gain on paper isn’t money until you sell, and it can’t tell you what happens next.',
+};
+
+// Average cost of each holding, from the player's trades (selling keeps the average cost of the rest).
+function costBasis(trades) {
+  const pos = {};
+  for (const tr of trades) {
+    const p = (pos[tr.coinId] ??= { coins: 0, cost: 0 });
+    if (tr.side === 'buy') {
+      p.coins += tr.filledCoins;
+      p.cost += tr['filledL$'];
+    } else if (p.coins > 0) {
+      p.cost *= 1 - Math.min(1, tr.filledCoins / p.coins);
+      p.coins = Math.max(0, p.coins - tr.filledCoins);
+    }
+  }
+  return pos;
+}
+const signedMoney = (n) => `${n > 0 ? '+' : ''}${money(n)}`;
+
 function loadData(base) {
   dataPromise ??= Promise.all([
     getJSON(`${base}coins.json`),
@@ -264,6 +310,7 @@ function newMarket(data, tier, store) {
       created: p.created,
       events: final.events,
       quiz: market.quiz.slice(),
+      metrics: runMetrics(final, market.quiz), // read by Learning Path missions (BRIEF §14)
       at: Date.now(),
     };
     store.set((s) => ({ lab: { ...s.lab, [tier]: summary } }));
@@ -456,6 +503,31 @@ export function mount(root, ctx) {
     const chartPrice = h('p', { class: 'lab-chart__price' });
     const chartChips = h('div', { class: 'lab-chart__chips' });
     const chartBadge = h('span', { class: 'lab-chart__badge' });
+    // Chart tools (BRIEF §14): volume for all, SMA 7/25 from 13, RSI 14 from 16 or in desktop Advanced.
+    // A tool is on by default when the tier has it; chips switch them, and each has an ⓘ explainer.
+    const chartInfo = explainer('chart-tool-info');
+    const TOOLS = [
+      { id: 'volume', label: 'Volume', available: () => true },
+      { id: 'sma', label: 'SMA 7 / 25', available: () => tierInfo.rank >= 1 },
+      { id: 'rsi', label: 'RSI 14', available: () => tierInfo.rank >= 2 || advancedOn() },
+    ];
+    market.tools ??= {};
+    const toolOn = (t) => t.available() && market.tools[t.id] !== false;
+    const toolEls = new Map();
+    const toolsRow = h('div', { class: 'chart-tools', role: 'group', 'aria-label': 'Chart tools' });
+    for (const t of TOOLS) {
+      const chip = h('button', {
+        class: 'chip-toggle',
+        type: 'button',
+        onClick: () => {
+          market.tools[t.id] = !toolOn(t);
+          renderChart(session.getState());
+        },
+      }, t.label);
+      const wrap = h('span', { class: 'chart-tool' }, [chip, infoButton(t.label, INFO[t.id], chartInfo)]);
+      toolEls.set(t.id, { wrap, chip });
+      toolsRow.append(wrap);
+    }
     const washLegend = h('p', { class: 'lab-chart__legend', hidden: true }, [
       h('span', { class: 'legend-key legend-key--real', 'aria-hidden': 'true' }),
       'Real volume',
@@ -465,6 +537,8 @@ export function mount(root, ctx) {
     const chartCard = h('div', { class: 'card lab-chart' }, [
       h('div', { class: 'lab-chart__head' }, [chartBadge, h('div', { class: 'lab-chart__label' }, [chartTitle, chartChips]), chartPrice]),
       chartBox,
+      toolsRow,
+      chartInfo.el,
       washLegend,
       h('p', { class: 'lab-chart__credit' }, [
         'Chart by ',
@@ -544,10 +618,74 @@ export function mount(root, ctx) {
     const toWash = (k) => ({ time: toTime(k.t), value: k.washVolume, color: amber });
     let washSeries = null;
 
+    const blue = token('--pal-blue', '#3F5FDB');
+    const pink = token('--pal-magenta', '#B0399F');
+    const ink = token('--ink-700', '#34443D');
+    const lineOpts = (color, width) => ({ color, lineWidth: width, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+    let smaFast = null;
+    let smaSlow = null;
+    let rsiLine = null;
+    let toolsFresh = true;
+
+    // Add or remove indicator series so the chart matches the chips. Returns true when one was added.
+    function syncTools() {
+      let added = false;
+      for (const t of TOOLS) {
+        const el = toolEls.get(t.id);
+        el.wrap.hidden = !t.available();
+        el.chip.setAttribute('aria-pressed', String(toolOn(t)));
+      }
+      const [vol, avg, osc] = TOOLS.map(toolOn);
+      volumeSeries.applyOptions({ visible: vol });
+      if (avg && !smaFast) {
+        smaFast = chart.addSeries(LineSeries, lineOpts(blue, 2));
+        smaSlow = chart.addSeries(LineSeries, lineOpts(pink, 2));
+        added = true;
+      } else if (!avg && smaFast) {
+        chart.removeSeries(smaFast);
+        chart.removeSeries(smaSlow);
+        smaFast = null;
+        smaSlow = null;
+      }
+      if (osc && !rsiLine) {
+        rsiLine = chart.addSeries(LineSeries, {
+          ...lineOpts(ink, 2),
+          lastValueVisible: true,
+          priceFormat: { type: 'price', precision: 0, minMove: 1 },
+          autoscaleInfoProvider: () => ({ priceRange: { minValue: 0, maxValue: 100 } }),
+        }, 1);
+        rsiLine.createPriceLine({ price: 70, color: down, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' });
+        rsiLine.createPriceLine({ price: 30, color: up, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' });
+        chartBox.classList.add('has-rsi');
+        chart.panes()[1]?.setHeight(80);
+        added = true;
+      } else if (!osc && rsiLine) {
+        chart.removeSeries(rsiLine);
+        rsiLine = null;
+        if (chart.panes().length > 1) chart.removePane(1);
+        chartBox.classList.remove('has-rsi');
+      }
+      return added;
+    }
+
+    function renderTools(ks, full, from) {
+      if (!smaFast && !rsiLine) return;
+      const closes = ks.map((k) => k.close);
+      const point = (vals, i) => (vals[i] == null ? { time: toTime(ks[i].t) } : { time: toTime(ks[i].t), value: vals[i] });
+      const sets = [];
+      if (smaFast) sets.push([smaFast, sma(closes, 7)], [smaSlow, sma(closes, 25)]);
+      if (rsiLine) sets.push([rsiLine, rsi(closes, 14)]);
+      for (const [series, vals] of sets) {
+        if (full) series.setData(vals.map((_, i) => point(vals, i)));
+        else for (let i = from; i < ks.length; i++) series.update(point(vals, i));
+      }
+    }
+
     function renderChart(st) {
       const c = st.coins[market.selected];
       const ks = c.candles;
-      const washOn = advancedOn() && tier === 'builder' && c.totalWashVolume > 0;
+      if (syncTools()) toolsFresh = true;
+      const washOn = advancedOn() && tier === 'builder' && c.totalWashVolume > 0 && toolOn(TOOLS[0]);
       if (washOn && !washSeries) {
         washSeries = chart.addSeries(HistogramSeries, { priceScaleId: '', priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false });
         washSeries.setData(ks.map(toWash));
@@ -561,6 +699,8 @@ export function mount(root, ctx) {
         volumeSeries.setData(ks.map(toVolume));
         washSeries?.setData(ks.map(toWash));
         keepInView(ks.length);
+        renderTools(ks, true, 0);
+        toolsFresh = false;
         chartCoin = c.id;
         chartBadge.replaceChildren(badge(c));
         chartTitle.textContent = `${c.name} (${c.ticker})`;
@@ -571,6 +711,8 @@ export function mount(root, ctx) {
           washSeries?.update(toWash(ks[i]));
         }
         if (ks.length !== chartCount) keepInView(ks.length);
+        renderTools(ks, toolsFresh, Math.max(0, chartCount - 1));
+        toolsFresh = false;
       }
       chartCount = ks.length;
       chartPrice.replaceChildren(h('span', { class: 'lab-chart__value', text: price(c.price) }), delta(dayChange(c, st)));
@@ -619,7 +761,13 @@ export function mount(root, ctx) {
     ]);
     tradeInput.setAttribute('aria-describedby', 'trade-preview');
     const ownNote = h('p', { class: 'lab-trade__own', hidden: true });
-    const tradeCard = h('div', { class: 'card lab-trade' }, [tradeTitle, form, ownNote]);
+    const impactInfo = explainer('impact-info');
+    const tradeCard = h('div', { class: 'card lab-trade' }, [
+      h('div', { class: 'card-head' }, [tradeTitle, infoButton('price impact', INFO.impact, impactInfo)]),
+      impactInfo.el,
+      form,
+      ownNote,
+    ]);
 
     tradeInput.addEventListener('input', () => {
       delete tradeInput.dataset.exact;
@@ -691,9 +839,10 @@ export function mount(root, ctx) {
           preview.textContent = q.error.message;
         } else {
           ok = true;
+          const moves = q.priceImpactPct < 0.1 ? 'barely moves the price (less than 0.1%)' : `moves the price about ${number(q.priceImpactPct, 1)}%`;
           preview.textContent = buying
-            ? `You get about ${coinAmount(q.filledCoins)} ${c.ticker}. Your trade moves the price ${pct(q.priceImpactPct)}.`
-            : `You get about ${money(q.filledL$)}. Your trade moves the price ${pct(q.priceImpactPct)}.`;
+            ? `Buying ${money(q.filledL$)} ${moves}. You get about ${coinAmount(q.filledCoins)} ${c.ticker}.`
+            : `Selling ${coinAmount(q.filledCoins)} ${c.ticker} ${moves}. You get about ${money(q.filledL$)}.`;
         }
       }
       preview.classList.toggle('is-problem', amt != null && !ok);
@@ -727,9 +876,13 @@ export function mount(root, ctx) {
     // ---- portfolio and news ------------------------------------------------------------------
     const pfValue = h('p', { class: 'lab-portfolio__value' });
     const pfRows = h('ul', { class: 'lab-portfolio__rows' });
+    const allocInfo = explainer('alloc-info');
+    const allocBar = h('div', { class: 'alloc', 'aria-hidden': 'true' });
     const portfolioCard = h('div', { class: 'card lab-portfolio' }, [
-      h('h2', { class: 'lab-card__title', text: 'Your portfolio' }),
+      h('div', { class: 'card-head' }, [h('h2', { class: 'lab-card__title', text: 'Your portfolio' }), infoButton('your portfolio', INFO.allocation, allocInfo)]),
+      allocInfo.el,
       pfValue,
+      allocBar,
       pfRows,
     ]);
 
@@ -738,8 +891,11 @@ export function mount(root, ctx) {
       pfValue.replaceChildren(
         h('span', { class: 'lab-portfolio__total', text: money(p.value) }),
         delta((p.value / p.startValue - 1) * 100),
-        h('span', { class: 'lab-portfolio__note', text: `Started with ${money(p.startValue)}` }),
+        h('span', { class: 'lab-portfolio__note', text: `Started with ${money(p.startValue)} · profit or loss ${signedMoney(p.value - p.startValue)}` }),
       );
+      const basis = costBasis(p.trades);
+      const segments = [h('span', { class: 'alloc__seg alloc__seg--cash' })];
+      segments[0].style.flexGrow = String(p.cash);
       const items = [
         h('li', { class: 'pf-row' }, [
           h('span', { class: 'coin-badge coin-badge--cash', 'aria-hidden': 'true', text: 'L$' }),
@@ -752,12 +908,19 @@ export function mount(root, ctx) {
         const c = st.coins[id];
         if (!c) continue;
         const value = coins * c.price;
+        const cost = basis[id]?.cost ?? 0;
+        const seg = h('span', { class: `alloc__seg coin--${config.COIN_COLORS[c.colorId] || 'mint'}` });
+        seg.style.flexGrow = String(value);
+        segments.push(seg);
         items.push(
           h('li', { class: 'pf-row' }, [
             badge(c),
             h('span', { class: 'pf-row__name' }, [
               h('span', { class: 'pf-row__ticker', text: c.ticker }),
               h('span', { class: 'pf-row__coins', text: `${coinAmount(coins)} coins` }),
+              cost > 0
+                ? h('span', { class: 'pf-row__pl' }, [`${signedMoney(value - cost)} `, delta((value / cost - 1) * 100)])
+                : null,
             ]),
             h('span', { class: 'pf-row__value', text: money(value) }),
             h('span', { class: 'pf-row__share', text: `${number((value / p.value) * 100, 0)}%` }),
@@ -768,6 +931,7 @@ export function mount(root, ctx) {
         items.push(h('li', { class: 'pf-empty', text: 'No coins yet. Pick a coin, choose an amount and tap Buy.' }));
       }
       pfRows.replaceChildren(...items);
+      allocBar.replaceChildren(...segments);
     }
 
     // ---- your coin: the entry to Create, then the launch outcome explained --------------------
