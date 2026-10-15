@@ -214,6 +214,23 @@ The sim records raw data; it does not compute the score.
   It has four plots and real-time growth, with countdowns updating each second; the card only redraws when a stage changes.
 - **Time preference.** Each planting is recorded in `store.orchard.choices` with `patience` set to `now`, `soon` or `later`. `revealedPreference(choices)` returns `{ count, laterShare, nowShare, lean }` for the Money Type screen's "Your choices look more Later than your quiz said".
 
+## Daily Stall and Bank (slice J12, BRIEF §16.1)
+
+- **Stall rules.** `sim/stall.js` holds them, tested.
+  - Seven goods; four are picked by the Bangkok date, so everyone sees the same line-up and prices. Each good gets a seeded opening price, then a walk every 10 minutes with a gentle pull back toward the open.
+  - The stall buys back at 10% under its selling price. Fish and garlands spoil after 1 day, mangoes after 2, coconuts after 5; rice, pots and kites keep.
+  - `store.stall = { holdings, trades }`. Buying debits the wallet, or the Town Card when one is open.
+  - When the player has an unpaid loan, a just-in-time warning about borrowing to speculate shows above the goods.
+- **Bank rules.** `sim/bank.js` holds them, tested.
+  - Loans charge simple interest per real (Bangkok) day, counting the first day. The quote shows the total cost before the player agrees. The game rule caps total interest at the principal, and the screen says real loans have no such cap.
+  - The Bank's rate is 1% a day, adjusted by `rateFor(score)`. Quick Cash lends 30 coins for 3 days at 15% a day.
+  - Credit changes: on-time full repayment +20, late −40 (once per loan, settled when the Bank opens), restructuring −10 once. A restructure freezes interest and splits what's owed into 4 weekly payments, and is always offered.
+  - Town Card: the limit is 50–200 by score, with weekly statements. The minimum is 10% (at least 5), due 3 days after the statement. A missed minimum is −40, and unpaid statement balances add 5% a week, capped at what was spent on the card.
+  - The minimum-payment calculator uses an uncapped real-card model.
+  - With two or more loans, the payoff card compares highest rate first with smallest first at 10 coins a day (Gal & McShane 2012).
+  - `store.bank = { loans, card }`.
+- **Real-world figures.** The "Real life in Thailand" card shows no numbers yet, only that limits exist, and points to the [unverified] SOURCES entries until they're checked.
+
 ## Config location
 
 - The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.

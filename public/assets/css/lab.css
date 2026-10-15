@@ -2300,3 +2300,223 @@
 .orchard-art.is-growing::after,
 .orchard-art.is-grown::after { bottom: 46%; width: 34px; height: 26px; margin-left: -17px; border-radius: 50%; background: var(--gain-500); }
 .orchard-art.is-ready::after { bottom: 44%; width: 40px; height: 30px; margin-left: -20px; border-radius: 50%; background: radial-gradient(circle at 30% 40%, var(--amber-500) 0 4px, transparent 5px), radial-gradient(circle at 65% 55%, var(--amber-500) 0 4px, transparent 5px), var(--gain-500); }
+
+/* ---- Daily Stall and Bank (BRIEF §16.1) ------------------------------------------------------- */
+
+[data-route="stall"] .app-main,
+[data-route="bank"] .app-main {
+  max-width: 64rem;
+}
+
+.stall-screen,
+.bank-screen,
+.bank,
+.stall-holdings,
+.bank-loans,
+.bank-borrow,
+.bank-quick,
+.bank-card,
+.bank-payoff,
+.bank-score {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.stall-screen,
+.bank-screen {
+  gap: var(--sp-4);
+}
+
+@media (min-width: 900px) {
+  .bank {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.stall-bar,
+.bank-actions,
+.stall-buy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.stall-warn {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--sp-3);
+  border-color: var(--amber-400);
+  background: var(--amber-50);
+  color: var(--amber-800);
+  font-weight: 600;
+}
+
+.stall-goods {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--sp-3);
+  padding: 0;
+  list-style: none;
+}
+
+.stall-good {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.stall-good__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.stall-good__name {
+  font-size: var(--fs-lg);
+}
+
+.stall-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+}
+
+.stall-price__value {
+  font-size: var(--fs-xl);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.stall-spark {
+  display: block;
+  width: 100%;
+  height: 40px;
+}
+
+.stall-spark polyline {
+  fill: none;
+  stroke: var(--primary-600);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.stall-qty {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.stall-qty .btn {
+  min-width: var(--tap);
+  font-size: var(--fs-lg);
+}
+
+.stall-qty__value {
+  min-width: 2ch;
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  text-align: center;
+}
+
+.stall-holding-list,
+.bank-list {
+  display: grid;
+  gap: var(--sp-3);
+  padding: 0;
+  list-style: none;
+}
+
+.stall-holding,
+.bank-loan {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-1);
+  padding: var(--sp-3);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.bank-loan.is-late {
+  border-color: var(--loss-600);
+}
+
+.stall-holding__name,
+.bank-loan__title {
+  font-weight: 800;
+}
+
+.stall-holding__pl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-1) var(--sp-2);
+}
+
+.stall-lessons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--sp-3);
+}
+
+.bank-score__value {
+  font-size: var(--fs-lg);
+}
+
+.bank-score__value strong {
+  font-size: var(--fs-3xl);
+  font-variant-numeric: tabular-nums;
+}
+
+.bank-quote {
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--primary-50);
+}
+
+.bank-quote strong {
+  font-size: var(--fs-xl);
+}
+
+.bank-quick {
+  border-color: var(--loss-600);
+  background: var(--loss-50);
+}
+
+.bank-quick__shout {
+  font-family: var(--font-head);
+  font-size: var(--fs-lg);
+  font-weight: 900;
+  color: var(--loss-700);
+}
+
+.bank-quick .btn {
+  justify-self: start;
+}
+
+.bank-real summary {
+  min-height: var(--tap);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bank-real[open] {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+/* Long status chips wrap on narrow screens instead of pushing the page sideways. */
+.bank-screen .chip,
+.stall-screen .chip,
+.farm-screen .chip,
+.piggy-screen .chip,
+.future-screen .chip {
+  min-height: 26px;
+  height: auto;
+  padding-block: 4px;
+  line-height: 1.3;
+  white-space: normal;
+}
