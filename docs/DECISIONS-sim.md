@@ -157,6 +157,16 @@ The sim records raw data; it does not compute the score.
   The player's real market is never touched.
 - **Offer and XP.** The chapter menu opens automatically on the first Lab visit per tier ("Explore on my own" closes it), and the Lab's Coach button reopens it. Completing a chapter writes `store.coach[tier].done[chapterId] = { at, xp: 20 }`; the Learning Path (Y7) reads it to award XP and count it toward the daily goal and streak. `onChapterDone(fn)` lets other features react; J8 mints a badge there.
 
+## Soulbound badges (slice J8, BRIEF §15)
+
+- **Minting.** `screens/badges.js` provides `mintBadge(store, { kind: 'coach' | 'unit', ref, tier })`. It mints once per badge and keeps `store.badges[id] = { id, kind, ref, tier, at, hash, onChain }`.
+  - `hash` is SHA-256 of the mint record. When a market is open, the mint is also a transaction in today's chain, from `session.recordMint(id)` with `who: 'mint'`. The explorer lists mints first in their block and gives that block a "Badge mint" chip.
+  - Badge ids: `coach:<chapterId>`, one per chapter, and `unit:<tier>:<n>`, because each level's units differ.
+  - The module doesn't import the Lab, so the Learning Path can use it without loading the chart.
+- **For Yotha (Y7).** Call `mintBadge(store, { kind: 'unit', ref: '1', tier })` from `path.js` when a unit is completed. Coach chapters already mint through `onChapterDone`.
+- **Gallery.** It sits at the top of `#/explorer`, works even before a market opens, and has an empty state. Each card shows the badge, how it was earned, when it was minted, the mint transaction's hash, and "Soulbound · no price". An NFT lesson card sits next to it.
+- **No trading.** Badges have no price, no trade or transfer controls, and no market. All badge art is original SVG drawn in `badges.js`.
+
 ## Config location
 
 - The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.

@@ -94,6 +94,7 @@ export async function openCoachMenu(screenEnv, { offer = false } = {}) {
       h('button', { class: 'btn btn--block', type: 'button', onClick: closeMenu }, offer ? 'Explore on my own' : 'Close'),
     ]),
   ]);
+  mark = null; // the menu explains nothing on the page, so no ring
   showCard(card, { dim: true });
   env.pause?.();
 }
@@ -235,6 +236,7 @@ function finishChapter() {
       h('button', { class: 'btn btn--primary', type: 'button', onClick: closeMenu }, ['Back to the market', icon('arrow-right', { size: 18 })]),
     ]),
   ]);
+  mark = null;
   showCard(card, { dim: true });
   celebrate(card, { pieces: 30 });
 }

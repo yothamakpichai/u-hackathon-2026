@@ -4,6 +4,7 @@
 import { WHO, currentMarket } from './lab.js';
 import { BLOCK_TICKS, formBlocks, gasFor, hashBlock, linkChain } from '../sim/chain.js';
 import { animate, announce, h, icon, money, number, stateView } from '../ui.js';
+import { NFT_LESSON, badgeArt, badgeInfo, listBadges } from './badges.js';
 
 const SHOWN = 40;
 const TAMPER_FACTOR = 1000;
@@ -16,10 +17,40 @@ function coinAmount(n) {
   if (abs >= 1) return number(n, 2);
   return abs === 0 ? '0' : number(n, Math.min(8, 3 - Math.floor(Math.log10(abs))));
 }
-const tradeText = (tx) => `${tx.side === 'buy' ? 'Bought' : 'Sold'} ${coinAmount(tx.coins)} ${tx.coin} for ${money(tx.L)}`;
+const tradeText = (tx) =>
+  tx.side === 'mint'
+    ? `Minted the “${badgeInfo(tx.badge)?.title || 'badge'}” badge: soulbound, no price`
+    : `${tx.side === 'buy' ? 'Bought' : 'Sold'} ${coinAmount(tx.coins)} ${tx.coin} for ${money(tx.L)}`;
+const mintedAt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' });
+
+// The badge gallery (BRIEF §15): soulbound badges with their mint transactions, and the NFT lesson.
+function badgeGallery(store) {
+  const records = listBadges(store);
+  const list = records.length
+    ? h('ul', { class: 'badge-grid' }, records.map((rec) => {
+        const info = badgeInfo(rec.id);
+        if (!info) return null;
+        return h('li', { class: 'badge-card' }, [
+          badgeArt(info),
+          h('p', { class: 'badge-card__title', text: info.title }),
+          h('p', { class: 'badge-card__how', text: info.how }),
+          h('p', { class: 'badge-card__meta', text: `Minted ${mintedAt.format(rec.at)}${rec.onChain ? ' · in today’s chain' : ''}` }),
+          h('p', { class: 'badge-card__meta hash', text: rec.hash ? `tx ${short(rec.hash)}` : 'Fingerprint unavailable in this browser' }),
+          h('span', { class: 'chip chip--ok', text: 'Soulbound · no price' }),
+        ]);
+      }))
+    : h('p', { class: 'badges__empty', text: 'No badges yet. Finish a Coach chapter in the Lab, or a Learning Path unit, to mint your first one.' });
+  return h('section', { class: 'badges', 'aria-labelledby': 'badges-title' }, [
+    h('div', { class: 'badges__main' }, [h('h2', { class: 'badges__title', id: 'badges-title', text: 'Your soulbound badges' }), list]),
+    h('div', { class: 'card card--quiet lesson-mini badges__lesson' }, [
+      h('h2', { class: 'lesson-mini__title', text: 'NFTs, and why these can’t be sold' }),
+      ...NFT_LESSON.map((t) => h('p', { text: t })),
+    ]),
+  ]);
+}
 
 export function mount(root, ctx) {
-  const { tier, navigate, config } = ctx;
+  const { tier, navigate, config, store } = ctx;
   const tierInfo = config.getTier(tier);
   const market = currentMarket(tier);
   let alive = true;
@@ -40,23 +71,24 @@ export function mount(root, ctx) {
     view.remove();
   };
 
+  const gallery = badgeGallery(store);
   if (!market) {
-    view.replaceChildren(head, stateView({ kind: 'empty', title: 'Open today’s market first', body: 'Blocks are made from the trades in today’s market. Open it, let it run for a few seconds, then come back.', actions: [backButton('Open today’s market')] }));
+    view.replaceChildren(head, gallery, stateView({ kind: 'empty', title: 'Open today’s market first', body: 'Blocks are made from the trades in today’s market. Open it, let it run for a few seconds, then come back.', actions: [backButton('Open today’s market')] }));
     return done;
   }
   const st = market.session.getState();
   const blocks = formBlocks(market.session.getTransactions(), st.t);
   if (!blocks.length) {
-    view.replaceChildren(head, stateView({ kind: 'empty', title: 'No blocks yet', body: 'The first block is sealed after 5 seconds of trading. Go back to the market and let it run.', actions: [backButton()] }));
+    view.replaceChildren(head, gallery, stateView({ kind: 'empty', title: 'No blocks yet', body: 'The first block is sealed after 5 seconds of trading. Go back to the market and let it run.', actions: [backButton()] }));
     return done;
   }
 
-  view.replaceChildren(head, stateView({ kind: 'loading', title: 'Sealing the blocks…' }));
+  view.replaceChildren(head, gallery, stateView({ kind: 'loading', title: 'Sealing the blocks…' }));
   linkChain(blocks)
     .then(() => alive && show())
     .catch(() => {
       if (!alive) return;
-      view.replaceChildren(head, stateView({
+      view.replaceChildren(head, gallery, stateView({
         kind: 'error',
         title: 'The fingerprints couldn’t be worked out',
         body: 'This browser blocked the hashing tool. Open the site over https in an up-to-date browser, then try again.',
@@ -99,9 +131,13 @@ export function mount(root, ctx) {
         toggle.textContent = open ? 'Hide transactions' : `Show ${number(b.txs.length, 0)} transactions`;
         if (open && !list.childElementCount) {
           const txs = tampered && tampered.height === b.height ? tampered.txs : b.txs;
+          const changed = tampered && tampered.height === b.height ? txs[target.index] : null;
+          // Badge mints and the player's own trades list first, so they're never lost among 500 rows.
+          const mine = (tx) => tx.who === 'mint' || tx.who === 'player' || tx === changed;
+          const shown = [...txs.filter(mine), ...txs.filter((tx) => !mine(tx))];
           list.append(
-            ...txs.slice(0, SHOWN).map((tx, i) =>
-              h('li', { class: `tx${tx.who === 'player' ? ' is-player' : ''}${tampered && tampered.height === b.height && i === target.index ? ' is-tampered' : ''}` }, [
+            ...shown.slice(0, SHOWN).map((tx) =>
+              h('li', { class: `tx${tx.who === 'player' ? ' is-player' : ''}${tx.who === 'mint' ? ' is-mint' : ''}${tx === changed ? ' is-tampered' : ''}` }, [
                 h('span', { class: 'tx__who', text: WHO[tx.who] || tx.who }),
                 h('span', { class: 'tx__what', text: tradeText(tx) }),
                 h('span', { class: 'tx__gas', text: `gas ${money(gas, 3)}` }),
@@ -117,7 +153,11 @@ export function mount(root, ctx) {
         ? h('span', { class: 'chip chip--loss' }, [icon('alert', { size: 14 }), b.height === tampered.height ? 'Changed: fingerprint no longer matches' : 'Link broken'])
         : h('span', { class: 'chip chip--ok' }, [icon('check', { size: 14 }), 'Sealed']);
       return h('li', { class: `card block${broken ? ' is-broken' : ''}` }, [
-        h('div', { class: 'block__head' }, [h('h2', { class: 'block__title', text: `Block #${b.height + 1}` }), status]),
+        h('div', { class: 'block__head' }, [
+          h('h2', { class: 'block__title', text: `Block #${b.height + 1}` }),
+          b.txs.some((tx) => tx.who === 'mint') ? h('span', { class: 'chip chip--mine', text: 'Badge mint' }) : null,
+          status,
+        ]),
         h('p', { class: 'block__meta', text: `${when(b)} · ${number(b.txs.length, 0)} transactions · ${money(volume, 0)} traded · gas ${money(gas, 3)} each` }),
         h('dl', { class: 'block__hashes' }, [
           h('dt', { text: 'Fingerprint' }),
@@ -208,6 +248,7 @@ export function mount(root, ctx) {
     renderChain();
     view.replaceChildren(
       head,
+      gallery,
       h('p', { class: 'explorer__summary', text: `${number(blocks.length, 0)} blocks sealed so far in today’s market, newest first.` }),
       h('div', { class: 'explorer' }, [
         h('div', { class: 'explorer__side' }, [

@@ -1697,3 +1697,100 @@
 .coach-art__guide { stroke: var(--ink-300); stroke-width: 1.5; stroke-dasharray: 3 3; }
 .coach-art__label { fill: var(--ink-900); font-size: 14px; font-weight: 700; }
 .coach-art__small { fill: var(--ink-500); font-size: 12px; }
+
+/* ---- Soulbound badges (BRIEF §15) ------------------------------------------------------------ */
+
+.badges {
+  display: grid;
+  gap: var(--sp-4);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .badges {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+  }
+}
+
+.badges__main {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.badges__title {
+  font-size: var(--fs-lg);
+}
+
+.badges__empty {
+  padding: var(--sp-4);
+  border: 2px dashed var(--line);
+  border-radius: var(--r-md);
+  color: var(--ink-500);
+}
+
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: var(--sp-3);
+  padding: 0;
+  list-style: none;
+}
+
+.badge-card {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-4) var(--sp-3);
+  border: 2px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  text-align: center;
+}
+
+.badge-card__title {
+  font-family: var(--font-head);
+  font-weight: 900;
+}
+
+.badge-card__how,
+.badge-card__meta {
+  color: var(--ink-500);
+  font-size: var(--fs-xs);
+}
+
+.badge-card .hash {
+  overflow-wrap: anywhere;
+}
+
+.badge-art__medal { fill: var(--coin, var(--pal-mint)); }
+.badge-art__inner { fill: rgb(255 255 255 / 0.18); stroke: rgb(255 255 255 / 0.55); stroke-width: 2; }
+.badge-art__ribbon { fill: var(--coin, var(--pal-mint)); opacity: 0.75; }
+.badge-art__fill { fill: #FFFFFF; }
+.badge-art__line { fill: none; stroke: #FFFFFF; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.badge-art__soft { opacity: 0.6; }
+.badge-art__tick { fill: none; stroke: var(--coin, var(--pal-mint)); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+.badge-art__hole { fill: var(--coin, var(--pal-mint)); }
+
+.badge-note {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--primary-50);
+}
+
+.badge-note__title {
+  font-weight: 800;
+}
+
+.badge-note__text {
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+}
+
+.tx.is-mint {
+  background: var(--amber-50);
+  font-weight: 700;
+}

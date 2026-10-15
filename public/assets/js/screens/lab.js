@@ -15,7 +15,11 @@ import { bangkokDate, dailySeed } from '../sim/prng.js';
 import { BLOCK_TICKS } from '../sim/chain.js';
 import { rsi, sma } from '../sim/indicators.js';
 import { runMetrics } from '../sim/metrics.js';
-import { attachCoach, isCoaching, openCoachMenu } from './coach.js';
+import { attachCoach, isCoaching, onChapterDone, openCoachMenu } from './coach.js';
+import { mintBadge, mintedNote, setChainSink } from './badges.js';
+
+// A finished Coach chapter mints its soulbound badge (BRIEF §15) and shows it on the completion card.
+onChapterDone(({ tier, chapter, store }) => mintedNote(mintBadge(store, { kind: 'coach', ref: chapter.id, tier })));
 import {
   animate, announce, celebrate, delta, getJSON, h, icon, money, number, penny, price, questionCard, resultPanel,
   stateView, trend,
@@ -42,6 +46,7 @@ export const WHO = {
   rugger: 'Coin creator',
   wash: 'Wash-trading bot',
   issuer: 'New coins (miners and rewards)',
+  mint: 'Badge mint',
 };
 
 // 24 original geometric coin glyphs on a 24 px grid, white on the coin colour (BRIEF §10).
@@ -1323,6 +1328,12 @@ export function mount(root, ctx) {
       drillConfig: () => ({ ...structuredClone({ coinsConfig: market.data.coinsConfig, agentsConfig: market.data.agentsConfig, scenario: market.data.scenario }), seed: market.seed, tier }),
     };
     cleanup.push(attachCoach(coachEnv));
+    // Badge mints go into today's chain while this market is open (BRIEF §15).
+    setChainSink((id) => {
+      if (market.closed || live !== market) return false;
+      session.recordMint(id);
+      return true;
+    });
     if (!store.get().coach?.[tier]?.offered && !isCoaching()) openCoachMenu(coachEnv, { offer: true });
 
     render();

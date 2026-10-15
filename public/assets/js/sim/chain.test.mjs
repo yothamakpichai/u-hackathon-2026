@@ -45,3 +45,15 @@ test('changing an old transaction breaks its block and every later link', async 
   assert.notEqual(rehashed, blocks[1].hash);
   assert.notEqual(rehashed, blocks[2].prevHash, 'so the next block no longer points at it');
 });
+
+test('a soulbound badge mint is a transaction in its block', async () => {
+  const s = createSession({ seed: 11, tier: 'explorer', ...structuredClone(CONFIG) });
+  for (let i = 0; i < 20; i++) s.tick();
+  s.recordMint('coach:candle');
+  for (let i = 0; i < BLOCK_TICKS; i++) s.tick();
+  const mint = s.getTransactions().find((x) => x.who === 'mint');
+  assert.deepEqual(mint, { t: 20, coin: 'BADGE', side: 'mint', coins: 1, L: 0, who: 'mint', badge: 'coach:candle' });
+  const blocks = await linkChain(formBlocks(s.getTransactions(), s.getState().t));
+  assert.ok(blocks[0].txs.includes(blocks[0].txs.find((x) => x.who === 'mint')), 'sealed in the first block');
+  assert.equal(await firstBroken(blocks), -1);
+});

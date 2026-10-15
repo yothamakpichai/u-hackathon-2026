@@ -745,5 +745,10 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
   // Transactions from index `from` on (copies), for the block explorer and the order-flow panel.
   const getTransactions = (from = 0) => txs.slice(Math.max(0, from)).map((x) => ({ ...x }));
 
-  return { tick, swap, quote, createCoin, getState, getTransactions, on, finish };
+  // A soulbound badge mint (BRIEF §15): a transaction on today's chain with no price and no transfer.
+  function recordMint(badgeId) {
+    txs.push({ t: now, coin: 'BADGE', side: 'mint', coins: 1, L: 0, who: 'mint', badge: String(badgeId) });
+  }
+
+  return { tick, swap, quote, createCoin, getState, getTransactions, recordMint, on, finish };
 }
