@@ -3,6 +3,8 @@
 // coins. Each cow has seeded traits and a soulbound birth certificate minted on the simulated chain.
 import { collectMilk, cowsDue, COW_AT, feedFrom, milkReady, MILK_PRICE, STAGES, stageOf } from '../sim/farm.js';
 import { PLOTS, SEEDS, harvest, plant, plotState, revealedPreference } from '../sim/orchard.js';
+import { FAIR, askOf, bidOf, buyCard, hypeIndex, makeFair, newRound, newsAt, sellCard, summary } from '../sim/fair.js';
+import { dayKey } from '../sim/piggy.js';
 import { mintBadge } from './badges.js';
 import { balance as walletBalance, ensureStarter, post } from '../../../js/wallet.js';
 import { announce, celebrate, h, icon, number } from '../ui.js';
@@ -18,6 +20,12 @@ export function mount(root, ctx) {
   let ticker = 0;
   let orchardBox = null;
   let orchardKey = '';
+  // The Cow Fair box lives across redraws of the farm, so a running fair keeps going.
+  const fairBox = h('div', { class: 'card fair' });
+  let fair = null;
+  let round = null;
+  let fairTimer = 0;
+  let fairEls = null;
 
   // One Town wallet for every building (BRIEF §16.1): a starter grant once, and earlier milk coins moved in.
   ensureStarter(store);
@@ -92,6 +100,7 @@ export function mount(root, ctx) {
           ]),
       milkCard(farm, ready, feed),
       (orchardBox = h('div', { class: 'card orchard' })),
+      fairBox,
       h('div', { class: 'card card--quiet farm-lesson' }, [
         h('h2', { class: 'lesson-mini__title', text: 'A cow pays you. A meme coin doesn’t.' }),
         h('p', { text: 'Your cow is a productive asset: it makes something useful every day, and you get paid for it. A meme coin makes nothing. Its price only goes up if someone else pays more for it later, and it can fall to zero.' }),
@@ -202,10 +211,149 @@ export function mount(root, ctx) {
     return [h('p', { class: 'orchard-plot__name', text: `Plot ${i + 1}: empty` }), h('div', { class: 'orchard-menu', role: 'group', 'aria-label': `Plant in plot ${i + 1}` }, menu)];
   }
 
+  // ---- Cow Fair (BRIEF §16 stretch): NPC hype on a rare trait, then a crash ----------------------
+  function fairIntro() {
+    const saved = store.get().fair;
+    fairBox.replaceChildren(
+      h('div', { class: 'card-head' }, [h('h2', { class: 'lab-card__title', text: 'Cow Fair' }), h('p', { class: 'chip', text: '1 minute' })]),
+      h('p', { text: `Collectors trade cow cards here: pictures of cows, not cows. Prices change fast. You get ${FAIR.tickets} pretend fair tickets each time, and your Town wallet isn’t touched.` }),
+      h('p', { class: 'field__hint', text: 'Your own cows can’t be sold here. Their birth certificates are soulbound, and they give milk every day.' }),
+      saved?.last ? h('p', { class: 'field__hint', text: `Last fair: you ended with ${number(saved.last.end, 0)} tickets from ${FAIR.tickets}.` }) : null,
+      h('button', { class: 'btn btn--primary', type: 'button', onClick: startFair }, saved?.played ? 'Go to the fair again' : 'Go to the fair'),
+    );
+  }
+
+  function startFair() {
+    fair = makeFair(`${dayKey(Date.now())}:${store.get().fair?.played ?? 0}`);
+    round = newRound();
+    buildFair();
+    clearInterval(fairTimer);
+    fairTimer = setInterval(stepFair, FAIR.stepMs);
+    fairEls.tickets.focus();
+  }
+
+  function buildFair() {
+    const rows = fair.cards.map((card, i) => {
+      const price = h('span', { class: 'fair-card__price' });
+      const change = h('span', { class: 'fair-card__change' });
+      const owned = h('span', { class: 'chip chip--ok', text: 'Yours', hidden: true });
+      const hype = h('span', { class: 'chip chip--warn', text: `${fair.trait.label}: in demand`, hidden: true });
+      const buy = h('button', { class: 'btn btn--sm btn--primary', type: 'button', onClick: () => act(i, 'buy') });
+      const sell = h('button', { class: 'btn btn--sm', type: 'button', onClick: () => act(i, 'sell') });
+      const el = h('li', { class: 'fair-card' }, [
+        cowArt(card, 'adult'),
+        h('div', { class: 'fair-card__body' }, [
+          h('p', { class: 'fair-card__name', text: `${card.name}’s card` }),
+          h('p', { class: 'fair-card__chips' }, [owned, hype]),
+          h('p', { class: 'fair-card__traits', text: traitText(card) }),
+          h('p', { class: 'fair-card__quote' }, [price, change]),
+          h('div', { class: 'fair-card__actions' }, [buy, sell]),
+        ]),
+      ]);
+      return { el, price, change, owned, hype, buy, sell };
+    });
+    const tickets = h('p', { class: 'fair__tickets', tabindex: '-1' });
+    const clock = h('p', { class: 'chip fair__clock' });
+    const news = h('p', { class: 'fair__news', role: 'status' });
+    const index = h('p', { class: 'fair__index' });
+    fairEls = { rows, tickets, clock, news, index };
+    fairBox.replaceChildren(
+      h('div', { class: 'card-head' }, [h('h2', { class: 'lab-card__title', text: 'Cow Fair' }), clock]),
+      tickets,
+      news,
+      index,
+      h('ul', { class: 'fair-cards' }, rows.map((r) => r.el)),
+    );
+    updateFair();
+  }
+
+  function updateFair() {
+    const s = Math.min(round.step, FAIR.steps);
+    const held = Object.keys(round.owned).reduce((v, i) => v + (bidOf(fair, Number(i), s) ?? 0), 0);
+    fairEls.clock.textContent = `${Math.ceil(((FAIR.steps - s) * FAIR.stepMs) / 1000)} s left`;
+    fairEls.tickets.textContent = `${number(round.tickets, 1)} tickets${Object.keys(round.owned).length ? ` · your cards would sell for ${number(held, 1)}` : ''}`;
+    const line = newsAt(fair, s);
+    if (line) fairEls.news.textContent = line;
+    const hi = hypeIndex(fair, s);
+    fairEls.index.hidden = s < 3;
+    fairEls.index.textContent = `${fair.trait.label} cards: ${hi >= 1 ? 'up' : 'down'} ${Math.round(Math.abs(hi - 1) * 100)}% since the fair opened`;
+    fairEls.rows.forEach((r, i) => {
+      const ask = askOf(fair, i, s);
+      const bid = bidOf(fair, i, s);
+      const ch = fair.prices[i][s] / fair.prices[i][0] - 1;
+      const own = round.owned[i];
+      r.price.textContent = `${number(fair.prices[i][s], 1)} tickets`;
+      r.change.textContent = `${ch >= 0 ? '↑' : '↓'} ${Math.round(Math.abs(ch) * 100)}%`;
+      r.change.className = `fair-card__change ${ch >= 0 ? 'is-up' : 'is-down'}`;
+      r.owned.hidden = !own;
+      r.hype.hidden = !(fair.cards[i].hyped && s >= 3 && s < 34);
+      r.hype.textContent = `${fair.trait.label}: ${s < 20 ? 'in demand' : s < 25 ? 'sellers lining up' : 'crashing'}`;
+      r.buy.textContent = `Buy for ${number(ask, 1)}`;
+      r.buy.hidden = Boolean(own);
+      r.buy.disabled = ask > round.tickets;
+      r.sell.hidden = !own;
+      r.sell.textContent = bid == null ? 'No buyers right now' : `Sell for ${number(bid, 1)}`;
+      r.sell.disabled = bid == null;
+    });
+  }
+
+  function stepFair() {
+    round = { ...round, step: round.step + 1 };
+    if (round.step >= FAIR.steps) endFair();
+    else updateFair();
+  }
+
+  function act(i, side) {
+    const r = side === 'buy' ? buyCard(fair, round, i) : sellCard(fair, round, i);
+    if (!r.ok) return announce(r.error);
+    round = r.round;
+    announce(`${side === 'buy' ? 'Bought' : 'Sold'} ${fair.cards[i].name}’s card.`);
+    updateFair();
+    // The pressed button hides; keep keyboard focus on the card's other action.
+    (side === 'buy' ? fairEls.rows[i].sell : fairEls.rows[i].buy).focus();
+  }
+
+  function endFair() {
+    clearInterval(fairTimer);
+    round = { ...round, step: FAIR.steps };
+    const s = summary(fair, round);
+    const prev = store.get().fair || {};
+    store.set({ fair: { played: (prev.played ?? 0) + 1, last: { end: s.end, date: dayKey(Date.now()), trait: fair.trait.id } } });
+    const t = fair.trait.label;
+    const T = t[0].toUpperCase() + t.slice(1);
+    const verdict = s.end > s.start
+      ? `You ended with ${number(s.end, 1)} tickets from ${s.start}: a gain.`
+      : s.end < s.start
+        ? `You ended with ${number(s.end, 1)} tickets from ${s.start}: a loss.`
+        : `You ended with the ${s.start} tickets you started with.`;
+    const how = [];
+    if (s.early) how.push(`You bought ${s.early} ${t} ${s.early === 1 ? 'card' : 'cards'} early, before the crowd.`);
+    if (s.late) how.push(`You bought ${s.late} after the crowd arrived, near the top.`);
+    if (s.heldThroughCrash) how.push(`You still held ${s.heldThroughCrash} when the buyers vanished.`);
+    if (!round.trades.length) how.push('You watched without trading. That’s allowed, and you lost nothing.');
+    const cow = (store.get().farm?.cows || [])[0];
+    fairBox.replaceChildren(
+      h('div', { class: 'card-head' }, [h('h2', { class: 'lab-card__title', text: 'Cow Fair' }), h('p', { class: 'chip', text: 'Closed' })]),
+      h('p', { class: 'fair__result', text: verdict }),
+      how.length ? h('ul', { class: 'fair__how' }, how.map((x) => h('li', { text: x }))) : null,
+      h('div', { class: 'card card--quiet fair-lesson' }, [
+        h('h3', { class: 'lesson-mini__title', text: 'Why prices rose and then crashed' }),
+        h('p', { text: `${T} cards didn’t make anything. Their price rose only because new buyers kept paying more, hoping to sell to someone else later. When new buyers stopped coming, nobody would buy for a while, and then prices fell to about a third of where they started.` }),
+        h('p', { text: 'Early buyers can win, but only because later buyers paid more. Nobody rings a bell at the top.' }),
+        h('p', { text: cow ? `${cow.name} gives ${cow.milk} litres of milk a day, whatever the fair does.` : 'A cow you earn gives milk every day, whatever the fair does.' }),
+        h('p', { class: 'field__hint', text: 'Real collectibles on blockchains have done this: CryptoKitties in 2017 and Axie Infinity in 2022 drew crowds of buyers, then prices fell hard. Sources: docs/SOURCES.md (not yet checked).' }),
+      ]),
+      h('button', { class: 'btn btn--primary', type: 'button', onClick: startFair }, 'Go to the fair again'),
+    );
+    announce(verdict);
+  }
+
+  fairIntro();
   render();
   ticker = setInterval(() => renderOrchard(false), 1000);
   return () => {
     clearInterval(ticker);
+    clearInterval(fairTimer);
     view.remove();
   };
 }

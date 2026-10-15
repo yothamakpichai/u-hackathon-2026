@@ -245,6 +245,19 @@ The sim records raw data; it does not compute the score.
   - Selling down never takes out more than the real L$ in the pool, so a fresh bonding curve shows no down side.
   - It also says how far spending all your cash would move the price. It only redraws while open.
 
+## Cow Fair (BRIEF §16 stretch)
+
+- **Cow cards, not cows.** Collectors at the fair trade cow cards, which are pictures of cows. Your own cows are never for sale: they are earned, and their birth certificates are soulbound.
+- **Pretend tickets.** Each visit gives 100 fair tickets, separate from the Town wallet, so a bubble can't drain the coins earned in other buildings.
+- **Rules.** `sim/fair.js` holds them, tested.
+  - Each round has 8 one-of-a-kind cards, seeded by the Bangkok date and the round number, so replays differ. Three cards share one hyped trait: star mark, gold bell, belt pattern or honey coat.
+  - The round lasts 40 steps of 1.5 seconds. The hyped cards climb to 6–9 times their start, hold, then crash to about a third of it. For four steps of the crash nobody buys them at all, which teaches that a quoted price means little when there are no buyers.
+  - Ordinary cards drift, and dip a little while everyone chases the hype.
+  - You buy 3% over the middle price and sell 3% under it.
+- **NPC hype.** Scripted fair news lines track the phases, from "a famous collector just paid a lot" to "hardly anyone new is arriving" to "nobody wants to buy".
+- **Result and lesson.** The result says whether you bought early or near the top and whether you held through the crash. The lesson explains the greater-fool mechanism, and contrasts your cow's daily milk with a card that makes nothing. It cites CryptoKitties (2017) and Axie Infinity (2022) from the SOURCES entry still marked [unverified].
+- **Store.** `store.fair = { played, last: { end, date, trait } }`.
+
 ## Config location
 
 - The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.

@@ -2740,3 +2740,118 @@
   justify-content: space-between;
   font-size: var(--fs-xs);
 }
+
+/* ---- Cow Fair (BRIEF §16 stretch) -------------------------------------------------------------- */
+
+.fair {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.fair__tickets {
+  font-size: var(--fs-lg);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.fair__news {
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 4px solid var(--primary-600);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  font-weight: 700;
+}
+
+.fair__news:empty {
+  display: none;
+}
+
+.fair__index,
+.fair-card__traits {
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+}
+
+.fair__clock {
+  font-variant-numeric: tabular-nums;
+}
+
+.fair-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+  gap: var(--sp-3);
+  padding: 0;
+  list-style: none;
+}
+
+.fair-card {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.fair-card .farm-art {
+  max-width: 5.5rem;
+}
+
+.fair-lesson {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.fair-card__body {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.fair-card__name {
+  font-weight: 800;
+}
+
+.fair-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.fair-card__chips:not(:has(.chip:not([hidden]))) {
+  display: none;
+}
+
+.fair-card__quote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.fair-card__price {
+  font-size: var(--fs-lg);
+  font-weight: 800;
+}
+
+.fair-card__change.is-up { color: var(--gain-600); }
+.fair-card__change.is-down { color: var(--loss-600); }
+
+.fair-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.fair__how {
+  display: grid;
+  gap: var(--sp-1);
+  padding-left: var(--sp-4);
+}
+
+.fair__result {
+  font-size: var(--fs-lg);
+  font-weight: 800;
+}
