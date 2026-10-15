@@ -1,0 +1,34 @@
+# Security headers and caching (BRIEF §11). Apache 2.4 behind nginx and Cloudflare.
+
+Options -Indexes
+DirectoryIndex index.html
+AddDefaultCharset utf-8
+
+<IfModule mod_mime.c>
+  AddType text/javascript .js .mjs
+  AddType application/json .json
+  AddType image/svg+xml .svg
+  AddType font/woff2 .woff2
+  AddType audio/mpeg .mp3
+  AddCharset utf-8 .js .mjs .css .json .svg .txt
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set Content-Security-Policy "default-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self'; font-src 'self'; style-src 'self'; script-src 'self'; frame-ancestors 'none'; base-uri 'none'"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "no-referrer"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+  # No build step and no hashed file names: code, content and audio revalidate on every load
+  # (cheap 304s), so a push is live at once and Cloudflare never serves a stale copy.
+  Header set Cache-Control "no-cache"
+  # Fonts never change in place.
+  <FilesMatch "\.woff2$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+</IfModule>
+
+# Never serve dotfiles, tests or editor leftovers.
+<FilesMatch "(^\.|\.test\.mjs$|\.(bak|orig|swp|log)$)">
+  Require all denied
+</FilesMatch>

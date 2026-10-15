@@ -1,0 +1,484 @@
+/* Shared components. Screens compose these; screen-specific layout lives at the end of this file
+   (Yotha's screens) or in lab.css (Joewee's screens). */
+
+/* Buttons: a pressable face on a darker lip. Every size keeps a 44 px or larger tap target. */
+
+.btn {
+  --btn-bg: var(--surface);
+  --btn-bg-hover: var(--surface-2);
+  --btn-fg: var(--ink-900);
+  --btn-border: var(--line);
+  --btn-lip: var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 48px;
+  padding: var(--sp-2) var(--sp-5);
+  border: 2px solid var(--btn-border);
+  border-radius: var(--r-md);
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  box-shadow: 0 var(--lip) 0 var(--btn-lip);
+  font-family: var(--font-head);
+  font-size: var(--fs-md);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  text-align: center;
+  text-decoration: none;
+  user-select: none;
+  transition:
+    transform var(--dur-1) var(--ease-out),
+    box-shadow var(--dur-1) var(--ease-out),
+    background-color var(--dur-1) var(--ease-out),
+    border-color var(--dur-1) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    background: var(--btn-bg-hover);
+  }
+}
+
+.btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 calc(var(--lip) - 2px) 0 var(--btn-lip);
+}
+
+.btn--primary {
+  --btn-bg: var(--primary-600);
+  --btn-bg-hover: var(--primary-700);
+  --btn-fg: #FFFFFF;
+  --btn-border: var(--primary-600);
+  --btn-lip: var(--primary-800);
+}
+
+@media (hover: hover) {
+  .btn--primary:hover {
+    border-color: var(--primary-700);
+  }
+}
+
+.btn--accent {
+  --btn-bg: var(--amber-500);
+  --btn-bg-hover: var(--amber-400);
+  --btn-fg: var(--ink-900);
+  --btn-border: var(--amber-500);
+  --btn-lip: var(--amber-600);
+}
+
+.btn--ghost {
+  --btn-bg: transparent;
+  --btn-bg-hover: var(--primary-50);
+  --btn-fg: var(--primary-700);
+  --btn-border: transparent;
+  --btn-lip: transparent;
+}
+
+.btn--lg {
+  min-height: 56px;
+  font-size: var(--fs-lg);
+  border-radius: var(--r-lg);
+}
+
+.btn--sm {
+  min-height: var(--tap);
+  padding-inline: var(--sp-4);
+  font-size: var(--fs-sm);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+/* Cards */
+
+.card {
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+}
+
+.card--quiet {
+  background: var(--surface-2);
+  border-color: transparent;
+}
+
+/* Chips and the persistent simulation badge */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--ink-700);
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.sim-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--amber-100);
+  border-radius: var(--r-pill);
+  background: var(--amber-50);
+  color: var(--amber-800);
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.sim-badge__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--amber-500);
+  box-shadow: 0 0 0 3px rgb(245 165 36 / 0.22);
+}
+
+/* Gains and losses: colour plus an arrow plus a sign (ui.js delta()). */
+
+.delta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25em;
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.delta.is-gain {
+  color: var(--gain-600);
+}
+
+.delta.is-loss {
+  color: var(--loss-600);
+}
+
+.delta.is-flat {
+  color: var(--ink-500);
+}
+
+/* Loading, empty and error states: each says what happened and what to do next. */
+
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-7) var(--sp-4);
+  text-align: center;
+}
+
+.state__icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--ink-700);
+}
+
+.state--error .state__icon {
+  background: var(--loss-50);
+  color: var(--loss-700);
+}
+
+.state__title {
+  font-family: var(--font-head);
+  font-size: var(--fs-xl);
+  font-weight: 800;
+  line-height: var(--lh-snug);
+}
+
+.state__body {
+  max-width: 30rem;
+  color: var(--ink-700);
+}
+
+.state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid var(--primary-100);
+  border-top-color: var(--primary-600);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The boot message in index.html shows a hint if the app has not started after 8 s. */
+.boot__slow {
+  visibility: hidden;
+  animation: boot-reveal 1ms linear 8s forwards;
+}
+
+@keyframes boot-reveal {
+  to {
+    visibility: visible;
+  }
+}
+
+/* Penny speaking: mascot plus a speech bubble. */
+
+.penny-says {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.penny-says__img {
+  width: 84px;
+  height: 84px;
+}
+
+.bubble {
+  position: relative;
+  padding: var(--sp-3) var(--sp-4);
+  border: 2px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  color: var(--ink-900);
+  font-family: var(--font-head);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.bubble::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -9px;
+  width: 16px;
+  height: 16px;
+  border-bottom: 2px solid var(--line);
+  border-left: 2px solid var(--line);
+  border-bottom-left-radius: 4px;
+  background: var(--surface);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+@media (min-width: 640px) {
+  .penny-says__img {
+    width: 112px;
+    height: 112px;
+  }
+
+  .bubble {
+    padding: var(--sp-4) var(--sp-5);
+    font-size: var(--fs-xl);
+  }
+}
+
+/* Choice cards: big, pressable rows (tier choice now; gate answers later). */
+
+.choice-list {
+  display: grid;
+  gap: var(--sp-4);
+  padding: 0;
+  list-style: none;
+}
+
+.choice-card {
+  --choice: var(--primary-500);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-4);
+  width: 100%;
+  min-height: 88px;
+  padding: var(--sp-4);
+  border: 2px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: 0 var(--lip) 0 var(--line);
+  color: var(--ink-900);
+  text-align: left;
+  transition:
+    transform var(--dur-1) var(--ease-out),
+    box-shadow var(--dur-1) var(--ease-out),
+    border-color var(--dur-1) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .choice-card:hover {
+    border-color: var(--choice);
+    box-shadow: 0 var(--lip) 0 var(--choice);
+  }
+}
+
+.choice-card:active {
+  transform: translateY(2px);
+  box-shadow: 0 calc(var(--lip) - 2px) 0 var(--choice);
+}
+
+.choice-card__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--choice);
+  box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.16);
+  color: #FFFFFF;
+}
+
+.choice-card__body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.choice-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-2);
+}
+
+.choice-card__title {
+  font-family: var(--font-head);
+  font-size: var(--fs-xl);
+  font-weight: 800;
+  line-height: var(--lh-tight);
+}
+
+.choice-card__text {
+  display: block;
+  color: var(--ink-700);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.choice-card__meta {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.choice-card__chevron {
+  color: var(--ink-400);
+  transition: transform var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .choice-card:hover .choice-card__chevron {
+    color: var(--choice);
+    transform: translateX(2px);
+  }
+}
+
+.choice-card[data-tier="explorer"] {
+  --choice: var(--tier-explorer);
+}
+
+.choice-card[data-tier="trader"] {
+  --choice: var(--tier-trader);
+}
+
+.choice-card[data-tier="builder"] {
+  --choice: var(--tier-builder);
+}
+
+/* Info note (the "For parents" card) */
+
+.note {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-3) var(--sp-4);
+  align-items: start;
+}
+
+.note__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--primary-50);
+  color: var(--primary-700);
+}
+
+.note__title {
+  font-size: var(--fs-lg);
+  line-height: 40px;
+}
+
+.note__body {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--sp-2);
+  color: var(--ink-700);
+  font-size: 0.9375rem;
+}
+
+.note__small {
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+}
+
+@media (min-width: 480px) {
+  .note__body {
+    grid-column: 2;
+  }
+}
+
+/* Welcome screen */
+
+.welcome {
+  display: grid;
+  gap: var(--sp-6);
+}
+
+.welcome__hero {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.welcome__title {
+  font-size: var(--fs-3xl);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.welcome__levels {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.welcome__levels-title {
+  font-size: var(--fs-xl);
+}

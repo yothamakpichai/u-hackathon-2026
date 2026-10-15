@@ -1,0 +1,133 @@
+/* Design tokens (BRIEF §10).
+   Contrast is checked: text pairs >= 4.5:1 (WCAG AA), UI marks and glyph-on-fill >= 3:1.
+   Re-check any pair you change. Gains and losses always carry an arrow and a sign as well as colour. */
+
+:root {
+  color-scheme: light;
+
+  /* Neutral ink and surfaces */
+  --ink-900: #0F1C17;   /* primary text, 16.7:1 on --bg */
+  --ink-800: #1D2A25;
+  --ink-700: #34443D;   /* secondary text, 9.8:1 on --bg */
+  --ink-500: #5D6B65;   /* muted text, 5.3:1 on --bg, 5.0:1 on --surface-2 */
+  --ink-400: #8A9691;   /* icons and strong borders (3:1 on white); never body text */
+  --ink-300: #B9C3BE;
+  --line: #DCE3DF;
+  --line-soft: #EAEFEC;
+  --surface-2: #EEF3F0; /* sunken wells, tracks, quiet chips */
+  --bg: #F7FAF8;        /* app background */
+  --surface: #FFFFFF;   /* cards */
+
+  /* Primary: the EDUU green. White text needs --primary-600 or darker. */
+  --primary-50: #E8F8F2;
+  --primary-100: #C8EEDF;
+  --primary-200: #93DDBF;
+  --primary-500: #0DA678; /* brand and EDUU; fills and large marks (white on it is 3.1:1: large text only) */
+  --primary-600: #09855F; /* button face, white text 4.6:1 */
+  --primary-700: #076B4D; /* button hover, links, text on tints 6.0:1 */
+  --primary-800: #05553D; /* button lip */
+  --primary: var(--primary-500);
+
+  /* Accent amber */
+  --amber-50: #FFF7E6;
+  --amber-100: #FFEBC2;
+  --amber-400: #FFC24D;
+  --amber-500: #F5A524;   /* fills; --ink-900 on it is 8.6:1 */
+  --amber-600: #D98A0B;   /* lip */
+  --amber-800: #8A5300;   /* text on amber tints 5.9:1 */
+  --accent: var(--amber-500);
+
+  /* Status */
+  --warning-50: #FFF4E5;
+  --warning-700: #9A4A00; /* 5.8:1 on --warning-50 */
+  --loss-50: #FDEDEE;
+  --loss-500: #E5484D;    /* fills and down candles */
+  --loss-600: #D12F3A;    /* loss text, 5.0:1 on white */
+  --loss-700: #A61E2A;    /* 6.5:1 on --loss-50 */
+  --gain-50: #E6F6EE;
+  --gain-500: #18A867;    /* fills and up candles */
+  --gain-600: #0A8354;    /* gain text, 4.8:1 on white */
+  --gain-700: #076641;    /* 6.3:1 on --gain-50 */
+  --focus: #1F63E0;       /* focus ring, 5.4:1 on white */
+
+  /* 12-colour coin palette, shared by the roster and user-created coins (ids in config.js COIN_COLORS).
+     A white glyph on each fill is >= 3:1. */
+  --pal-mint: #0DA678;
+  --pal-teal: #0B8C8C;
+  --pal-cyan: #0A87AD;
+  --pal-sky: #2A77D1;
+  --pal-blue: #3F5FDB;
+  --pal-indigo: #5A4BD6;
+  --pal-violet: #8143D1;
+  --pal-magenta: #B0399F;
+  --pal-pink: #D13B73;
+  --pal-coral: #D9502F;
+  --pal-orange: #C2630A;
+  --pal-gold: #A87A00;
+
+  /* Roster coins */
+  --coin-vault: var(--pal-gold);
+  --coin-eduu: var(--pal-mint);
+  --coin-peg: var(--pal-sky);
+  --coin-fuel: var(--pal-orange);
+  --coin-orbit: var(--pal-violet);
+  --coin-zoomz: var(--pal-pink);
+  --coin-bloop: var(--pal-cyan);
+
+  /* Tiers */
+  --tier-explorer: var(--pal-mint);
+  --tier-trader: var(--pal-blue);
+  --tier-builder: var(--pal-violet);
+
+  /* Type: Nunito for headings and UI labels, Inter for body and every number */
+  --font-head: "Nunito", ui-rounded, "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.75rem;
+  --fs-3xl: clamp(2rem, 1.5rem + 2.2vw, 2.75rem);
+  --lh-tight: 1.15;
+  --lh-snug: 1.3;
+  --lh-body: 1.55;
+
+  /* Space (4 px base) */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+  --sp-8: 4rem;
+
+  /* Shape and depth */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+  --lip: 4px;  /* the pressable bottom edge on buttons and cards */
+  --shadow-sm: 0 1px 2px rgb(15 28 23 / 0.06);
+  --shadow-md: 0 8px 24px -10px rgb(15 28 23 / 0.18);
+  --shadow-lg: 0 20px 44px -18px rgb(15 28 23 / 0.28);
+
+  /* Motion: 150 to 300 ms, ease-out. Non-essential motion is off under prefers-reduced-motion (base.css). */
+  --dur-1: 150ms;
+  --dur-2: 220ms;
+  --dur-3: 300ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Layout */
+  --tap: 44px;
+  --gutter: clamp(1rem, 4vw, 2rem);
+  --page-max: 40rem;
+  --lab-max: 80rem;
+  --header-h: 3.5rem;
+  --z-header: 10;
+  --z-overlay: 40;
+  --z-toast: 50;
+}

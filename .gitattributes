@@ -1,0 +1,10 @@
+# LF everywhere: the server is Linux and the team works on Windows.
+* text=auto eol=lf
+
+*.woff2 binary
+*.mp3 binary
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary
+*.pdf binary

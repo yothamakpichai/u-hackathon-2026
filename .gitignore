@@ -1,0 +1,20 @@
+# Secrets and writable state live outside the repo, in ../u-hackathon-2026-private/ (BRIEF §11).
+.env
+.env.*
+!.env.example
+
+# Personal tool settings
+.claude/settings.local.json
+.idea/
+.vscode/
+
+# OS and editor leftovers
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.bak
+*.orig
+*.log
+
+node_modules/
