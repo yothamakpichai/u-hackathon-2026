@@ -199,7 +199,8 @@ Every `data/…` path in this brief means `public/data/…`: the browser loads t
 |---|---|
 | `data/gate.json` | Per tier: 3 questions `{id, prompt, options[3], answerIndex, explain}` |
 | `data/lessons.json` | Per tier: 1 lesson of 4 cards `{title, body (≤ 45 words), interaction:{type, ...}}` + 1 quiz |
-| `data/events.json` | Per event id × tier: `{headline, narration (≤ 60 words), question:{prompt, options[3], answerIndex}}` |
+| `data/events.json` | Per event id × tier: `{headline, narration (≤ 60 words), question:{prompt, options[3], answerIndex, explain}}` |
+| `data/tutor_faq.json` | Per tier: 6 suggested questions `{id, question, answer (≤ 60 words), source}`; `source` is `claude` or `u-bot` |
 | `data/facts.json` | Canonical facts the generator must not contradict. 21M cap; halving roughly every 4 years in Bitcoin's design; AMM `x·y=k`; stablecoins can depeg; unlocks increase circulating supply; wash trading inflates volume without real demand; rug pull = creators remove liquidity. |
 | `data/coins.json`, `data/agents.json` | Sim parameters (owned by Joewee) |
 
@@ -212,7 +213,7 @@ Voice for kids:
 ## 9. AI and voice
 
 **Claude API** (key `ANTHROPIC_API_KEY`, server only):
-- **Build time** (`bin/generate-content.php`, run locally, outputs committed): model `ANTHROPIC_MODEL_CONTENT` (default `claude-sonnet-5-5`). Use tool use with a JSON `input_schema` per file to force structure, then validate against the schema and `facts.json` before writing.
+- **Build time** (`bin/generate-content.mjs`, Node, run locally, outputs committed): model `ANTHROPIC_MODEL_CONTENT` (default `claude-sonnet-5-5`). Use tool use with a JSON `input_schema` per file to force structure, then validate against the schema and `facts.json` before writing.
 - **Runtime "Ask Penny"** (P1, `public/api/tutor.php`): model `ANTHROPIC_MODEL_RUNTIME` (default `claude-haiku-5-5`).
   - `max_tokens` 300, temperature 0.3.
   - System prompt sets the persona and safety rules, with prompt caching on the system block.
@@ -222,7 +223,7 @@ Voice for kids:
 - Before the API is wired, the UI uses `data/tutor_faq.json`.
 
 **ElevenLabs** (key `ELEVENLABS_API_KEY`, voice `ELEVENLABS_VOICE_ID`):
-- **Build time** (`bin/generate-audio.php`): text-to-speech for every narration string in `gate/lessons/events` into `public/assets/audio/<id>.mp3`, committed.
+- **Build time** (`bin/generate-audio.mjs`, Node): text-to-speech for every narration string in `gate/lessons/events` into `public/assets/audio/<id>.mp3`, committed.
   - Use the highest-quality English model in the current docs.
   - Choose a **premade library voice** (warm, clear, friendly). Never clone a real person.
   - Record the model id and voice in DECISIONS.md.
@@ -294,7 +295,7 @@ public/
   data/gate.json lessons.json events.json facts.json tutor_faq.json — Yotha
   data/coins.json agents.json scenario.json                        — Joewee
 src/ (PHP: bootstrap, config, http, ratelimit, cache, anthropic, elevenlabs) — Yotha
-bin/check.mjs generate-content.php generate-audio.php              — Yotha
+bin/check.mjs generate-content.mjs generate-audio.mjs              — Yotha
 docs/BRIEF.md DECISIONS.md STATUS.md EVIDENCE.md
 README.md (written last, for judges)                               — Yotha
 ```
@@ -322,7 +323,7 @@ README.md (written last, for judges)                               — Yotha
 | J1 | Joewee | 60 min | Sim core: PRNG, AMM, bonding curve, agents, scenario/events, `createSession` API, `coins/agents/scenario.json`, unit checks. No UI. Can start immediately. |
 | Y2 | Yotha | 45 min | Gate + lesson screens with draft content in the JSON shapes from §8, Penny SVG (4 states), audio player with captions (silent until audio exists). |
 | J2 | Joewee | 60 min | Lab screen: chart, coin list, trade panel, portfolio, event toasts that call `ctx.audio` + narration from `data/events.json`, close → report. Mobile first. |
-| Y3 | Yotha | 45 min | `bin/generate-content.php` (Claude, schema-validated) → final `gate/lessons/events/tutor_faq.json`; then `bin/generate-audio.php` (ElevenLabs) → committed mp3. |
+| Y3 | Yotha | 45 min | `bin/generate-content.mjs` (Claude, schema-validated) → final `gate/lessons/events/tutor_faq.json`; then `bin/generate-audio.mjs` (ElevenLabs) → committed mp3. |
 | J3 | Joewee | 45 min | Create-a-coin with tiered knobs, curated icons/colours, validation and blocklist, launch on the bonding curve, outcome explained. |
 | Y4 | Yotha | 40 min | Report card + Money Health Score + `leaderboard.php` (file-locked JSON, nickname generator, rate limit) + `health.php`. |
 | J4 | Joewee | 45 min | Block explorer + tamper demo; desktop Basic/Advanced toggle; wash-volume overlay (Builder). |
