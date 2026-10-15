@@ -2791,3 +2791,13 @@ svg.is-flipped {
   color: var(--ink-700);
   font-size: var(--fs-sm);
 }
+
+.tutor__chip--mode {
+  border-color: var(--primary-500);
+  background: var(--primary-50);
+  color: var(--primary-800);
+}
+
+.tutor-msg {
+  white-space: pre-line;
+}

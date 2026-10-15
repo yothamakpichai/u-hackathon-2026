@@ -136,6 +136,7 @@ export function mount(root, ctx) {
       h('p', { class: 'part__why', text: 'One now-or-later choice says little about who you will become (Watts, Duncan & Quan, 2018). Habits can change, and your town is a place to practise them.' }),
       h('div', { class: 'report-actions' }, [
         start ? h('button', { class: 'btn btn--primary btn--lg btn--block', type: 'button', onClick: () => navigate('/town') }, [`Go to my town: start at the ${start.name}`, icon('arrow-right', { size: 22 })]) : null,
+        h('button', { class: 'btn btn--block', type: 'button', onClick: () => import('./tutor.js').then((m) => m.openTutor({ store, config }, { mode: 'explain_result' })) }, 'Ask Penny about my result'),
         h('a', { class: 'btn btn--block', href: '#/research' }, 'The research behind the Money Check'),
       ]),
     );

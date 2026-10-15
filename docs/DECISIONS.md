@@ -116,3 +116,10 @@ Choices made where the brief was silent or ambiguous (BRIEF §13). Newest last.
     - **Arena link:** shown in the Market Lab tile only when the server has the Arena on.
 45. **Product name and contact.** `PRODUCT_NAME` is "Penny", with `TAGLINE` and `MANIFESTO` from §16, all in `config.js`. The landing's "For partners" section links to `CONTACT_URL` (https://cenedury.com/ for now, to be confirmed). Nobody sees partner names, logos or ads.
 46. **Research page** (`#/research`). It quotes references word for word from `SOURCES.md`, says what each one is used for, and lists [unverified] entries under "Being checked" without using them as facts. The one exception is the Gold Shop lesson card, which uses the unverified Gold Traders Association entry and says so on the card.
+47. **The Penny companion has one endpoint and four modes** (`api/tutor.php`): `ask`, `review_run`, `explain_result` and `explain_future`.
+    - **Inputs:** each mode except `ask` takes `data` through its own whitelist of clamped numbers, booleans and fixed words. Free text is dropped, so names or other personal details can't reach the model. The Money Type's full name and meaning come from the server's own table, and BLOOP is mentioned only if its rug pull happened in that market.
+    - **Prompt:** the system prompt covers the whole town, and it forbids recommending any specific coin, stock, fund, product, bank or trade, or predicting real prices.
+    - **Fallbacks:** if the server has no key, hits its cap or fails, a typed question is answered from `tutor_faq.json`, and the three explain modes are answered from the same numbers, in the browser, with no error.
+    - **Future You:** `explain_future` recomputes Future You's seeded projection from `store.future` to get P10, P50 and P90 at the goal age, without changing Joewee's screen.
+    - **Entry points:** "Ask Penny to review this run" on the report card, "Ask Penny about my result" on the result screen, and chips in the Ask Penny sheet when the data exists.
+    - **Fix:** the cut-off-answer regex had lost its `s` and is fixed.
