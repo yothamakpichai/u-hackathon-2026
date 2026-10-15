@@ -4,6 +4,7 @@
 import { hashString, mulberry32 } from './prng.js';
 import { buy, createPool, graduate, poolPrice, realL, removeLiquidity, sell, tradeToPrice } from './amm.js';
 import { STEPS, between } from './agents.js';
+import { checkName, checkTicker } from './names.js';
 
 export const TIERS = ['explorer', 'trader', 'builder'];
 const MIN_ORDER_L = 0.01;
@@ -50,11 +51,13 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
   };
 
   const schedule = new Map();
-  for (const e of scenario.events) {
-    if (e.at == null) continue; // narration triggered by the UI, no market effect (wash_volume)
-    const at = Math.round((e.at * 1000) / tickMs);
+  const addScheduled = (at, e) => {
     if (!schedule.has(at)) schedule.set(at, []);
     schedule.get(at).push(e);
+  };
+  for (const e of scenario.events) {
+    if (e.at == null) continue; // narration triggered by the UI, no market effect (wash_volume)
+    addScheduled(Math.round((e.at * 1000) / tickMs), e);
   }
 
   // ---- market plumbing -------------------------------------------------------------------
@@ -257,7 +260,8 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
         w.dumpChunk = w.dump / fx.ticks;
         break;
       }
-      case 'rug_pull': {
+      case 'rug_pull':
+      case 'copycat_rug': {
         const r = c.agents.find((a) => a.type === 'rugger');
         const got = removeLiquidity(c.pool, fx.removeShare);
         r.cash += got.L;
@@ -319,6 +323,49 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
 
   const isVisible = (c) => c.user || visibleIds.has(c.id);
 
+  // Builder, pool not locked: an NPC lists a look-alike of the player's coin, shills it, then pulls
+  // its pool (BRIEF §3.5). The player's own coin stays honest; its buyers are the ones exposed.
+  function copycatTicker(t) {
+    for (const id of [`${t.slice(0, 4)}X`, `${t.slice(0, 3)}XX`, `${t.slice(0, 2)}XXX`]) {
+      if (id !== t && !byId.has(id)) return id;
+    }
+    return 'COPYX';
+  }
+
+  function spawnCopycat(e) {
+    const orig = byId.get(e.effect.of);
+    if (!orig || byId.has(e.coin)) return;
+    const cc = scenario.userCoin.copycat;
+    const price0 = Math.max(poolPrice(orig.pool), 1e-12);
+    const c = addCoin({
+      id: e.coin,
+      name: `${orig.name} Official`,
+      ticker: e.coin,
+      cls: 'copycat',
+      iconId: orig.iconId,
+      colorId: orig.colorId,
+      user: false,
+      pool: createPool({ reserveL: cc.liquidityL, reserveCoins: cc.liquidityL / price0, fee }),
+      phase: 'amm',
+      supply: orig.supply,
+      maxSupply: orig.supply,
+      hype: cc.hype,
+      hypeFloor: cc.hypeFloor,
+      lpLocked: false,
+    });
+    visibleIds.add(c.id);
+    spawn(c, cc.agents, cc.params);
+    spawn(c, { rugger: 1 }, cc.params)[0].coins = (cc.liquidityL / price0) * cc.bagMultiple;
+    orig.hype *= cc.hypeKept; // the look-alike steals the real coin's buzz
+    addScheduled(now + cc.rugAfterTicks, {
+      id: 'copycat_rug',
+      coin: c.id,
+      tiers: ['builder'],
+      negative: true,
+      effect: { removeShare: 0.99, ticks: 10, fear: 1 },
+    });
+  }
+
   // ---- the roster ------------------------------------------------------------------------
 
   for (const def of coinsConfig.coins) {
@@ -375,6 +422,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     const due = schedule.get(t) ?? [];
     const toEmit = [];
     for (const e of due) {
+      if (e.id === 'copycat') spawnCopycat(e);
       const c = byId.get(e.coin);
       if (!c) continue;
       if (e.tiers.includes(tier)) {
@@ -519,9 +567,9 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
       throw new SimError('LIMIT', 'You already launched a coin in this market.');
     }
     const name = String(opts.name ?? '').trim().replace(/\s+/g, ' ');
-    if (!/^[A-Za-z ]{3,16}$/.test(name)) throw new SimError('BAD_NAME', 'Use 3 to 16 letters or spaces for the name.');
     const ticker = String(opts.ticker ?? '').trim().toUpperCase();
-    if (!/^[A-Z]{3,5}$/.test(ticker)) throw new SimError('BAD_TICKER', 'Use 3 to 5 letters (A to Z) for the ticker.');
+    const problem = checkName(name) || checkTicker(ticker);
+    if (problem) throw new SimError(problem.code, problem.message);
     if (byId.has(ticker)) throw new SimError('TICKER_TAKEN', `${ticker} is already in this market. Pick another ticker.`);
     const toId = (v) => (typeof v === 'number' || (typeof v === 'string' && v.trim() !== '') ? Number(v) : NaN);
     const iconId = toId(opts.iconId);
@@ -589,8 +637,11 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
       hype,
       lpLocked,
       trust,
-      launch: { t: now, supply, allocation: alloc, hype, lpLocked, vesting, trust, factors },
+      launch: { t: now, price0: uc.virtualL / publicCoins, supply, allocation: alloc, hype, lpLocked, vesting, trust, factors },
     });
+    if (tier === 'builder' && !lpLocked && uc.copycat) {
+      addScheduled(now + uc.copycat.delayTicks, { id: 'copycat', coin: copycatTicker(ticker), tiers: ['builder'], negative: true, effect: { of: ticker } });
+    }
     spawn(c, uc.agents, uc.params);
     if (teamCoins > 0) {
       const holder = spawn(c, { insider: 1 }, uc.params)[0];

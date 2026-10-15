@@ -88,6 +88,26 @@ The sim records raw data; it does not compute the score.
 - **Chart.** TradingView Lightweight Charts 5.2.1 is vendored in `public/assets/js/vendor/lightweight-charts/` with its LICENSE and NOTICE. Its built-in attribution logo injects a `<style>` element, which the CSP blocks, so it is off. A text credit linking to tradingview.com sits under the chart instead. Each candle is 6 sim hours, the axis shows "Day N", and candles fill the chart from the left.
 - **Coin colours.** `colorId` in `coins.json` indexes `config.COIN_COLORS`, and the Lab maps it to `--pal-<name>`. The roster matches the `--coin-*` tokens.
 
+## Create a coin (slice J3)
+
+- **Entry.** Create opens from the Lab's "Your coin" card after Penny's first news. `#/create` explains itself, with a link back, when there is no open market, no news yet, the market has closed, or a coin was already launched (one per market).
+- **Knobs per tier (§2):**
+
+  | Tier | Knobs |
+  |---|---|
+  | All | Name, ticker, icon (24), colour (12), supply (1 thousand, 1 million or 1 billion) |
+  | Trader and up | You/team split as sliders (buyers keep at least 20%), and launch hype: Quiet, Some buzz or Loud (0.2, 0.5, 0.9) |
+  | Builder | Pool lock and vesting of your own coins |
+
+  Explorer coins use the default 10/10/80 split.
+- **Names and tickers.** `sim/names.js` is shared by the engine and the form. It checks the format, blocks the real tickers and brands from §10, and blocks a small profanity list stored ROT13. A blocked word matches a whole word or the start of a word, so "Grape" and "Class" pass.
+- **Glyphs.** `public/assets/svg/glyphs/` doesn't exist yet, so `lab.js` draws the 24 coin glyphs inline (`GLYPHS`; `iconId` is the index, and 0–6 are the roster's). If an SVG set ships, only `coinBadge()` changes; the ids stay the same.
+- **Copycat** (Builder, pool unlocked, §3.5):
+  - 15 s after launch, an NPC lists "<name> Official" (ticker + X) at the same price and shills it. It takes half of the real coin's hype.
+  - 30 s later it pulls its pool.
+  - These fire the events `copycat` and `copycat_rug` (Builder only). Their narration comes from `events.json`, or from the Lab's fallback copy. Exposure is in `events[]`, like the BLOOP rug.
+- **Outcome explained.** `designNotes()` turns a design into plain-language notes: scarcity, insider share, team selling, hype, pool lock and vesting. They show in the preview before launch, and in the Lab's "Your coin" card after it. That card also shows the price since launch, holders, curve progress or graduation day, and the copycat.
+
 ## Config location
 
 - The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.

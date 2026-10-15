@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createSession, SimError } from './session.js';
 import { bangkokDate, dailySeed } from './prng.js';
+import { checkName, checkTicker } from './names.js';
 
 const load = (f) => JSON.parse(readFileSync(new URL(`../../../data/${f}`, import.meta.url), 'utf8'));
 const CONFIG = { coinsConfig: load('coins.json'), agentsConfig: load('agents.json'), scenario: load('scenario.json') };
@@ -274,6 +275,50 @@ test('a greedy design earns less trust than a fair one', () => {
   assert.ok(fair > greedy, `${fair} vs ${greedy}`);
   // Knobs a tier cannot see are ignored.
   assert.equal(trust('explorer', { allocation: { you: 60, team: 20, public: 20 } }), trust('explorer', {}));
+});
+
+test('an unlocked pool invites a copycat that rugs its buyers (Builder only)', () => {
+  const cc = CONFIG.scenario.userCoin.copycat;
+  const s = createSession({ seed: SEEDS[2], tier: 'builder', ...config() });
+  for (let i = 0; i < 400; i++) s.tick();
+  s.createCoin({ name: 'Moon Pie', ticker: 'MOON', iconId: 1, colorId: 2, supply: 1e6, lpLocked: false });
+  const heard = [];
+  s.on('event', (e) => heard.push(e));
+  for (let i = 0; i < cc.delayTicks + 5; i++) s.tick();
+  const copy = Object.values(s.getState().coins).find((c) => c.class === 'copycat');
+  assert.ok(copy, 'a look-alike appeared');
+  assert.equal(copy.ticker, 'MOONX');
+  assert.equal(copy.name, 'Moon Pie Official');
+  assert.ok(heard.some((e) => e.id === 'copycat' && e.coinId === 'MOONX'));
+  assert.ok(s.swap('MOONX', 'buy', 50).ok, 'the player can be fooled');
+  for (let i = 0; i < cc.rugAfterTicks - 10; i++) s.tick();
+  const before = s.getState().coins.MOONX.price;
+  for (let i = 0; i < 30; i++) s.tick();
+  const after = s.getState();
+  assert.ok(after.coins.MOONX.rugged);
+  assert.ok(after.coins.MOONX.price <= before * 0.1, `${before} → ${after.coins.MOONX.price}`);
+  const rug = after.events.find((e) => e.id === 'copycat_rug');
+  assert.ok(rug && rug.playerCoins > 0, 'the report can see the player held the copycat');
+
+  // A locked pool, or a tier without the knob: no copycat.
+  for (const [tier, opts] of [['builder', { lpLocked: true }], ['trader', {}]]) {
+    const t = createSession({ seed: SEEDS[2], tier, ...config() });
+    t.createCoin({ name: 'Moon Pie', ticker: 'MOON', iconId: 1, colorId: 2, supply: 1e6, ...opts });
+    for (let i = 0; i < 600; i++) t.tick();
+    assert.ok(!Object.values(t.getState().coins).some((c) => c.class === 'copycat'), tier);
+  }
+});
+
+test('names and tickers keep real coins and rude words out', () => {
+  for (const t of ['BTC', 'eth', 'Doge', 'EDUU', 'usdt']) assert.equal(checkTicker(t)?.code, 'BLOCKED_TICKER', t);
+  for (const n of ['Bitcoin', 'Super Ethereum', 'Cenedury']) assert.equal(checkName(n)?.code, 'BLOCKED_NAME', n);
+  assert.equal(checkName('Shit Coin')?.code, 'BLOCKED_NAME');
+  assert.equal(checkTicker('SHITX')?.code, 'BLOCKED_TICKER');
+  for (const n of ['Grape Coin', 'Class Act', 'Peacock', 'Scrap Metal', 'Space Cats']) assert.equal(checkName(n), null, n);
+  for (const t of ['PASS', 'MOON', 'GRAPE', 'SCRAP']) assert.equal(checkTicker(t), null, t);
+  const s = createSession({ seed: 1, tier: 'trader', ...config() });
+  assert.throws(() => s.createCoin({ name: 'Bitcoin', ticker: 'BITS', iconId: 0, colorId: 0, supply: 1e6 }), /real coin/);
+  assert.throws(() => s.createCoin({ name: 'Good Name', ticker: 'ETH', iconId: 0, colorId: 0, supply: 1e6 }), /real coin/);
 });
 
 test('the daily seed follows the Bangkok calendar', () => {

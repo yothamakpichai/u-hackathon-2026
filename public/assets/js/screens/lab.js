@@ -20,6 +20,105 @@ import {
 let live = null;
 let dataPromise = null;
 
+// The open market for this tier, for the Create screen (null when the Lab hasn't opened one).
+export const currentMarket = (tier) => (live && live.tier === tier ? live : null);
+
+// 24 original geometric coin glyphs on a 24 px grid, white on the coin colour (BRIEF §10).
+// iconId indexes this list; 0 to 6 are the roster's (VAULT, EDUU, PEG, FUEL, ORBIT, ZOOMZ, BLOOP).
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const FILL = { fill: '#FFFFFF' };
+const LINE = { fill: 'none', stroke: '#FFFFFF', 'stroke-width': 2.6, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
+export const GLYPHS = [
+  ['Hexagon', [['polygon', { points: '12,3.5 19.5,7.8 19.5,16.2 12,20.5 4.5,16.2 4.5,7.8', ...FILL }]]],
+  ['Leaf', [['path', { d: 'M5 19C5 10.5 10.5 5 19 5c0 8.5-5.5 14-14 14z', ...FILL }]]],
+  ['Equals', [['rect', { x: 5, y: 7.5, width: 14, height: 3.5, rx: 1.75, ...FILL }], ['rect', { x: 5, y: 13, width: 14, height: 3.5, rx: 1.75, ...FILL }]]],
+  ['Bolt', [['polygon', { points: '13.5,3 6,13.5 11,13.5 10,21 18,10 13,10', ...FILL }]]],
+  ['Orbit', [['circle', { cx: 12, cy: 12, r: 6.5, ...LINE }], ['circle', { cx: 18, cy: 6.5, r: 2.4, ...FILL }]]],
+  ['Chevrons', [['path', { d: 'M5.5 7l5 5-5 5M12.5 7l5 5-5 5', ...LINE }]]],
+  ['Bubbles', [['circle', { cx: 9, cy: 14.5, r: 4.5, ...FILL }], ['circle', { cx: 16.5, cy: 8, r: 2.8, ...FILL }], ['circle', { cx: 17, cy: 16.5, r: 1.8, ...FILL }]]],
+  ['Circle', [['circle', { cx: 12, cy: 12, r: 7, ...FILL }]]],
+  ['Square', [['rect', { x: 5.5, y: 5.5, width: 13, height: 13, rx: 2.5, ...FILL }]]],
+  ['Triangle', [['polygon', { points: '12,4 20.5,19 3.5,19', ...FILL }]]],
+  ['Diamond', [['polygon', { points: '12,3 20.5,12 12,21 3.5,12', ...FILL }]]],
+  ['Star', [['polygon', { points: '12,3.5 14.6,9.2 20.6,9.6 16,13.6 17.4,19.6 12,16.4 6.6,19.6 8,13.6 3.4,9.6 9.4,9.2', ...FILL }]]],
+  ['Ring', [['circle', { cx: 12, cy: 12, r: 7, ...LINE, 'stroke-width': 3.4 }]]],
+  ['Plus', [['path', { d: 'M12 5v14M5 12h14', ...LINE, 'stroke-width': 3.6 }]]],
+  ['Drop', [['path', { d: 'M12 3.5c3.8 4.6 6 8 6 10.8a6 6 0 0 1-12 0c0-2.8 2.2-6.2 6-10.8z', ...FILL }]]],
+  ['Moon', [['path', { d: 'M15.5 4.2a8 8 0 1 0 4.6 12.9A6.6 6.6 0 0 1 15.5 4.2z', ...FILL }]]],
+  ['Sun', [['circle', { cx: 12, cy: 12, r: 4, ...FILL }], ['path', { d: 'M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M5.6 18.4l1.6-1.6M16.8 7.2l1.6-1.6', ...LINE, 'stroke-width': 2.2 }]]],
+  ['Wave', [['path', { d: 'M3.5 12c2.8-4 5.7-4 8.5 0s5.7 4 8.5 0', ...LINE, 'stroke-width': 3 }]]],
+  ['Heart', [['path', { d: 'M12 19.5s-7-4.3-7-9.6A3.9 3.9 0 0 1 12 7.6a3.9 3.9 0 0 1 7 2.3c0 5.3-7 9.6-7 9.6z', ...FILL }]]],
+  ['Spark', [['path', { d: 'M12 3l2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4z', ...FILL }]]],
+  ['Tiles', [['rect', { x: 5, y: 5, width: 6, height: 6, rx: 1.5, ...FILL }], ['rect', { x: 13, y: 5, width: 6, height: 6, rx: 1.5, ...FILL }], ['rect', { x: 5, y: 13, width: 6, height: 6, rx: 1.5, ...FILL }], ['rect', { x: 13, y: 13, width: 6, height: 6, rx: 1.5, ...FILL }]]],
+  ['Steps', [['rect', { x: 4.5, y: 13, width: 4, height: 6.5, rx: 1.2, ...FILL }], ['rect', { x: 10, y: 9, width: 4, height: 10.5, rx: 1.2, ...FILL }], ['rect', { x: 15.5, y: 4.5, width: 4, height: 15, rx: 1.2, ...FILL }]]],
+  ['Arrow', [['path', { d: 'M12 19V5.5M6 11.5l6-6 6 6', ...LINE, 'stroke-width': 3 }]]],
+  ['Pentagon', [['polygon', { points: '12,3.5 20.2,9.5 17.1,19.2 6.9,19.2 3.8,9.5', ...FILL }]]],
+];
+
+function glyph(iconId) {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  for (const [k, v] of Object.entries({ viewBox: '0 0 24 24', width: 20, height: 20, 'aria-hidden': 'true', focusable: 'false' })) {
+    svg.setAttribute(k, String(v));
+  }
+  for (const [tag, attrs] of (GLYPHS[iconId] || GLYPHS[7])[1]) {
+    const part = document.createElementNS(SVG_NS, tag);
+    for (const [k, v] of Object.entries(attrs)) part.setAttribute(k, String(v));
+    svg.append(part);
+  }
+  return svg;
+}
+
+// Plain-language notes on a coin design (BRIEF §2 lenses). Used before launch (Create) and after (Lab).
+// tone: 'good' | 'risk' | 'info'. Only knobs the tier can see are explained.
+export function designNotes({ supply, price0, allocation, hype, lpLocked, vesting, bigInsiders }, tier) {
+  const notes = [{ tone: 'info', text: `${coinAmount(supply)} coins, so each starts at ${price(price0)}. Make more and each one is worth less.` }];
+  if (tier !== 'explorer') {
+    const insiders = allocation.you + allocation.team;
+    notes.push(
+      bigInsiders
+        ? { tone: 'risk', text: `You and your team keep ${insiders}%. Buyers worry big holders will sell, so fewer of them buy.` }
+        : { tone: 'good', text: `You and your team keep ${insiders}%, which buyers see as fair.` },
+    );
+    if (allocation.team > 0) notes.push({ tone: 'risk', text: `Your team’s ${allocation.team}% unlocks over a minute, and they sell half of it.` });
+    if (hype >= 0.7) notes.push({ tone: 'risk', text: 'A loud launch brings a rush of buyers, but hype fades fast.' });
+    else if (hype <= 0.3) notes.push({ tone: 'info', text: 'A quiet launch: fewer buyers at first, and a smaller drop later.' });
+    else notes.push({ tone: 'info', text: 'Some launch buzz: a few early buyers, then the hype fades.' });
+  }
+  if (tier === 'builder') {
+    notes.push(
+      lpLocked
+        ? { tone: 'good', text: 'Your pool is locked, so buyers know its money can’t be pulled out.' }
+        : { tone: 'risk', text: 'Your pool isn’t locked. Scammers can copy your coin and trick your buyers.' },
+    );
+    if (allocation.you > 0) {
+      notes.push(
+        vesting
+          ? { tone: 'good', text: 'Your own coins unlock slowly, so buyers trust you more.' }
+          : { tone: 'risk', text: 'Your own coins aren’t vesting, so buyers worry you might sell.' },
+      );
+    }
+  }
+  return notes;
+}
+
+export function notesList(notes) {
+  return h(
+    'ul',
+    { class: 'design-notes' },
+    notes.map((n) =>
+      h('li', { class: `design-notes__item is-${n.tone}` }, [
+        icon(n.tone === 'good' ? 'check' : n.tone === 'risk' ? 'alert' : 'compass', { size: 18 }),
+        h('span', { text: n.text }),
+      ]),
+    ),
+  );
+}
+
+// A coin's icon on its colour. Decorative: the ticker always sits next to it.
+export function coinBadge(c, colors) {
+  return h('span', { class: `coin-badge coin--${colors[c.colorId] || 'mint'}`, 'aria-hidden': 'true' }, [glyph(c.iconId)]);
+}
+
 // Shown only if public/data/events.json is missing an event (Penny's reviewed lines live there).
 const FALLBACK_EVENTS = {
   hype_wave: {
@@ -45,6 +144,14 @@ const FALLBACK_EVENTS = {
   depeg_scare: {
     headline: 'PEG slipped below L$1',
     narration: 'Scared holders sold PEG all at once, so it dipped under L$1.00. Traders who can swap PEG back for L$1 buy the cheap coins, and that pulls the price back up.',
+  },
+  copycat: {
+    headline: 'A copycat of your coin appeared',
+    narration: 'Someone listed a look-alike of your coin with “Official” in its name. Your pool isn’t locked, so buyers can’t easily tell which coin is safe. Before you buy any coin, check its name, who holds most of it, and whether its pool is locked.',
+  },
+  copycat_rug: {
+    headline: 'The copycat was rug pulled',
+    narration: 'The look-alike’s creator pulled the money out of its pool. Everyone who bought the copycat lost their money. Your real coin is still trading.',
   },
 };
 
@@ -272,8 +379,7 @@ export function mount(root, ctx) {
     const coinsCard = h('div', { class: 'card lab-coins' }, [h('h2', { class: 'lab-card__title', text: 'Coins' }), coinList]);
     const rows = new Map();
 
-    const colorOf = (c) => config.COIN_COLORS[c.colorId] || 'mint';
-    const badge = (c) => h('span', { class: `coin-badge coin--${colorOf(c)}`, 'aria-hidden': 'true', text: c.ticker[0] });
+    const badge = (c) => coinBadge(c, config.COIN_COLORS);
 
     function dayChange(c, st) {
       const perDay = st.ticksPerDay / scenario.candleTicks;
@@ -292,7 +398,7 @@ export function mount(root, ctx) {
             badge(c),
             h('span', { class: 'coin-row__name' }, [
               h('span', { class: 'coin-row__ticker', text: c.ticker }),
-              h('span', { class: 'coin-row__full', text: c.name }),
+              c.user ? h('span', { class: 'chip chip--mine', text: 'Yours' }) : h('span', { class: 'coin-row__full', text: c.name }),
             ]),
             h('span', { class: 'coin-row__meta' }, [priceEl, changeEl]),
           ]);
@@ -419,6 +525,7 @@ export function mount(root, ctx) {
       if (c.rugged) chips.push(h('span', { class: 'chip chip--loss', text: 'Rug pulled' }));
       else if (c.phase === 'curve') chips.push(h('span', { class: 'chip', text: `Bonding curve ${Math.round(c.curveProgress * 100)}% to launch` }));
       if (c.class === 'stablecoin') chips.push(h('span', { class: 'chip', text: 'Aims for L$1.00' }));
+      if (!c.lpLocked && !c.rugged) chips.push(h('span', { class: 'chip chip--warn', text: 'Pool not locked' }));
       if (c.maxSupply) chips.push(h('span', { class: 'chip', text: `Supply ${coinAmount(c.supply)} of ${coinAmount(c.maxSupply)}` }));
       else chips.push(h('span', { class: 'chip', text: `Supply ${coinAmount(c.supply)}` }));
       chartChips.replaceChildren(...chips);
@@ -458,7 +565,8 @@ export function mount(root, ctx) {
       doneEl,
     ]);
     tradeInput.setAttribute('aria-describedby', 'trade-preview');
-    const tradeCard = h('div', { class: 'card lab-trade' }, [tradeTitle, form]);
+    const ownNote = h('p', { class: 'lab-trade__own', hidden: true });
+    const tradeCard = h('div', { class: 'card lab-trade' }, [tradeTitle, form, ownNote]);
 
     tradeInput.addEventListener('input', () => {
       delete tradeInput.dataset.exact;
@@ -505,6 +613,13 @@ export function mount(root, ctx) {
       sideButtons[0].setAttribute('aria-pressed', String(buying));
       sideButtons[1].setAttribute('aria-pressed', String(!buying));
       tradeTitle.textContent = `Trade ${c.ticker}`;
+      // Creators watch their own coin but never trade it (no pump and dump on buyers).
+      form.hidden = c.user;
+      ownNote.hidden = !c.user;
+      if (c.user) {
+        ownNote.textContent = `You launched ${c.ticker}. Creators can watch their coin but not trade it, so it stays fair for everyone who buys it.`;
+        return;
+      }
       tradeLabel.textContent = buying ? 'How many L$ to spend' : `How many ${c.ticker} to sell`;
       tradeUnit.textContent = buying ? 'L$' : c.ticker;
       submit.replaceChildren(`${buying ? 'Buy' : 'Sell'} ${c.ticker}`);
@@ -600,6 +715,62 @@ export function mount(root, ctx) {
         items.push(h('li', { class: 'pf-empty', text: 'No coins yet. Pick a coin, choose an amount and tap Buy.' }));
       }
       pfRows.replaceChildren(...items);
+    }
+
+    // ---- your coin: the entry to Create, then the launch outcome explained --------------------
+    const mineBody = h('div', { class: 'lab-mine__body' });
+    const mineCard = h('div', { class: 'card lab-mine' }, [h('h2', { class: 'lab-card__title', text: 'Your coin' }), mineBody]);
+    let mineMode = null;
+
+    function renderMine(st) {
+      const coin = Object.values(st.coins).find((c) => c.user);
+      const mode = coin ? 'live' : market.news.length ? 'ready' : 'wait';
+      if (mode !== 'live' && mode === mineMode) return;
+      mineMode = mode;
+      if (mode === 'wait') {
+        mineBody.replaceChildren(h('p', { class: 'lab-mine__text', text: 'After Penny’s first news, you can launch your own coin here and watch how buyers react.' }));
+        return;
+      }
+      if (mode === 'ready') {
+        mineBody.replaceChildren(
+          h('p', { class: 'lab-mine__text', text: 'Design a coin and launch it into today’s market. How it does depends on your design.' }),
+          h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: () => navigate('/create') }, [
+            'Create a coin',
+            icon('arrow-right', { size: 20 }),
+          ]),
+        );
+        return;
+      }
+      const L = coin.launch;
+      const day = (t) => Math.floor(t / st.ticksPerDay) + 1;
+      const stage = coin.phase === 'curve'
+        ? `On its bonding curve: ${Math.round(coin.curveProgress * 100)}% of the way to a real pool`
+        : `Moved from its bonding curve to a real pool on Day ${day(coin.graduatedAt)}`;
+      const notes = designNotes({ ...L, bigInsiders: L.factors.some((f) => f.id === 'big_insider_share') }, tier);
+      const copy = Object.values(st.coins).find((c) => c.class === 'copycat');
+      if (copy) {
+        notes.push({
+          tone: 'risk',
+          text: copy.rugged
+            ? `The copycat ${copy.ticker} was rug pulled. Everyone who bought it lost their money.`
+            : `A copycat, ${copy.ticker}, is pretending to be your coin.`,
+        });
+      }
+      mineBody.replaceChildren(
+        h('div', { class: 'lab-mine__head' }, [
+          badge(coin),
+          h('div', { class: 'lab-mine__label' }, [
+            h('p', { class: 'lab-mine__name', text: `${coin.name} (${coin.ticker})` }),
+            h('p', { class: 'lab-mine__stage', text: stage }),
+          ]),
+        ]),
+        h('p', { class: 'lab-mine__price' }, [
+          h('span', { class: 'lab-mine__value', text: price(coin.price) }),
+          delta((coin.price / L.price0 - 1) * 100),
+          h('span', { class: 'lab-mine__since', text: `since launch on Day ${day(L.t)} · ${coin.holders} holders` }),
+        ]),
+        notesList(notes),
+      );
     }
 
     const newsList = h('ol', { class: 'lab-news__list' });
@@ -723,6 +894,7 @@ export function mount(root, ctx) {
         chartCard,
         tradeCard,
         portfolioCard,
+        mineCard,
         newsCard,
       ]),
       dialog,
@@ -735,6 +907,7 @@ export function mount(root, ctx) {
       renderChart(st);
       renderTrade(st);
       renderPortfolio(st);
+      renderMine(st);
     }
 
     function step() {
