@@ -15,6 +15,7 @@ import { bangkokDate, dailySeed } from '../sim/prng.js';
 import { BLOCK_TICKS } from '../sim/chain.js';
 import { rsi, sma } from '../sim/indicators.js';
 import { runMetrics } from '../sim/metrics.js';
+import { attachCoach, isCoaching, openCoachMenu } from './coach.js';
 import {
   animate, announce, celebrate, delta, getJSON, h, icon, money, number, penny, price, questionCard, resultPanel,
   stateView, trend,
@@ -435,7 +436,8 @@ export function mount(root, ctx) {
         h('button', { class: 'btn btn--sm', type: 'button', onClick: () => askFinish(false) }, 'Keep trading'),
       ]),
     ]);
-    const actions = h('div', { class: 'lab-clock__actions' }, [pauseBtn, finishBtn]);
+    const coachBtn = h('button', { class: 'btn btn--sm', type: 'button', onClick: () => openCoachMenu(coachEnv) }, 'Coach');
+    const actions = h('div', { class: 'lab-clock__actions' }, [pauseBtn, coachBtn, finishBtn]);
     const clock = h('div', { class: 'card lab-clock' }, [
       h('div', { class: 'lab-clock__row' }, [dayText, leftText]),
       bar,
@@ -550,7 +552,7 @@ export function mount(root, ctx) {
           renderChart(session.getState());
         },
       }, t.label);
-      const wrap = h('span', { class: 'chart-tool' }, [chip, infoButton(t.label, INFO[t.id], chartInfo)]);
+      const wrap = h('span', { class: 'chart-tool', dataset: { tool: t.id } }, [chip, infoButton(t.label, INFO[t.id], chartInfo)]);
       toolEls.set(t.id, { wrap, chip });
       toolsRow.append(wrap);
     }
@@ -1303,6 +1305,25 @@ export function mount(root, ctx) {
     document.addEventListener('visibilitychange', onVisibility);
     onVisibility();
     cleanup.push(() => document.removeEventListener('visibilitychange', onVisibility));
+
+    // Coach mode (BRIEF §15): the market waits while Penny coaches. Offered once, on the first visit.
+    const coachEnv = {
+      route: '/lab',
+      tier,
+      store,
+      navigate,
+      dataBase: config.DATA_BASE,
+      pause: () => pauses.add('coach'),
+      resume: () => pauses.delete('coach'),
+      select: (id) => session.getState().coins[id] && select(id),
+      tradesCount: () => session.getState().portfolio.trades.length,
+      canTrade: () => !form.hidden && !submit.disabled,
+      hasNews: () => market.news.length > 0,
+      hasCoin: () => Object.values(session.getState().coins).some((c) => c.user),
+      drillConfig: () => ({ ...structuredClone({ coinsConfig: market.data.coinsConfig, agentsConfig: market.data.agentsConfig, scenario: market.data.scenario }), seed: market.seed, tier }),
+    };
+    cleanup.push(attachCoach(coachEnv));
+    if (!store.get().coach?.[tier]?.offered && !isCoaching()) openCoachMenu(coachEnv, { offer: true });
 
     render();
     renderNews();

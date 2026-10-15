@@ -142,6 +142,21 @@ The sim records raw data; it does not compute the score.
   - `quizCorrect` and `quizTotal`: the event questions answered in the Lab.
   - `finalValue`: rounded to cents.
 
+## Coach mode (slice J7, BRIEF §15)
+
+- **Engine.** `screens/coach.js` spotlights the real element with a ring whose shadow dims the rest of the page, and pauses the market while it runs.
+  - On phones the card docks to the bottom, and the page scrolls so the element sits in the space above it. If the page can't scroll that far, the card flips to the top, so it never covers the element.
+  - On wider screens the card floats below, above or beside the element. Marks follow their element on scroll and resize.
+  - Steps that ask the child to do something (type an amount, tap Buy, launch) wait for it, and offer "Skip this step".
+  - Esc or × closes the coach. A chapter in progress survives route changes, so chapter 5 runs through `#/create` and back.
+- **Content.** `public/data/coach.json` holds the 5 chapters. A step has an optional `target` (CSS selector), `route`, `tiers`, `wait` (`tradePreview`, `tradeDone` or `launch`), `go` (navigate on Next), `art` (candle diagrams) and `drill`. Steps a tier can't see are filtered out. Chapter 5 skips its Create steps when a coin is already out, and opens after Penny's first news.
+- **Drills.** `sim/drills.js` replays today's market in a sandbox session, with the same seed and the same whale:
+  - `whaleDrill()` runs panic versus hold, ending 30 s after the dump. Holding won on 6 of 6 days tested, about L$955 against L$900.
+  - `copycatDrill()` runs a Builder launch with an unlocked pool, so "Demo Coin Official" appears and is rugged.
+
+  The player's real market is never touched.
+- **Offer and XP.** The chapter menu opens automatically on the first Lab visit per tier ("Explore on my own" closes it), and the Lab's Coach button reopens it. Completing a chapter writes `store.coach[tier].done[chapterId] = { at, xp: 20 }`; the Learning Path (Y7) reads it to award XP and count it toward the daily goal and streak. `onChapterDone(fn)` lets other features react; J8 mints a badge there.
+
 ## Config location
 
 - The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.

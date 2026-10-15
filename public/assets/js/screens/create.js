@@ -3,6 +3,7 @@
 // The coin launches on a bonding curve in today's market, and the Lab explains what happens next.
 // The player's coin is always honest: its risk comes from the design, never from cheating.
 import { GLYPHS, coinBadge, currentMarket, designNotes, notesList } from './lab.js';
+import { attachCoach } from './coach.js';
 import { checkName, checkTicker } from '../sim/names.js';
 import { animate, celebrate, h, icon, number, price, resultPanel, stateView } from '../ui.js';
 
@@ -178,7 +179,7 @@ export function mount(root, ctx) {
     return h('div', { class: 'split__row' }, [h('label', { class: 'split__label', for: id, text: label }), input, out]);
   }
   const splitSection = canSplit
-    ? h('fieldset', { class: 'pick split' }, [
+    ? h('fieldset', { class: 'pick split', 'data-coach': 'split' }, [
         h('legend', { class: 'field__label', text: 'Who gets the coins?' }),
         slider('alloc-you', 'You keep', design.you, 60, youOut, (v) => (design.you = v)),
         slider('alloc-team', 'Your team', design.team, 40, teamOut, (v) => (design.team = v)),
@@ -213,7 +214,7 @@ export function mount(root, ctx) {
     ]);
   }
   const safety = isBuilder
-    ? h('fieldset', { class: 'pick' }, [
+    ? h('fieldset', { class: 'pick', 'data-coach': 'safety' }, [
         h('legend', { class: 'visually-hidden', text: 'Launch safety' }),
         toggle('lp-lock', 'Lock the pool', 'Nobody, not even you, can pull its money out.', 'lpLocked'),
         toggle('vesting', 'Vest my coins', 'Your own coins unlock slowly over time.', 'vesting'),
@@ -226,7 +227,7 @@ export function mount(root, ctx) {
   const previewPrice = h('p', { class: 'create-preview__price' });
   const previewNotes = h('div', { class: 'create-preview__notes' });
   const formError = h('p', { class: 'field__error create__error', role: 'alert', hidden: true });
-  const launchBtn = h('button', { class: 'btn btn--primary btn--lg btn--block', type: 'submit', form: 'create-form' });
+  const launchBtn = h('button', { class: 'btn btn--primary btn--lg btn--block', type: 'submit', form: 'create-form', 'data-coach': 'launch' });
   const preview = h('aside', { class: 'card create-preview', 'aria-label': 'Preview' }, [
     h('div', { class: 'create-preview__head' }, [previewBadge, h('div', {}, [previewName, previewPrice])]),
     h('h2', { class: 'create-preview__title', text: 'How buyers will see it' }),
@@ -308,9 +309,9 @@ export function mount(root, ctx) {
   }
 
   const form = h('form', { id: 'create-form', class: 'create-form', novalidate: true, onSubmit: launch }, [
-    h('div', { class: 'card create-section' }, [h('h2', { class: 'create-section__title', text: 'Name it' }), nameField.el, tickerField.el]),
-    h('div', { class: 'card create-section' }, [h('h2', { class: 'create-section__title', text: 'Pick a look' }), colorPick, iconPick]),
-    h('div', { class: 'card create-section' }, [
+    h('div', { class: 'card create-section', 'data-coach': 'name' }, [h('h2', { class: 'create-section__title', text: 'Name it' }), nameField.el, tickerField.el]),
+    h('div', { class: 'card create-section', 'data-coach': 'look' }, [h('h2', { class: 'create-section__title', text: 'Pick a look' }), colorPick, iconPick]),
+    h('div', { class: 'card create-section', 'data-coach': 'supply' }, [
       h('h2', { class: 'create-section__title', text: 'Supply' }),
       supplyPick,
       h('p', { class: 'field__hint', text: 'More coins means each one starts cheaper. Watch the starting price in the preview.' }),
@@ -327,8 +328,23 @@ export function mount(root, ctx) {
     h('button', { class: 'btn btn--ghost create__back', type: 'button', onClick: () => navigate('/lab') }, 'Back to the market without launching'),
   );
   formError.setAttribute('tabindex', '-1');
+  if (hypePick) hypePick.dataset.coach = 'hype';
   renderPreview();
+  // Coach chapter 5 continues here (BRIEF §15).
+  const detachCoach = attachCoach({
+    route: '/create',
+    tier,
+    store: ctx.store,
+    navigate,
+    dataBase: config.DATA_BASE,
+    hasNews: () => market.news.length > 0,
+    hasCoin: () => Object.values(market.session.getState().coins).some((c) => c.user),
+    drillConfig: () => ({ ...structuredClone({ coinsConfig: market.data.coinsConfig, agentsConfig: market.data.agentsConfig, scenario: market.data.scenario }), seed: market.seed, tier }),
+  });
   animate(form, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }]);
 
-  return done;
+  return () => {
+    detachCoach();
+    done();
+  };
 }

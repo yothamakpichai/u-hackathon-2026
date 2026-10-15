@@ -1411,3 +1411,289 @@
 
 .legend-key--real { background: rgb(24 168 103 / 0.35); }
 .legend-key--wash { margin-left: var(--sp-2); background: var(--amber-500); }
+
+/* ---- Coach mode (BRIEF §15) ------------------------------------------------------------------- */
+
+.coach {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.coach__block {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+}
+
+.coach.is-dim .coach__block {
+  background: rgb(15 28 23 / 0.5);
+}
+
+/* "Try it" steps let taps through to the page. */
+.coach.is-interactive .coach__block {
+  pointer-events: none;
+}
+
+.coach__ring {
+  position: fixed;
+  border-radius: var(--r-md);
+  box-shadow: 0 0 0 3px var(--amber-400), 0 0 0 200vmax rgb(15 28 23 / 0.5);
+  pointer-events: none;
+  transition: left var(--dur-2) var(--ease-out), top var(--dur-2) var(--ease-out), width var(--dur-2) var(--ease-out), height var(--dur-2) var(--ease-out);
+}
+
+.coach__card {
+  position: fixed;
+  display: grid;
+  gap: var(--sp-3);
+  width: min(26rem, calc(100vw - 2 * var(--sp-3)));
+  max-height: calc(100dvh - 2 * var(--sp-3));
+  padding: var(--sp-4);
+  overflow: auto;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  color: var(--ink-900);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+}
+
+/* Docked cards centre with auto margins, so the entrance animation's transform can't shift them. */
+.coach__card[data-dock="bottom"],
+.coach__card:not([data-dock]) {
+  left: 0;
+  right: 0;
+  bottom: max(var(--sp-3), env(safe-area-inset-bottom));
+  margin-inline: auto;
+}
+
+.coach__card[data-dock="top"] {
+  left: 0;
+  right: 0;
+  top: var(--sp-3);
+  margin-inline: auto;
+}
+
+.coach__card[data-dock="bottom"],
+.coach__card[data-dock="top"] {
+  max-height: 46dvh;
+}
+
+/* No element to point at (menus, diagrams, drills): use the full height; centre it on wider screens. */
+.coach.is-dim .coach__card,
+.coach-menu.coach__card,
+.coach__card--done {
+  max-height: calc(100dvh - 2 * var(--sp-3));
+}
+
+@media (min-width: 600px) {
+  .coach.is-dim .coach__card[data-dock="bottom"] {
+    top: 0;
+    bottom: 0;
+    height: fit-content;
+    margin: auto;
+  }
+}
+
+.coach__top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.coach__step {
+  color: var(--ink-500);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.coach__title {
+  font-size: var(--fs-lg);
+}
+
+.coach__title:focus {
+  outline: none;
+}
+
+.coach__body {
+  color: var(--ink-700);
+  line-height: var(--lh-body);
+}
+
+.coach__hint {
+  color: var(--primary-700);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.coach__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+
+.coach__actions .btn {
+  flex: 1 1 auto;
+}
+
+.coach__extra {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.coach__extra:empty {
+  display: none;
+}
+
+.coach__done-head {
+  justify-self: center;
+}
+
+.coach-menu__list {
+  display: grid;
+  gap: var(--sp-2);
+  padding: 0;
+  list-style: none;
+}
+
+.coach-menu__item {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.coach-menu__item.is-done {
+  background: var(--gain-50);
+}
+
+.coach-menu__num {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--surface-2);
+  font-family: var(--font-head);
+  font-weight: 900;
+}
+
+.coach-menu__item.is-done .coach-menu__num {
+  background: var(--gain-500);
+  color: #FFFFFF;
+}
+
+.coach-menu__text {
+  display: grid;
+  min-width: 0;
+}
+
+.coach-menu__title {
+  font-weight: 800;
+}
+
+.coach-menu__blurb {
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+}
+
+.coach__chart {
+  padding: var(--sp-2);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.spark {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.spark__line {
+  fill: none;
+  stroke: var(--ink-700);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.spark__mark {
+  stroke: var(--loss-600);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+.spark__label {
+  fill: var(--ink-700);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.coach__result {
+  font-weight: 600;
+  line-height: var(--lh-snug);
+}
+
+.coach__compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+}
+
+.coach__col {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.coach__col-title {
+  font-weight: 800;
+}
+
+.coach__col-value {
+  font-size: var(--fs-lg);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.coach__flags-title {
+  font-weight: 800;
+}
+
+.coach__flags {
+  display: grid;
+  gap: var(--sp-1);
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+}
+
+.coach__flags li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--sp-2);
+  align-items: start;
+}
+
+.coach__flags svg {
+  color: var(--warning-700);
+}
+
+.coach-art {
+  display: block;
+  width: 100%;
+  max-width: 18rem;
+  height: auto;
+  margin-inline: auto;
+}
+
+.coach-art__wick { stroke: var(--ink-700); stroke-width: 3; }
+.coach-art__up { fill: var(--gain-500); }
+.coach-art__down { fill: var(--loss-500); }
+.coach-art__guide { stroke: var(--ink-300); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.coach-art__label { fill: var(--ink-900); font-size: 14px; font-weight: 700; }
+.coach-art__small { fill: var(--ink-500); font-size: 12px; }
