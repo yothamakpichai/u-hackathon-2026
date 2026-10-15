@@ -231,6 +231,20 @@ The sim records raw data; it does not compute the score.
   - `store.bank = { loans, card }`.
 - **Real-world figures.** The "Real life in Thailand" card shows no numbers yet, only that limits exist, and points to the [unverified] SOURCES entries until they're checked.
 
+## Lab tools: orders, contract and depth (slice J9)
+
+- **Orders.** From age 13 (tier rank 1 and up), the trade panel has Market, Limit and Stop-loss. Explorer keeps the plain Market trade, and Market mode is unchanged.
+  - The session holds the orders: `placeOrder({ coinId, type, price, amount })` with `limit-buy` (L$ to spend, price below today's), `limit-sell` (coins, price above) and `stop-loss` (coins, price below), plus `cancelOrder(id)`.
+  - After the NPCs trade each tick, any triggered order becomes an ordinary swap at that tick's price. In a fast drop a stop-loss fills below its level: in the whale dump a stop at L$118 filled near L$99. The ⓘ explainers say so: a limit may never fill, and a stop-loss can sell lower than its level or sell out at the bottom of a dip that bounces back.
+  - Orders don't reserve cash or coins. If there isn't enough when one triggers, it fills what it can, or fails with a notice.
+  - Open orders lapse when the market closes, including after Finish now.
+  - Orders are player actions, so the NPC market stays deterministic (tested).
+- **Your coin's smart contract (Builder).** A read-only, plain-language view of the rules the coin launched with. It shows fixed supply with no mint function, the split, the team unlock, own vesting, pool locked, the trade fee and owner powers. An unlocked pool shows `withdrawPool()` as a risk. It ends with three checks to make before buying any coin.
+  - It sits outside the coin card's per-tick redraw, so it stays open while the market runs.
+- **Pool depth.** From age 13, "How deep is the pool?" draws the L$ it takes to push the selected coin's price from −30% to +30%, straight from the x · y = k curve (`depthTo` in `amm.js`, fee ignored).
+  - Selling down never takes out more than the real L$ in the pool, so a fresh bonding curve shows no down side.
+  - It also says how far spending all your cash would move the price. It only redraws while open.
+
 ## Config location
 
 - The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.

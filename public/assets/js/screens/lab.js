@@ -127,6 +127,34 @@ export function designNotes({ supply, price0, allocation, hype, lpLocked, vestin
   return notes;
 }
 
+// Builder tier (J9): a read-only, plain-language view of the rules the player's coin launched with.
+// tone per row as in designNotes: 'good' | 'risk' | 'info'.
+export function contractView(coin, { fee, teamVestDays }) {
+  const L = coin.launch;
+  const a = L.allocation;
+  const share = (pct) => coinAmount((L.supply * pct) / 100);
+  const rows = [
+    ['maxSupply', `${coinAmount(L.supply)} coins`, 'Fixed. There is no mint function, so no one can make more coins later.', 'good'],
+    ['split', `You ${a.you}% · Team ${a.team}% · Public ${a.public}%`, 'Who got the coins at launch.', 'info'],
+    a.team > 0 && ['teamUnlock', `${share(a.team)} over ${teamVestDays} market days`, 'Team coins unlock bit by bit over about a minute of play, so they can’t all be sold on day one.', 'info'],
+    a.you > 0 && ['yourVesting', L.vesting ? 'yes' : 'no', L.vesting ? 'Your own coins unlock slowly too.' : 'Your coins are free at once, so buyers worry you might sell.', L.vesting ? 'good' : 'risk'],
+    ['poolLocked', L.lpLocked ? 'yes' : 'no', L.lpLocked ? 'The pool’s money is locked, so no one can pull it out.' : 'Not locked: whoever holds the pool could pull its money out (a rug pull).', L.lpLocked ? 'good' : 'risk'],
+    ['tradeFee', `${number(fee * 100, 1)}% of each trade`, 'It stays in the pool, so the pool slowly grows.', 'info'],
+    ['ownerPowers', L.lpLocked ? 'none' : 'withdrawPool()', L.lpLocked ? 'No mint, no pause, no upgrade. Some real contracts let the owner change the rules later; yours can’t.' : 'The pool can be emptied. This is the line to check before you buy any coin.', L.lpLocked ? 'good' : 'risk'],
+  ].filter(Boolean);
+  return h('details', { class: 'contract' }, [
+    h('summary', { class: 'contract__summary' }, [icon('blocks', { size: 20 }), `Read ${coin.ticker}’s smart contract`]),
+    h('p', { class: 'contract__intro', text: `A smart contract is code on the blockchain that sets a coin’s rules. Anyone can read it before they buy. This is a simple, read-only view of ${coin.name}’s. Nobody can edit it now, not even you.` }),
+    h('dl', { class: 'contract__rows' }, rows.map(([key, value, plain, tone]) =>
+      h('div', { class: `contract__row is-${tone}` }, [
+        h('dt', { class: 'contract__key' }, [h('code', { text: key })]),
+        h('dd', { class: 'contract__val' }, [h('span', { class: 'contract__value', text: value }), h('span', { class: 'contract__plain', text: plain })]),
+      ]),
+    )),
+    h('p', { class: 'contract__tip', text: 'Before you buy any coin, check three things: can more coins be made, is the pool locked, and who holds the most?' }),
+  ]);
+}
+
 export function notesList(notes) {
   return h(
     'ul',
@@ -187,6 +215,14 @@ const FALLBACK_EVENTS = {
 
 const CHART_CREDIT = 'https://www.tradingview.com/';
 
+// Pool depth chart (J9): steps from -30% to +30% around today's price.
+const DEPTH_STEPS = Array.from({ length: 31 }, (_, i) => (i - 15) * 2);
+function svgEl(tag, attrs = {}) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
+  return el;
+}
+
 // ⓘ explainers (BRIEF §14): what a tool shows and what it can't tell you. One text panel per card.
 const explainer = (id) => ({ el: h('p', { class: 'tool-explainer', id, hidden: true }), owners: [] });
 function infoButton(label, text, panel) {
@@ -210,6 +246,9 @@ const INFO = {
   sma: 'The blue line is the average price of the last 7 bars and the pink line of the last 25, so the noise is smoothed out. When the short line crosses the long one, the trend may be changing. Averages always lag behind the price, so they can’t predict the next move.',
   rsi: 'RSI (0 to 100) shows how strongly the price has moved up or down lately. Above 70 people call it “overbought”, below 30 “oversold”. It can’t tell you what a coin is really worth, and prices can stay above 70 or below 30 for a long time.',
   impact: 'Price impact is how much your own trade moves the price, because the pool has to rebalance. Big trades in small pools move it more. It can’t tell you where the price goes next: other traders move it too.',
+  limit: 'A limit order waits for your price: buy only if the price falls to it, or sell only if it rises to it. It saves you watching the screen, but it may never fill if the price never gets there.',
+  stop: 'A stop-loss sells automatically if the price falls to your level, to stop a loss from growing. In a sudden drop it can sell lower than your level, and a dip that bounces back may sell you out at the bottom.',
+  depth: 'Depth shows how much money it takes to push the price down (selling, left) or up (buying, right). A deep pool barely moves when someone trades; a shallow one swings a lot. It can’t tell you which way the price will go.',
   allocation: 'This shows where your money is now, and how much each coin has gained or lost since you bought it. A gain on paper isn’t money until you sell, and it can’t tell you what happens next.',
 };
 
@@ -775,6 +814,41 @@ export function mount(root, ctx) {
     const sideButtons = ['buy', 'sell'].map((side) =>
       h('button', { class: 'segmented__btn', type: 'button', onClick: () => setSide(side) }, side === 'buy' ? 'Buy' : 'Sell'),
     );
+    // Limit and stop-loss orders (J9), from age 13. Market mode is the plain trade above.
+    market.orderType ??= 'market';
+    const ordersOn = tierInfo.rank >= 1;
+    const orderInfo = explainer('order-info');
+    const orderTypeBtns = [['market', 'Market'], ['limit', 'Limit'], ['stop', 'Stop-loss']].map(([id, label]) =>
+      h('button', { class: 'segmented__btn', type: 'button', onClick: () => setOrderType(id) }, label),
+    );
+    const orderInfoBtn = h('span', { class: 'trade__order-info' });
+    const orderTypeRow = ordersOn
+      ? h('div', { class: 'trade__order-type' }, [h('div', { class: 'segmented', role: 'group', 'aria-label': 'Order type' }, orderTypeBtns), orderInfoBtn])
+      : null;
+    const triggerInput = h('input', { id: 'trade-trigger', class: 'trade__input', type: 'text', inputmode: 'decimal', autocomplete: 'off', placeholder: '0' });
+    const triggerLabel = h('label', { class: 'trade__label', for: 'trade-trigger' });
+    const triggerField = h('div', { class: 'trade__trigger', hidden: true }, [triggerLabel, h('div', { class: 'trade__field' }, [triggerInput, h('span', { class: 'trade__unit', 'aria-hidden': 'true', text: 'L$' })])]);
+    triggerInput.addEventListener('input', () => {
+      clearMessages();
+      renderTrade(session.getState());
+    });
+    const ordersList = h('div', { class: 'trade__orders' });
+
+    function setOrderInfo(id) {
+      orderInfo.el.hidden = true;
+      orderInfo.owners.length = 0;
+      orderInfoBtn.replaceChildren(id === 'market' ? '' : infoButton(id === 'limit' ? 'limit orders' : 'stop-loss orders', INFO[id === 'limit' ? 'limit' : 'stop'], orderInfo));
+    }
+    function setOrderType(id) {
+      market.orderType = id;
+      if (id === 'stop') market.side = 'sell';
+      triggerInput.value = '';
+      clearMessages();
+      setOrderInfo(id);
+      renderTrade(session.getState());
+    }
+    if (ordersOn) setOrderInfo(market.orderType);
+
     const tradeInput = h('input', {
       id: 'trade-amount',
       class: 'trade__input',
@@ -794,11 +868,15 @@ export function mount(root, ctx) {
     const doneEl = h('p', { class: 'trade__done', role: 'status', hidden: true });
     const submit = h('button', { class: 'btn btn--primary btn--block', type: 'submit' });
     const tradeTitle = h('h2', { class: 'lab-card__title' });
+    const sideGroup = h('div', { class: 'segmented', role: 'group', 'aria-label': 'Buy or sell' }, sideButtons);
     const form = h('form', { class: 'trade', novalidate: true, onSubmit: trade }, [
-      h('div', { class: 'segmented', role: 'group', 'aria-label': 'Buy or sell' }, sideButtons),
+      orderTypeRow,
+      orderInfo.el,
+      sideGroup,
       tradeLabel,
       h('div', { class: 'trade__field' }, [tradeInput, tradeUnit]),
       h('div', { class: 'trade__quick' }, quick),
+      triggerField,
       preview,
       errorEl,
       submit,
@@ -807,11 +885,36 @@ export function mount(root, ctx) {
     tradeInput.setAttribute('aria-describedby', 'trade-preview');
     const ownNote = h('p', { class: 'lab-trade__own', hidden: true });
     const impactInfo = explainer('impact-info');
+
+    // Pool depth (J9), from age 13: how much L$ it takes to move the selected coin's price.
+    const depthInfo = explainer('depth-info');
+    const depthDown = svgEl('path', { class: 'depth__down' });
+    const depthUp = svgEl('path', { class: 'depth__up' });
+    const depthSvg = svgEl('svg', { class: 'depth__chart', viewBox: '0 0 300 120', preserveAspectRatio: 'none', role: 'img' });
+    depthSvg.append(depthDown, depthUp, svgEl('line', { class: 'depth__now', x1: 150, x2: 150, y1: 0, y2: 120 }));
+    const depthText = h('p', { class: 'depth__text' });
+    const depthBox = ordersOn
+      ? h('details', { class: 'depth', onToggle: () => renderDepth(session.getState()) }, [
+        h('summary', { class: 'depth__summary', text: 'How deep is the pool?' }),
+        h('div', { class: 'depth__body' }, [
+          h('div', { class: 'depth__head' }, [
+            h('p', { class: 'depth__lead', text: 'Money it takes to push the price' }),
+            infoButton('pool depth', INFO.depth, depthInfo),
+          ]),
+          depthInfo.el,
+          depthSvg,
+          h('div', { class: 'depth__axis', 'aria-hidden': 'true' }, [h('span', { text: '−30%' }), h('span', { text: 'now' }), h('span', { text: '+30%' })]),
+          depthText,
+        ]),
+      ])
+      : null;
     const tradeCard = h('div', { class: 'card lab-trade' }, [
       h('div', { class: 'card-head' }, [tradeTitle, infoButton('price impact', INFO.impact, impactInfo)]),
       impactInfo.el,
       form,
+      ordersList,
       ownNote,
+      depthBox,
     ]);
 
     tradeInput.addEventListener('input', () => {
@@ -859,6 +962,7 @@ export function mount(root, ctx) {
       sideButtons[0].setAttribute('aria-pressed', String(buying));
       sideButtons[1].setAttribute('aria-pressed', String(!buying));
       tradeTitle.textContent = `Trade ${c.ticker}`;
+      renderOrders(st);
       // Creators watch their own coin but never trade it (no pump and dump on buyers).
       form.hidden = c.user;
       ownNote.hidden = !c.user;
@@ -869,6 +973,11 @@ export function mount(root, ctx) {
       tradeLabel.textContent = buying ? 'How many L$ to spend' : `How many ${c.ticker} to sell`;
       tradeUnit.textContent = buying ? 'L$' : c.ticker;
       submit.replaceChildren(`${buying ? 'Buy' : 'Sell'} ${c.ticker}`);
+      const mode = ordersOn ? market.orderType : 'market';
+      orderTypeBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(['market', 'limit', 'stop'][i] === mode)));
+      sideGroup.hidden = mode === 'stop';
+      triggerField.hidden = mode === 'market';
+      if (mode !== 'market') return renderOrderPreview(st, c, mode, held);
 
       const amt = amount();
       let ok = false;
@@ -900,6 +1009,24 @@ export function mount(root, ctx) {
       const amt = amount();
       if (amt == null) return;
       const c = session.getState().coins[market.selected];
+      if (ordersOn && market.orderType !== 'market') {
+        const type = market.orderType === 'stop' ? 'stop-loss' : market.side === 'buy' ? 'limit-buy' : 'limit-sell';
+        const r = session.placeOrder({ coinId: c.id, type, price: triggerPrice(), amount: amt });
+        if (!r.ok) {
+          errorEl.textContent = r.error.message;
+          errorEl.hidden = false;
+          doneEl.hidden = true;
+          return;
+        }
+        tradeInput.value = '';
+        triggerInput.value = '';
+        delete tradeInput.dataset.exact;
+        errorEl.hidden = true;
+        doneEl.textContent = 'Order placed. It runs by itself while the market is open.';
+        doneEl.hidden = false;
+        render();
+        return;
+      }
       const r = session.swap(c.id, market.side, amt);
       if (!r.ok) {
         errorEl.textContent = r.error.message;
@@ -916,6 +1043,106 @@ export function mount(root, ctx) {
       doneEl.hidden = false;
       animate(doneEl, [{ opacity: 0 }, { opacity: 1 }], { duration: 180 });
       render();
+    }
+
+    const triggerPrice = () => {
+      const t = triggerInput.value.trim();
+      return t === '' ? null : Number(t.replace(/[,\s]/g, ''));
+    };
+
+    function renderOrderPreview(st, c, mode, held) {
+      const amt = amount();
+      const trig = triggerPrice();
+      const buying = mode === 'limit' && market.side === 'buy';
+      triggerLabel.textContent = mode === 'stop' ? 'Sell if the price falls to (L$)' : buying ? 'Buy if the price falls to (L$)' : 'Sell if the price rises to (L$)';
+      submit.replaceChildren(mode === 'stop' ? `Place stop-loss on ${c.ticker}` : `Place limit ${buying ? 'buy' : 'sell'}`);
+      let ok = false;
+      let text;
+      if (amt == null || trig == null) {
+        text = `${c.ticker} is ${price(c.price)} now. Choose an amount and a price.`;
+      } else if (!(amt > 0) || !(trig > 0) || !Number.isFinite(amt) || !Number.isFinite(trig)) {
+        text = 'Enter an amount and a price bigger than zero.';
+      } else if ((mode === 'stop' || buying) && trig >= c.price) {
+        text = `Pick a price below today’s ${price(c.price)}.`;
+      } else if (mode === 'limit' && !buying && trig <= c.price) {
+        text = `Pick a price above today’s ${price(c.price)}.`;
+      } else if (!buying && amt > held * (1 + 1e-9)) {
+        text = `You own ${coinAmount(held)} ${c.ticker}. Try a smaller amount.`;
+      } else if (buying && amt > st.portfolio.cash + 1e-9) {
+        text = `You have ${money(st.portfolio.cash)} to spend. Try a smaller amount.`;
+      } else {
+        ok = true;
+        text = mode === 'stop'
+          ? `If ${c.ticker} falls to ${price(trig)} (now ${price(c.price)}), sell ${coinAmount(amt)} to stop the loss growing. In a fast drop it can sell lower.`
+          : buying
+            ? `If ${c.ticker} falls to ${price(trig)} (now ${price(c.price)}), spend ${money(amt)}. If it never gets there, nothing happens.`
+            : `If ${c.ticker} rises to ${price(trig)} (now ${price(c.price)}), sell ${coinAmount(amt)}. If it never gets there, nothing happens.`;
+      }
+      preview.textContent = text;
+      preview.classList.toggle('is-problem', amt != null && trig != null && !ok);
+      submit.disabled = !ok;
+      for (const b of quick) b.disabled = buying ? !(st.portfolio.cash > 0.01) : !(held > 0);
+    }
+
+    let ordersKey = '';
+    function renderOrders(st) {
+      const list = st.portfolio.orders || [];
+      const key = list.map((o) => `${o.id}:${o.status}`).join('|');
+      if (key === ordersKey) return;
+      ordersKey = key;
+      const open = list.filter((o) => o.status === 'open');
+      const recent = list.filter((o) => o.status !== 'open' && o.status !== 'cancelled').slice(-3).reverse();
+      if (!open.length && !recent.length) {
+        ordersList.replaceChildren();
+        return;
+      }
+      const label = (o) => {
+        const t = st.coins[o.coinId]?.ticker || o.coinId;
+        if (o.type === 'limit-buy') return `Buy ${t} with ${money(o.amount)} at ${price(o.price)} or less`;
+        if (o.type === 'limit-sell') return `Sell ${coinAmount(o.amount)} ${t} at ${price(o.price)} or more`;
+        return `Stop-loss: sell ${coinAmount(o.amount)} ${t} at ${price(o.price)} or less`;
+      };
+      ordersList.replaceChildren(
+        h('h3', { class: 'trade__orders-title', text: 'Your orders' }),
+        h('ul', { class: 'trade__orders-list' }, [
+          ...open.map((o) => h('li', { class: 'trade__order' }, [
+            h('span', { text: label(o) }),
+            h('button', { class: 'btn btn--sm', type: 'button', onClick: () => { session.cancelOrder(o.id); announce('Order cancelled.'); render(); } }, ['Cancel', h('span', { class: 'visually-hidden', text: `: ${label(o)}` })]),
+          ])),
+          ...recent.map((o) => h('li', { class: 'trade__order is-done' }, [
+            h('span', { text: label(o) }),
+            o.status === 'filled'
+              ? h('span', { class: 'chip chip--ok', text: `Filled at ${price(o.fill.price)}` })
+              : h('span', { class: o.status === 'expired' ? 'chip' : 'chip chip--warn', text: o.status === 'expired' ? 'Ended at the close' : 'Couldn’t fill' }),
+          ])),
+        ]),
+      );
+    }
+
+    function renderDepth(st) {
+      if (!depthBox?.open) return;
+      const c = st.coins[market.selected];
+      const d = session.depth(c.id, DEPTH_STEPS);
+      if (!d.length) {
+        depthDown.setAttribute('d', '');
+        depthUp.setAttribute('d', '');
+        depthText.textContent = `${c.ticker}’s pool is empty, so it can’t be traded.`;
+        depthSvg.setAttribute('aria-label', depthText.textContent);
+        return;
+      }
+      const max = Math.max(...d.map((p) => p.L)) || 1;
+      const X = (pct) => 150 + pct * 5;
+      const Y = (L) => 120 - (L / max) * 112;
+      const area = (pts) => `M150,120 ${pts.map((p) => `L${X(p.pct).toFixed(1)},${Y(p.L).toFixed(1)}`).join(' ')} L${X(pts[pts.length - 1].pct)},120 Z`;
+      depthDown.setAttribute('d', area(d.filter((p) => p.pct <= 0).reverse()));
+      depthUp.setAttribute('d', area(d.filter((p) => p.pct >= 0)));
+      const at = (pct) => d.find((p) => p.pct === pct).L;
+      let text = `To push ${c.ticker} up 10% takes about ${money(at(10), 0)} of buying. Down 10%: about ${money(at(-10), 0)} of selling.`;
+      if (at(-30) < 1) text = `To push ${c.ticker} up 10% takes about ${money(at(10), 0)} of buying. It can’t fall lower yet: nobody has paid real money in.`;
+      const q = st.portfolio.cash > 1 && !c.user ? session.quote(c.id, 'buy', st.portfolio.cash) : null;
+      if (q?.ok) text += ` Spending all your ${money(st.portfolio.cash, 0)} would move it about ${number(q.priceImpactPct, 1)}%.`;
+      depthText.textContent = text;
+      depthSvg.setAttribute('aria-label', `Depth chart for ${c.ticker}. ${text}`);
     }
 
     // ---- portfolio and news ------------------------------------------------------------------
@@ -989,8 +1216,11 @@ export function mount(root, ctx) {
 
     // ---- your coin: the entry to Create, then the launch outcome explained --------------------
     const mineBody = h('div', { class: 'lab-mine__body' });
-    const mineCard = h('div', { class: 'card lab-mine' }, [h('h2', { class: 'lab-card__title', text: 'Your coin' }), mineBody]);
+    // The contract sits outside mineBody, which redraws every tick, so an open <details> stays open.
+    const contractBox = h('div', { class: 'lab-contract' });
+    const mineCard = h('div', { class: 'card lab-mine' }, [h('h2', { class: 'lab-card__title', text: 'Your coin' }), mineBody, contractBox]);
     let mineMode = null;
+    let contractFor = null;
 
     function renderMine(st) {
       const coin = Object.values(st.coins).find((c) => c.user);
@@ -1021,6 +1251,11 @@ export function mount(root, ctx) {
       }
       const L = coin.launch;
       const day = (t) => Math.floor(t / st.ticksPerDay) + 1;
+      if (tier === 'builder' && contractFor !== coin.id) {
+        contractFor = coin.id;
+        const teamVestDays = number(data.scenario.userCoin.teamVestTicks / st.ticksPerDay, 1);
+        contractBox.replaceChildren(contractView(coin, { fee: data.coinsConfig.fee, teamVestDays }));
+      }
       const stage = coin.phase === 'curve'
         ? `On its bonding curve: ${Math.round(coin.curveProgress * 100)}% of the way to a real pool`
         : `Moved from its bonding curve to a real pool on Day ${day(coin.graduatedAt)}`;
@@ -1289,6 +1524,7 @@ export function mount(root, ctx) {
       renderCoins(st);
       renderChart(st);
       renderTrade(st);
+      renderDepth(st);
       renderPortfolio(st);
       renderMine(st);
       renderMode();
@@ -1328,6 +1564,15 @@ export function mount(root, ctx) {
       drillConfig: () => ({ ...structuredClone({ coinsConfig: market.data.coinsConfig, agentsConfig: market.data.agentsConfig, scenario: market.data.scenario }), seed: market.seed, tier }),
     };
     cleanup.push(attachCoach(coachEnv));
+    cleanup.push(session.on('order', (o) => {
+      const t = session.getState().coins[o.coinId]?.ticker || o.coinId;
+      const msg = o.status === 'filled'
+        ? `Your ${o.type === 'stop-loss' ? 'stop-loss' : 'limit order'} on ${t} filled at ${price(o.fill.price)}.`
+        : `Your order on ${t} couldn’t fill: not enough ${o.type === 'limit-buy' ? 'cash' : 'coins'} by then.`;
+      announce(msg);
+      doneEl.textContent = msg;
+      doneEl.hidden = false;
+    }));
     // Badge mints go into today's chain while this market is open (BRIEF §15).
     setChainSink((id) => {
       if (market.closed || live !== market) return false;

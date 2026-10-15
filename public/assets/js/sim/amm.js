@@ -45,6 +45,13 @@ export function tradeToPrice(p, target) {
   return { side: 'sell', amount: (Math.sqrt(k / target) - p.y) / (1 - p.fee) };
 }
 
+// Market depth: L$ it takes to push the price to `target`, ignoring the fee. Buying up pays L$ in;
+// selling down takes L$ out, never more than the pool really holds (a bonding curve has a floor).
+export function depthTo(p, target) {
+  const x1 = Math.sqrt(p.x * p.y * target);
+  return target >= p.x / p.y ? x1 - p.x : Math.min(p.x - x1, realL(p));
+}
+
 // Withdraw a share of both reserves. Price is unchanged; depth is gone.
 export function removeLiquidity(p, share) {
   const L = realL(p) * share;

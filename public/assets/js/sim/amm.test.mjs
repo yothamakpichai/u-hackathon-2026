@@ -1,7 +1,7 @@
 // Unit checks for the AMM and the bonding curve. Run: node public/assets/js/sim/amm.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buy, createPool, graduate, poolPrice, realL, removeLiquidity, sell, tradeToPrice } from './amm.js';
+import { buy, createPool, depthTo, graduate, poolPrice, realL, removeLiquidity, sell, tradeToPrice } from './amm.js';
 import { mulberry32 } from './prng.js';
 
 const close = (a, b, rel = 1e-9, msg) => assert.ok(Math.abs(a - b) <= rel * Math.abs(b), msg ?? `${a} ≉ ${b}`);
@@ -82,4 +82,20 @@ test('removing liquidity keeps the price but drains the depth', () => {
   close(poolPrice(p), price, 1e-12);
   close(got.L, 19800, 1e-12);
   close(p.x, 200, 1e-9);
+});
+
+test('depth: the L$ to move the price matches a real trade, and a bigger pool is deeper', () => {
+  const p = createPool({ reserveL: 10000, reserveCoins: 10000, fee: 0 });
+  const up = depthTo(p, 1.1);
+  const q = structuredClone(p);
+  buy(q, up);
+  close(poolPrice(q), 1.1, 1e-9, 'buying the depth lands on the target price');
+  const down = depthTo(p, 0.9);
+  const r = structuredClone(p);
+  sell(r, (r.x * r.y) / (r.x - down) - r.y);
+  close(poolPrice(r), 0.9, 1e-9, 'selling down takes that much L$ out');
+  const big = createPool({ reserveL: 40000, reserveCoins: 40000, fee: 0 });
+  close(depthTo(big, 1.1), up * 4, 1e-9, 'four times the pool, four times the depth');
+  const curve = createPool({ reserveL: 0, reserveCoins: 1000, fee: 0, virtualL: 3000 });
+  assert.equal(depthTo(curve, poolPrice(curve) * 0.5), 0, 'a fresh bonding curve has no real L$ to sell into');
 });

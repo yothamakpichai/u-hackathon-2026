@@ -2,7 +2,7 @@
 // One session = one daily market. tick() advances 100 ms of real time; the UI drives the clock.
 
 import { hashString, mulberry32 } from './prng.js';
-import { buy, createPool, graduate, poolPrice, realL, removeLiquidity, sell, tradeToPrice } from './amm.js';
+import { buy, createPool, depthTo, graduate, poolPrice, realL, removeLiquidity, sell, tradeToPrice } from './amm.js';
 import { STEPS, between } from './agents.js';
 import { checkName, checkTicker } from './names.js';
 
@@ -41,7 +41,8 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
   const byId = new Map();
   const fired = [];
   const txs = [];
-  const listeners = { event: [], close: [] };
+  const listeners = { event: [], close: [], order: [] };
+  const orders = []; // the player's limit and stop-loss orders (J9)
   const pf = {
     cash: startCash,
     holdings: {},
@@ -447,6 +448,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
         STEPS[a.type](a, c, m, u1, u2);
       }
     }
+    const filled = checkOrders();
 
     for (const c of coins) {
       c.hype = Math.max(c.hype * hypeDecay, c.rugged ? 0 : c.hypeFloor);
@@ -461,6 +463,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     const ended = now >= ticks;
     if (ended) {
       closed = true;
+      expireOrders();
     } else {
       const slot = now % TPD;
       for (const c of coins) {
@@ -474,6 +477,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     }
 
     for (const ev of toEmit) emit('event', ev);
+    for (const o of filled) emit('order', { ...o });
     // Only the natural end closes here; finish() called from a listener has already sent 'close'.
     if (ended) emit('close', getState());
     return true;
@@ -715,6 +719,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
         value,
         startValue: startCash,
         trades: pf.trades.map((x) => ({ ...x })),
+        orders: orders.map((o) => ({ ...o, fill: o.fill ? { ...o.fill } : null })),
         created: pf.created.map((x) => ({ ...x })),
         risk: { ...pf.risk },
         history: pf.history.map((x) => ({ ...x })),
@@ -739,6 +744,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
   function finish() {
     if (closed) return;
     closed = true;
+    expireOrders();
     emit('close', getState());
   }
 
@@ -750,5 +756,74 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     txs.push({ t: now, coin: 'BADGE', side: 'mint', coins: 1, L: 0, who: 'mint', badge: String(badgeId) });
   }
 
-  return { tick, swap, quote, createCoin, getState, getTransactions, recordMint, on, finish };
+  // ---- limit and stop-loss orders (J9) ---------------------------------------------------------
+  // limit-buy: spend `amount` L$ once the price is at or below `price`.
+  // limit-sell: sell `amount` coins once the price is at or above `price`.
+  // stop-loss: sell `amount` coins once the price is at or below `price`.
+  // A triggered order becomes an ordinary swap at that tick's price, so it can fill worse than its
+  // trigger in a fast market (slippage). Orders are player actions, so the market stays deterministic.
+  const ORDER_TYPES = ['limit-buy', 'limit-sell', 'stop-loss'];
+
+  function placeOrder({ coinId, type, price, amount } = {}) {
+    if (closed) return { ok: false, error: { code: 'MARKET_CLOSED', message: 'The market has closed.' } };
+    const c = byId.get(coinId);
+    if (!c || !isVisible(c)) return { ok: false, error: { code: 'UNKNOWN_COIN', message: 'That coin is not in this market.' } };
+    if (c.user) return { ok: false, error: { code: 'OWN_COIN', message: `You launched ${c.ticker}, so you can watch it but not trade it.` } };
+    if (!ORDER_TYPES.includes(type)) return { ok: false, error: { code: 'BAD_TYPE', message: 'Choose a limit or stop-loss order.' } };
+    if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) return { ok: false, error: { code: 'BAD_PRICE', message: 'Enter a price bigger than zero.' } };
+    if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) return { ok: false, error: { code: 'BAD_AMOUNT', message: 'Enter an amount bigger than zero.' } };
+    const p = poolPrice(c.pool);
+    if (type === 'limit-buy' && price >= p) return { ok: false, error: { code: 'WOULD_FILL_NOW', message: `${c.ticker} is already at or below that price. Use a normal Buy instead.` } };
+    if (type === 'limit-sell' && price <= p) return { ok: false, error: { code: 'WOULD_FILL_NOW', message: `${c.ticker} is already at or above that price. Use a normal Sell instead.` } };
+    if (type === 'stop-loss' && price >= p) return { ok: false, error: { code: 'WOULD_FILL_NOW', message: 'A stop-loss goes below today’s price.' } };
+    const id = `o${orders.length + 1}`;
+    orders.push({ id, coinId, type, price, amount, status: 'open', placedT: now, filledT: null, fill: null, error: null });
+    return { ok: true, id };
+  }
+
+  function cancelOrder(id) {
+    const o = orders.find((x) => x.id === id);
+    if (!o || o.status !== 'open') return false;
+    o.status = 'cancelled';
+    return true;
+  }
+
+  // Depth chart (J9): L$ it takes to move a coin's price by each percent step (+ up, - down).
+  function depth(coinId, pcts) {
+    const c = byId.get(coinId);
+    const p0 = c ? poolPrice(c.pool) : NaN;
+    if (!c || !isVisible(c) || !(p0 > 0) || !Number.isFinite(p0)) return [];
+    return pcts.map((pct) => ({ pct, price: p0 * (1 + pct / 100), L: Math.max(0, depthTo(c.pool, p0 * (1 + pct / 100))) }));
+  }
+
+  // Orders still open when the market closes lapse, like a day order.
+  function expireOrders() {
+    for (const o of orders) if (o.status === 'open') o.status = 'expired';
+  }
+
+  function checkOrders() {
+    const done = [];
+    for (const o of orders) {
+      if (o.status !== 'open') continue;
+      const c = byId.get(o.coinId);
+      const p = poolPrice(c.pool);
+      const hit = o.type === 'limit-buy' ? p <= o.price : o.type === 'limit-sell' ? p >= o.price : p <= o.price;
+      if (!hit) continue;
+      const side = o.type === 'limit-buy' ? 'buy' : 'sell';
+      const amount = side === 'buy' ? Math.min(o.amount, pf.cash) : Math.min(o.amount, pf.holdings[o.coinId] ?? 0);
+      const r = amount > 0 ? swap(o.coinId, side, amount) : null;
+      if (r?.ok) {
+        o.status = 'filled';
+        o.fill = { coins: r.filledCoins, L: r.filledL$, price: r.filledL$ / r.filledCoins };
+      } else {
+        o.status = 'failed';
+        o.error = r ? r.error.code : side === 'buy' ? 'INSUFFICIENT_CASH' : 'INSUFFICIENT_COINS';
+      }
+      o.filledT = now;
+      done.push(o);
+    }
+    return done;
+  }
+
+  return { tick, swap, quote, depth, createCoin, getState, getTransactions, recordMint, placeOrder, cancelOrder, on, finish };
 }

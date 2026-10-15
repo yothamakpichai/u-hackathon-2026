@@ -2520,3 +2520,223 @@
   line-height: 1.3;
   white-space: normal;
 }
+
+/* ---- Limit and stop-loss orders (J9) ----------------------------------------------------------- */
+
+.trade__order-type {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.trade__order-type .segmented__btn {
+  padding-inline: var(--sp-1);
+  white-space: nowrap;
+}
+
+.trade__trigger {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.trade__trigger[hidden] {
+  display: none;
+}
+
+.trade__orders {
+  display: grid;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+
+.trade__orders:empty {
+  display: none;
+}
+
+.trade__orders-title {
+  font-size: var(--fs-md);
+}
+
+.trade__orders-list {
+  display: grid;
+  gap: var(--sp-2);
+  padding: 0;
+  list-style: none;
+}
+
+.trade__order {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border: 2px solid var(--line);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+}
+
+.trade__order.is-done {
+  border-style: dashed;
+}
+
+.lab-trade .chip {
+  white-space: normal;
+}
+
+/* ---- Your coin's smart contract (J9, Builder) --------------------------------------------------- */
+
+.lab-contract:empty {
+  display: none;
+}
+
+.contract {
+  margin-top: var(--sp-4);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.contract__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  font-family: var(--font-head);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.contract[open] > .contract__summary {
+  border-bottom: 2px solid var(--line);
+}
+
+.contract__intro,
+.contract__tip {
+  padding: var(--sp-3) var(--sp-3) 0;
+  font-size: var(--fs-sm);
+}
+
+.contract__tip {
+  padding-bottom: var(--sp-3);
+  color: var(--ink-700);
+  font-weight: 700;
+}
+
+.contract__rows {
+  display: grid;
+  gap: var(--sp-2);
+  margin: var(--sp-3) var(--sp-3) 0;
+}
+
+.contract__row {
+  display: grid;
+  gap: 2px;
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 4px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.contract__row.is-good { border-left-color: var(--gain-600); }
+.contract__row.is-risk { border-left-color: var(--loss-600); }
+
+.contract__key code {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+
+.contract__val {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.contract__value {
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.contract__plain {
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+}
+
+/* ---- Pool depth chart (J9) -------------------------------------------------------------------- */
+
+.depth {
+  margin-top: var(--sp-4);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.depth__summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  font-family: var(--font-head);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.depth__body {
+  display: grid;
+  gap: var(--sp-2);
+  padding: 0 var(--sp-3) var(--sp-3);
+}
+
+.depth__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.depth__lead,
+.depth__text {
+  font-size: var(--fs-sm);
+}
+
+.depth__lead,
+.depth__axis {
+  color: var(--ink-700);
+}
+
+.depth__chart {
+  display: block;
+  width: 100%;
+  height: 120px;
+  border-bottom: 2px solid var(--line);
+}
+
+.depth__down,
+.depth__up {
+  fill-opacity: 0.22;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.depth__down {
+  fill: var(--loss-600);
+  stroke: var(--loss-600);
+}
+
+.depth__up {
+  fill: var(--gain-600);
+  stroke: var(--gain-600);
+}
+
+.depth__now {
+  stroke: var(--ink-700);
+  stroke-dasharray: 4 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.depth__axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-xs);
+}
