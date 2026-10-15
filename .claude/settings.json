@@ -1,0 +1,48 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(php:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(curl:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(git push origin main)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+      "Bash(git rebase --continue)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git mv:*)",
+      "Bash(git rm:*)",
+      "Bash(git restore --staged:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(sha256sum:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push --force-with-lease:*)",
+      "Bash(git remote:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(ssh:*)",
+      "Bash(scp:*)",
+      "Bash(winget:*)",
+      "Bash(choco:*)",
+      "Bash(Set-ExecutionPolicy:*)"
+    ]
+  }
+}
