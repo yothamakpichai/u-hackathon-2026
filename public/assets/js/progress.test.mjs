@@ -1,6 +1,6 @@
 // Daily loop checks (BRIEF §14, §16): XP, the daily goal and the streak. Run by bin/check.mjs.
 import assert from 'node:assert/strict';
-import { dayOf, logAction, progressSummary } from './progress.js';
+import { dayOf, logAction, progressSummary, syncActions } from './progress.js';
 
 const store = () => {
   let state = {};
@@ -30,6 +30,15 @@ const now = Date.parse('2026-10-16T05:00:00Z'); // 12:00 in Bangkok
   assert.equal(progressSummary(s.get(), now).streak, 3);
   assert.equal(progressSummary(s.get(), now).activeToday, false);
   assert.equal(progressSummary(s.get(), now + DAY).streak, 0);
+}
+
+// Actions recorded by other buildings count once each: piggy logs and wallet transactions.
+{
+  const s = store();
+  s.set({ piggy: { entries: [{ id: 'e1', at: now }, { id: 'e2', at: now }], reflections: [] }, wallet: { ledger: [{ id: 'w1', at: now, amount: 5 }] } });
+  syncActions(s);
+  syncActions(s);
+  assert.equal(progressSummary(s.get(), now).xp, 12);
 }
 
 console.log('progress: ok');

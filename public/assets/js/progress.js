@@ -4,7 +4,7 @@
 // Pure apart from the store, so progress.test.mjs runs it in Node.
 
 export const DAILY_GOAL = 30;
-export const XP = { lesson: 10, mission: 20, checkpoint: 30, market: 10, check: 20 };
+export const XP = { lesson: 10, mission: 20, checkpoint: 30, market: 10, check: 20, piggy: 5, town: 2 };
 const TIME_ZONE = 'Asia/Bangkok';
 const KEEP_DAYS = 400;
 
@@ -59,5 +59,13 @@ export function syncActions(store) {
   }
   for (const [tier, run] of Object.entries(s.lab || {})) {
     if (run?.at) logAction(store, { kind: 'market', xp: XP.market, ref: `market:${tier}:${run.at}`, at: run.at });
+  }
+  // Piggy Bank logs and reflections, and every Town wallet transaction (Farm, Stall, Bank), count once each.
+  const piggy = s.piggy || {};
+  for (const e of [...(piggy.entries || []), ...(piggy.reflections || [])]) {
+    if (e?.at) logAction(store, { kind: 'piggy', xp: XP.piggy, ref: `piggy:${e.id || e.at}`, at: e.at });
+  }
+  for (const e of s.wallet?.ledger || []) {
+    if (e?.at) logAction(store, { kind: 'town', xp: XP.town, ref: `wallet:${e.id || e.at}`, at: e.at });
   }
 }

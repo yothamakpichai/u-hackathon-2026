@@ -84,7 +84,7 @@ Choices made where the brief was silent or ambiguous (BRIEF §13). Newest last.
     - **How buildings count:** each building calls `logAction(store, { kind, xp, ref })` for an action the app can see; `ref` makes it count once. `store.progress` = `{ xp, days: { 'YYYY-MM-DD': { xp, actions } }, refs }`.
     - **XP:** lesson 10, mission 20, checkpoint 30, finished market 10, Money Check 20.
     - **Daily goal and streak:** the goal is 30 XP a Bangkok day. The streak counts consecutive Bangkok days with at least one action, and lasts until the end of the next day.
-    - **Joewee's actions:** `syncActions()` also counts finished Coach chapters (`store.coach`) and finished markets (`store.lab[tier].at`) once each, so his modules don't have to call anything. Piggy, Farm and Future should call `logAction`.
+    - **Joewee's actions:** `syncActions()` also counts actions other modules record in their own keys, once each: finished Coach chapters (`store.coach`), finished markets (`store.lab[tier].at`), Piggy Bank entries and reflections (`store.piggy`, 5 XP) and every Town wallet transaction (`store.wallet.ledger`, 2 XP), which covers the Farm, the Stall and the Bank. Future You saves no dated actions, so it doesn't count yet.
 39. **Learning Path** (`#/path`, `screens/path.js`). `path.json` holds per tier 3 units of [lesson, lesson, mission, checkpoint].
     - **Unlocking:** nodes open in order. A passed Money Health Check, or 4+ of the 5 knowledge items in the Money Check, opens the Unit 1 checkpoint directly.
     - **Checkpoints:** passing takes 4 of 5, and a miss can be retried at once with no penalty.
