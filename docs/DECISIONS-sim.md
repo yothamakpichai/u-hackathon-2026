@@ -180,7 +180,7 @@ The sim records raw data; it does not compute the score.
 - **Data.** Every constant is in `public/data/future_th.json` with its source and retrieval date (2026-10-16); a test enforces this. Values that `docs/SOURCES.md` doesn't verify are marked [unverified] in both files.
 - **Screen.** `#/future` has Quick (age, saving, goal age), Standard (adds savings so far, mix and inflation) and Pro (adds a custom mix, baht, historical shock, life-expectancy basis with "plan to 90", and spending).
   - Your avatar now and at the goal age, the P10/P50/P90 fan with a table fallback, and "Projection, not prediction" always visible.
-  - Amounts are shown as "THB", because the ฿ sign is in the Thai Unicode block that `bin/check.mjs` rejects.
+  - Amounts are shown as "THB", because the baht sign (U+0E3F) is in the Thai Unicode block that `bin/check.mjs` rejects.
   - Inputs persist in `store.future`.
 
 ## Config location
