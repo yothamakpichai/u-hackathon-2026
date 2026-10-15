@@ -197,6 +197,23 @@ The sim records raw data; it does not compute the score.
 - **Birth certificates.** Each birth mints a soulbound certificate through `mintBadge(store, { kind: 'cow', ref, meta })`. It's a badge id `cow:<id>`, shown in the explorer gallery with its hash, and on today's chain when a market is open.
 - **Routes.** `#/piggy` and `#/farm` are registered through `public/js/buildings.js` (not on main yet).
 
+## Town wallet and Orchard (BRIEF §16.1)
+
+- **Wallet.** `public/js/wallet.js` keeps `store.wallet = { ledger: [{ id, at, amount, kind, note, ref }], credit: { score, events } }`.
+  - The ledger is only appended to, and a spend that would take the balance below zero is refused.
+  - Every player gets a 50-coin starter grant once, so the Orchard and Stall work before any cow gives milk. Milk sales now post to the wallet, and farm coins from before the wallet were moved in once.
+  - The credit score runs 300–850 and starts at 600, with every change kept. `rateFor(score, base)` makes the best score borrow at 0.6× the base rate and the worst at 1.5×.
+- **Orchard.** The rules are in `sim/orchard.js`, tested.
+
+  | Plant | Cost | Ready in | Harvest |
+  |---|---|---|---|
+  | Herb sprout | 5 | 2 minutes | 6 |
+  | Fruit tree | 10 | 1 day | 20 |
+  | Big mango tree | 20 | 7 days | 60, then 12 more every day |
+
+  It has four plots and real-time growth, with countdowns updating each second; the card only redraws when a stage changes.
+- **Time preference.** Each planting is recorded in `store.orchard.choices` with `patience` set to `now`, `soon` or `later`. `revealedPreference(choices)` returns `{ count, laterShare, nowShare, lean }` for the Money Type screen's "Your choices look more Later than your quiz said".
+
 ## Config location
 
 - The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.

@@ -2,7 +2,9 @@
 // (lessons, Coach chapters, finished markets, Piggy Bank logs) and gives milk once a day, sold for farm
 // coins. Each cow has seeded traits and a soulbound birth certificate minted on the simulated chain.
 import { collectMilk, cowsDue, COW_AT, feedFrom, milkReady, MILK_PRICE, STAGES, stageOf } from '../sim/farm.js';
+import { PLOTS, SEEDS, harvest, plant, plotState, revealedPreference } from '../sim/orchard.js';
 import { mintBadge } from './badges.js';
+import { balance as walletBalance, ensureStarter, post } from '../../../js/wallet.js';
 import { announce, celebrate, h, icon, number } from '../ui.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -13,6 +15,17 @@ export function mount(root, ctx) {
   const { store, navigate, tier } = ctx;
   const view = h('section', { class: 'screen farm-screen' });
   root.append(view);
+  let ticker = 0;
+  let orchardBox = null;
+  let orchardKey = '';
+
+  // One Town wallet for every building (BRIEF §16.1): a starter grant once, and earlier milk coins moved in.
+  ensureStarter(store);
+  const old = store.get().farm;
+  if (old?.coins > 0 && !old.walletMigrated) {
+    post(store, { amount: old.coins, kind: 'milk', note: 'Earlier milk sales' });
+    store.set({ farm: { ...old, walletMigrated: true } });
+  }
 
   function render(celebrateIds = []) {
     const state = store.get();
@@ -78,6 +91,7 @@ export function mount(root, ctx) {
             ]),
           ]),
       milkCard(farm, ready, feed),
+      (orchardBox = h('div', { class: 'card orchard' })),
       h('div', { class: 'card card--quiet farm-lesson' }, [
         h('h2', { class: 'lesson-mini__title', text: 'A cow pays you. A meme coin doesn’t.' }),
         h('p', { text: 'Your cow is a productive asset: it makes something useful every day, and you get paid for it. A meme coin makes nothing. Its price only goes up if someone else pays more for it later, and it can fall to zero.' }),
@@ -88,6 +102,8 @@ export function mount(root, ctx) {
         h('p', { class: 'field__hint', text: 'Sources: docs/SOURCES.md.' }),
       ]),
     );
+    orchardKey = '';
+    renderOrchard(true);
     for (const id of celebrateIds) {
       const card = view.querySelector(`[data-cow="${id}"]`);
       if (card) celebrate(card, { pieces: 30 });
@@ -95,7 +111,7 @@ export function mount(root, ctx) {
   }
 
   function milkCard(farm, ready, feed) {
-    const coins = farm.coins || 0;
+    const coins = walletBalance(store.get());
     const litres = ready.reduce((s, c) => s + c.milk, 0);
     const btn = ready.length
       ? h('button', { class: 'btn btn--primary', type: 'button' }, `Collect ${litres} litres and sell for ${litres * MILK_PRICE} coins`)
@@ -103,20 +119,106 @@ export function mount(root, ctx) {
     btn?.addEventListener('click', () => {
       const r = collectMilk(farm, farm.cows, feed.total, Date.now());
       store.set({ farm: r.farm });
+      post(store, { amount: r.coins, kind: 'milk', note: `${r.litres} litres of milk` });
       announce(`Sold ${r.litres} litres of milk for ${r.coins} coins.`);
       render();
     });
     const grownCows = farm.cows.filter((c) => stageOf(c, feed.total).id === 'adult').length;
     return h('div', { class: 'card farm-milk' }, [
       h('h2', { class: 'lab-card__title', text: 'Milk' }),
-      h('p', { class: 'farm-coins' }, [icon('check', { size: 18 }), `${number(coins, 0)} farm coins`]),
+      h('p', { class: 'farm-coins' }, [icon('check', { size: 18 }), `${number(coins, 0)} coins in your Town wallet`]),
       btn || h('p', { class: 'field__hint', text: grownCows ? 'Milk collected today. Come back tomorrow for more.' : 'Grown cows give milk once a day. Keep feeding your calf by doing things around town.' }),
-      h('p', { class: 'field__hint', text: 'Farm coins are game coins, not real money.' }),
+      h('p', { class: 'field__hint', text: 'Town coins are game coins, not real money.' }),
     ]);
   }
 
+  // ---- Orchard (BRIEF §16.1): seeds bought with coins, growing in real time ---------------------
+  function renderOrchard(force = false) {
+    if (!orchardBox) return;
+    const now = Date.now();
+    const orchard = { plots: Array(PLOTS).fill(null), choices: [], ...store.get().orchard };
+    // Rebuild only when a plot changes stage; otherwise just refresh the countdowns.
+    const key = orchard.plots.map((p) => (p ? `${p.seed}:${plotState(p, now).stage}:${p.harvests}` : '-')).join('|');
+    if (!force && key === orchardKey) {
+      for (const el of orchardBox.querySelectorAll('[data-ready-at]')) el.textContent = countdown(Number(el.dataset.readyAt) - now);
+      return;
+    }
+    orchardKey = key;
+    const coins = walletBalance(store.get());
+    // The wallet is shared: keep the Milk card's balance in step with the orchard.
+    view.querySelector('.farm-coins')?.replaceChildren(icon('check', { size: 18 }), `${number(coins, 0)} coins in your Town wallet`);
+    const pref = revealedPreference(orchard.choices);
+    const plots = orchard.plots.map((p, i) => h('li', { class: 'orchard-plot' }, p ? plotView(p, i, now) : emptyPlot(i, coins)));
+    orchardBox.replaceChildren(
+      h('div', { class: 'card-head' }, [h('h2', { class: 'lab-card__title', text: 'Orchard' }), h('p', { class: 'chip', text: `${number(coins, 0)} coins` })]),
+      h('p', { class: 'field__hint', text: 'Buy seeds with coins and plant them. Some pay a little soon; some pay a lot if you wait.' }),
+      h('ul', { class: 'orchard-plots' }, plots),
+      h('p', { class: 'orchard-pref', text: pref ? `Your choices so far: ${pref.count} planted, ${Math.round(pref.laterShare * 100)}% waited for the big tree.` : 'Nothing planted yet.' }),
+      h('div', { class: 'card card--quiet orchard-lesson' }, [
+        h('h3', { class: 'lesson-mini__title', text: 'Waiting can pay' }),
+        h('p', { text: 'A sprout pays a little in 2 minutes, but only if you keep coming back to replant it. A big tree costs more and takes a week, but then it fruits every day for as long as you keep it. Patience turns a small start into a steady income.' }),
+      ]),
+    );
+  }
+
+  function plotView(p, i, now) {
+    const seed = SEEDS[p.seed];
+    const s = plotState(p, now);
+    const art = h('span', { class: `orchard-art is-${p.seed} is-${s.stage}`, 'aria-hidden': 'true' });
+    const label = { seed: 'Planted', sprout: 'Sprouting', growing: 'Growing', ready: 'Ready to harvest', grown: 'Growing more fruit', done: 'Harvested' }[s.stage];
+    const parts = [art, h('p', { class: 'orchard-plot__name', text: seed.label }), h('p', { class: 'orchard-plot__stage', text: label })];
+    if (s.stage === 'ready') {
+      const b = h('button', { class: 'btn btn--sm btn--primary', type: 'button' }, `Harvest ${s.harvest} coins`);
+      b.addEventListener('click', () => {
+        const r = harvest({ plots: Array(PLOTS).fill(null), ...store.get().orchard }, i, Date.now());
+        if (!r.coins) return;
+        store.set({ orchard: { ...store.get().orchard, ...r.orchard } });
+        post(store, { amount: r.coins, kind: 'harvest', note: seed.label });
+        announce(`Harvested ${r.coins} coins from your ${seed.label.toLowerCase()}.`);
+        renderOrchard(true);
+      });
+      parts.push(b);
+    } else if (s.readyAt) {
+      parts.push(h('p', { class: 'orchard-plot__time', dataset: { readyAt: String(s.readyAt) }, text: countdown(s.readyAt - now) }));
+    }
+    return parts;
+  }
+
+  function emptyPlot(i, coins) {
+    const menu = Object.entries(SEEDS).map(([id, seed]) => {
+      const b = h('button', { class: 'orchard-seed', type: 'button', disabled: coins < seed.cost }, [
+        h('span', { class: 'orchard-seed__name', text: seed.label }),
+        h('span', { class: 'orchard-seed__meta', text: `${seed.cost} coins · ready in ${seed.wait} · harvest ${seed.harvest}` }),
+      ]);
+      b.addEventListener('click', () => {
+        const paid = post(store, { amount: -seed.cost, kind: 'seed', note: seed.label });
+        if (!paid.ok) return announce(paid.error);
+        store.set({ orchard: plant({ plots: Array(PLOTS).fill(null), choices: [], ...store.get().orchard }, i, id, Date.now()) });
+        announce(`Planted a ${seed.label.toLowerCase()}.`);
+        renderOrchard(true);
+      });
+      return b;
+    });
+    return [h('p', { class: 'orchard-plot__name', text: `Plot ${i + 1}: empty` }), h('div', { class: 'orchard-menu', role: 'group', 'aria-label': `Plant in plot ${i + 1}` }, menu)];
+  }
+
   render();
-  return () => view.remove();
+  ticker = setInterval(() => renderOrchard(false), 1000);
+  return () => {
+    clearInterval(ticker);
+    view.remove();
+  };
+}
+
+function countdown(ms) {
+  if (ms <= 0) return 'Ready now';
+  const s = Math.ceil(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const hrs = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d) return `Ready in ${d} d ${hrs} h`;
+  if (hrs) return `Ready in ${hrs} h ${m} min`;
+  return `Ready in ${m}:${String(s % 60).padStart(2, '0')}`;
 }
 
 function traitText(cow) {

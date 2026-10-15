@@ -72,5 +72,6 @@ export function collectMilk(farm, cows, feed, now) {
   const litres = ready.reduce((s, c) => s + c.milk, 0);
   const milked = { ...farm.milked };
   for (const c of ready) milked[c.id] = dayKey(now);
-  return { farm: { ...farm, milked, coins: (farm.coins || 0) + litres * MILK_PRICE, milkLog: [...(farm.milkLog || []), { at: now, litres }] }, litres, coins: litres * MILK_PRICE };
+  // Coins go to the Town wallet (public/js/wallet.js); the farm keeps only what it produced.
+  return { farm: { ...farm, milked, milkLog: [...(farm.milkLog || []), { at: now, litres }] }, litres, coins: litres * MILK_PRICE };
 }

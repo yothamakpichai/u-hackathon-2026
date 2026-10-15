@@ -2200,3 +2200,103 @@
 .farm-milk .btn {
   justify-self: start;
 }
+
+/* ---- Orchard (BRIEF §16.1) --------------------------------------------------------------------- */
+
+.orchard {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.orchard-plots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--sp-3);
+  padding: 0;
+  list-style: none;
+}
+
+.orchard-plot {
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: var(--sp-1);
+  padding: var(--sp-3);
+  border: 2px dashed var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.orchard-plot__name {
+  font-weight: 800;
+}
+
+.orchard-plot__stage,
+.orchard-plot__time,
+.orchard-pref {
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.orchard-menu {
+  display: grid;
+  gap: var(--sp-2);
+  width: 100%;
+}
+
+.orchard-seed {
+  display: grid;
+  gap: 2px;
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-3);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink-900);
+  text-align: left;
+}
+
+.orchard-seed:hover:not(:disabled) {
+  border-color: var(--primary-600);
+}
+
+.orchard-seed:disabled {
+  opacity: 0.55;
+}
+
+.orchard-seed__name {
+  font-weight: 800;
+}
+
+.orchard-seed__meta {
+  color: var(--ink-500);
+  font-size: var(--fs-xs);
+}
+
+/* Growth stages drawn with CSS shapes: a seed, a sprout, a young plant, then fruit. */
+.orchard-art {
+  position: relative;
+  display: block;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 85%, #8A5A35 0 35%, transparent 36%);
+}
+
+.orchard-art::before,
+.orchard-art::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+}
+
+.orchard-art.is-seed::before { bottom: 18%; width: 10px; height: 8px; margin-left: -5px; border-radius: 50%; background: #5B3A26; }
+.orchard-art.is-sprout::before { bottom: 18%; width: 4px; height: 22px; margin-left: -2px; background: var(--gain-600); }
+.orchard-art.is-sprout::after { bottom: 52%; width: 18px; height: 10px; margin-left: -9px; border-radius: 50%; background: var(--gain-500); }
+.orchard-art.is-growing::before,
+.orchard-art.is-ready::before,
+.orchard-art.is-grown::before { bottom: 18%; width: 6px; height: 28px; margin-left: -3px; background: #6B4429; }
+.orchard-art.is-growing::after,
+.orchard-art.is-grown::after { bottom: 46%; width: 34px; height: 26px; margin-left: -17px; border-radius: 50%; background: var(--gain-500); }
+.orchard-art.is-ready::after { bottom: 44%; width: 40px; height: 30px; margin-left: -20px; border-radius: 50%; background: radial-gradient(circle at 30% 40%, var(--amber-500) 0 4px, transparent 5px), radial-gradient(circle at 65% 55%, var(--amber-500) 0 4px, transparent 5px), var(--gain-500); }

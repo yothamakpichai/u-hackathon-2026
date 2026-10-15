@@ -61,9 +61,9 @@ test('the farm: cows are earned from actions, grow, and give milk once a day', (
   assert.equal(stageOf(cows[0], 5).id, 'calf');
   assert.equal(stageOf(cows[0], 40).id, 'adult');
   assert.equal(milkReady(cows[0], {}, 10, day('2026-10-16')), false, 'calves give no milk');
-  const r = collectMilk({ coins: 0 }, cows, 40, day('2026-10-16'));
+  const r = collectMilk({}, cows, 40, day('2026-10-16'));
   assert.equal(r.litres, cows[0].milk);
-  assert.equal(r.farm.coins, cows[0].milk * 5);
+  assert.equal(r.coins, cows[0].milk * 5);
   assert.equal(collectMilk(r.farm, cows, 40, day('2026-10-16')).litres, 0, 'once a day');
   assert.equal(collectMilk(r.farm, cows, 40, day('2026-10-17')).litres, cows[0].milk, 'again tomorrow');
   assert.deepEqual(cowTraits('x'), cowTraits('x'), 'traits are seeded');
