@@ -224,6 +224,16 @@ function costBasis(trades) {
 }
 const signedMoney = (n) => `${n > 0 ? '+' : ''}${money(n)}`;
 
+// Motion (BRIEF §10): a short tinted pulse when a number moves a lot, so big moves catch the eye.
+// ui.animate already skips under prefers-reduced-motion.
+function pulse(el, up) {
+  const tint = up ? '24 168 103' : '229 72 77';
+  animate(el, [
+    { backgroundColor: `rgb(${tint} / 0.22)`, transform: 'scale(1.04)' },
+    { backgroundColor: `rgb(${tint} / 0)`, transform: 'scale(1)' },
+  ], { duration: 300, fill: 'none' });
+}
+
 function loadData(base) {
   dataPromise ??= Promise.all([
     getJSON(`${base}coins.json`),
@@ -328,24 +338,35 @@ export function mount(root, ctx) {
   const view = h('section', { class: 'lab-screen' });
   root.append(view);
 
+  function showLoadError(title, body) {
+    view.replaceChildren(
+      stateView({
+        kind: 'error',
+        title,
+        body,
+        actions: [
+          h('button', { class: 'btn btn--primary', type: 'button', onClick: load }, 'Try again'),
+          h('button', { class: 'btn', type: 'button', onClick: () => navigate('/') }, 'Back to start'),
+        ],
+      }),
+    );
+  }
+
   function load() {
     view.replaceChildren(stateView({ kind: 'loading', title: 'Opening today’s market…' }));
     loadData(config.DATA_BASE)
-      .then((data) => alive && start(data))
-      .catch((err) => {
+      .then((data) => {
         if (!alive) return;
-        view.replaceChildren(
-          stateView({
-            kind: 'error',
-            title: 'Today’s market didn’t open',
-            body: err.message,
-            actions: [
-              h('button', { class: 'btn btn--primary', type: 'button', onClick: load }, 'Try again'),
-              h('button', { class: 'btn', type: 'button', onClick: () => navigate('/') }, 'Back to start'),
-            ],
-          }),
-        );
-      });
+        try {
+          start(data);
+        } catch (err) {
+          // Data loaded but the screen couldn't be built (an old browser, say): say so plainly.
+          console.error(err);
+          for (const fn of cleanup.splice(0)) fn();
+          showLoadError('The market couldn’t be drawn', 'Something in this browser stopped the chart from loading. Try again, or open the site in an up-to-date browser.');
+        }
+      })
+      .catch((err) => alive && showLoadError('Today’s market didn’t open', err.message));
   }
 
   function replay() {
@@ -485,6 +506,11 @@ export function mount(root, ctx) {
         }
         row.el.setAttribute('aria-pressed', String(c.id === market.selected));
         row.priceEl.textContent = price(c.price);
+        if (row.mark == null) row.mark = c.price;
+        else if (Math.abs(c.price / row.mark - 1) >= 0.03) {
+          pulse(row.priceEl, c.price > row.mark);
+          row.mark = c.price;
+        }
         row.changeEl.replaceChildren(delta(dayChange(c, st)));
       }
     }
@@ -603,6 +629,7 @@ export function mount(root, ctx) {
     const toVolume = (k) => ({ time: toTime(k.t), value: k.volume, color: fade(k.close >= k.open ? up : down) });
     let chartCoin = null;
     let chartCount = 0;
+    const priceMark = { coin: null, price: 0 };
     const sessionCandles = scenario.ticks / scenario.candleTicks;
 
     // Candles fill a fixed window from the left (about 6 px each, the whole month on wide screens);
@@ -651,13 +678,16 @@ export function mount(root, ctx) {
         rsiLine = chart.addSeries(LineSeries, {
           ...lineOpts(ink, 2),
           lastValueVisible: true,
-          priceFormat: { type: 'price', precision: 0, minMove: 1 },
+          priceFormat: { type: 'custom', formatter: (v) => String(Math.round(v)), minMove: 1 }, // RSI is a 0 to 100 score
           autoscaleInfoProvider: () => ({ priceRange: { minValue: 0, maxValue: 100 } }),
         }, 1);
         rsiLine.createPriceLine({ price: 70, color: down, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' });
         rsiLine.createPriceLine({ price: 30, color: up, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' });
+        // Its own margins (the price pane's would push the 0 to 100 scale below zero), a quarter of the height.
+        rsiLine.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: 0.08 } });
         chartBox.classList.add('has-rsi');
-        chart.panes()[1]?.setHeight(80);
+        chart.panes()[0]?.setStretchFactor(3);
+        chart.panes()[1]?.setStretchFactor(1);
         added = true;
       } else if (!osc && rsiLine) {
         chart.removeSeries(rsiLine);
@@ -699,6 +729,7 @@ export function mount(root, ctx) {
         volumeSeries.setData(ks.map(toVolume));
         washSeries?.setData(ks.map(toWash));
         keepInView(ks.length);
+        requestAnimationFrame(() => alive && keepInView(chartCount)); // again once the chart has its size
         renderTools(ks, true, 0);
         toolsFresh = false;
         chartCoin = c.id;
@@ -715,7 +746,14 @@ export function mount(root, ctx) {
         toolsFresh = false;
       }
       chartCount = ks.length;
-      chartPrice.replaceChildren(h('span', { class: 'lab-chart__value', text: price(c.price) }), delta(dayChange(c, st)));
+      const valueEl = h('span', { class: 'lab-chart__value', text: price(c.price) });
+      chartPrice.replaceChildren(valueEl, delta(dayChange(c, st)));
+      // Pulse the big price on a sharp move (1% or more since the last pulse on this coin).
+      if (priceMark.coin !== c.id) Object.assign(priceMark, { coin: c.id, price: c.price });
+      else if (Math.abs(c.price / priceMark.price - 1) >= 0.01) {
+        pulse(valueEl, c.price > priceMark.price);
+        priceMark.price = c.price;
+      }
       const chips = [];
       if (c.rugged) chips.push(h('span', { class: 'chip chip--loss', text: 'Rug pulled' }));
       else if (c.phase === 'curve') chips.push(h('span', { class: 'chip', text: `Bonding curve ${Math.round(c.curveProgress * 100)}% to launch` }));
@@ -875,6 +913,8 @@ export function mount(root, ctx) {
 
     // ---- portfolio and news ------------------------------------------------------------------
     const pfValue = h('p', { class: 'lab-portfolio__value' });
+    const pfTotal = h('span', { class: 'lab-portfolio__total' }); // kept between ticks so its pulse can finish
+    let totalMark = null;
     const pfRows = h('ul', { class: 'lab-portfolio__rows' });
     const allocInfo = explainer('alloc-info');
     const allocBar = h('div', { class: 'alloc', 'aria-hidden': 'true' });
@@ -888,8 +928,14 @@ export function mount(root, ctx) {
 
     function renderPortfolio(st) {
       const p = st.portfolio;
+      pfTotal.textContent = money(p.value);
+      if (totalMark == null) totalMark = p.value;
+      else if (Math.abs(p.value / totalMark - 1) >= 0.01) {
+        pulse(pfTotal, p.value > totalMark);
+        totalMark = p.value;
+      }
       pfValue.replaceChildren(
-        h('span', { class: 'lab-portfolio__total', text: money(p.value) }),
+        pfTotal,
         delta((p.value / p.startValue - 1) * 100),
         h('span', { class: 'lab-portfolio__note', text: `Started with ${money(p.startValue)} · profit or loss ${signedMoney(p.value - p.startValue)}` }),
       );
@@ -943,6 +989,14 @@ export function mount(root, ctx) {
       const coin = Object.values(st.coins).find((c) => c.user);
       const mode = coin ? 'live' : market.news.length ? 'ready' : 'wait';
       if (mode !== 'live' && mode === mineMode) return;
+      // Coin launch (BRIEF §10): celebrate once, the first time the Lab shows the new coin.
+      if (mode === 'live' && mineMode !== 'live' && market.justLaunched === coin.id) {
+        market.justLaunched = null;
+        requestAnimationFrame(() => {
+          animate(mineCard, [{ transform: 'scale(0.96)' }, { transform: 'scale(1.02)', offset: 0.6 }, { transform: 'scale(1)' }], { duration: 300 });
+          celebrate(mineCard, { pieces: 24 });
+        });
+      }
       mineMode = mode;
       if (mode === 'wait') {
         mineBody.replaceChildren(h('p', { class: 'lab-mine__text', text: 'After Penny’s first news, you can launch your own coin here and watch how buyers react.' }));
@@ -1092,7 +1146,12 @@ export function mount(root, ctx) {
             ]),
           ),
       );
+      if (newsList.childElementCount > newsShown) {
+        animate(newsList.firstElementChild, [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 260 });
+      }
+      newsShown = newsList.childElementCount;
     }
+    let newsShown = 0;
 
     // ---- events: Penny pauses the market, narrates and asks one question -------------------
     const dialog = h('dialog', { class: 'lab-dialog', 'aria-labelledby': 'lab-dialog-title' });
@@ -1166,6 +1225,17 @@ export function mount(root, ctx) {
       dialog.replaceChildren(body);
       if (!dialog.open) dialog.showModal();
       animate(dialog, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }]);
+      // Penny reacts: a worried wobble for bad news, a happy hop for good news.
+      const mascot = body.querySelector('.penny');
+      if (mascot) {
+        animate(
+          mascot,
+          negative
+            ? [{ transform: 'rotate(0)' }, { transform: 'rotate(-9deg)' }, { transform: 'rotate(7deg)' }, { transform: 'rotate(-3deg)' }, { transform: 'rotate(0)' }]
+            : [{ transform: 'translateY(0)' }, { transform: 'translateY(-10px)' }, { transform: 'translateY(0)' }],
+          { duration: 300, delay: 160, fill: 'none' },
+        );
+      }
     }
 
     function showClosed(final) {

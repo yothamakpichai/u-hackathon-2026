@@ -89,8 +89,11 @@ export function mount(root, ctx) {
       const gas = gasFor(b.txs.length);
       const volume = b.txs.reduce((s, tx) => s + tx.L, 0);
       const list = h('ol', { class: 'tx-list', hidden: true });
-      const toggle = h('button', { class: 'btn btn--sm', type: 'button', 'aria-expanded': 'false' }, `Show ${number(b.txs.length, 0)} transactions`);
-      toggle.addEventListener('click', () => {
+      // An empty block says so rather than offering "Show 0 transactions".
+      const toggle = b.txs.length
+        ? h('button', { class: 'btn btn--sm', type: 'button', 'aria-expanded': 'false' }, `Show ${number(b.txs.length, 0)} transactions`)
+        : h('p', { class: 'block__meta', text: 'No trades were sealed in this block (the market was quiet).' });
+      if (b.txs.length) toggle.addEventListener('click', () => {
         const open = toggle.getAttribute('aria-expanded') !== 'true';
         toggle.setAttribute('aria-expanded', String(open));
         toggle.textContent = open ? 'Hide transactions' : `Show ${number(b.txs.length, 0)} transactions`;
@@ -108,6 +111,7 @@ export function mount(root, ctx) {
           if (txs.length > SHOWN) list.append(h('li', { class: 'tx tx--more', text: `and ${number(txs.length - SHOWN, 0)} more` }));
         }
         list.hidden = !open;
+        if (open) animate(list, [{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }], { duration: 200 });
       });
       const status = broken
         ? h('span', { class: 'chip chip--loss' }, [icon('alert', { size: 14 }), b.height === tampered.height ? 'Changed: fingerprint no longer matches' : 'Link broken'])
@@ -173,6 +177,15 @@ export function mount(root, ctx) {
       renderChain();
       announce(`Block ${b.height + 1} and every block after it no longer match.`);
       animate(demo, [{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 300 });
+      // The break ripples forward: the changed block flashes first, then each later one in turn.
+      const cards = [...chainList.querySelectorAll('.block.is-broken')].reverse();
+      cards.forEach((card, i) => {
+        animate(card, [
+          { boxShadow: '0 0 0 0 rgb(209 47 58 / 0)', transform: 'scale(1)' },
+          { boxShadow: '0 0 0 6px rgb(209 47 58 / 0.28)', transform: 'scale(1.01)' },
+          { boxShadow: '0 0 0 0 rgb(209 47 58 / 0)', transform: 'scale(1)' },
+        ], { duration: 300, delay: Math.min(i, 12) * 70, fill: 'none' });
+      });
       demo.querySelector('.tamper__title')?.setAttribute('tabindex', '-1');
       demo.querySelector('.tamper__title')?.focus();
     }

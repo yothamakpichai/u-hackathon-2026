@@ -116,6 +116,29 @@
   }
 }
 
+/* Pulsed numbers need a little room for their tint; press feedback on tappable tiles. */
+.lab-chart__value,
+.lab-portfolio__total,
+.coin-row__price {
+  border-radius: var(--r-xs);
+}
+
+.lab-mine {
+  position: relative; /* confetti host on coin launch */
+}
+
+.coin-row,
+.chip-toggle,
+.pick__option {
+  transition: transform var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out);
+}
+
+.coin-row:active,
+.chip-toggle:active,
+.pick__option:active {
+  transform: scale(0.97);
+}
+
 .alloc {
   display: flex;
   gap: 2px;

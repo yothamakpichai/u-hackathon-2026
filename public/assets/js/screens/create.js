@@ -238,10 +238,14 @@ export function mount(root, ctx) {
     return { you: design.you, team: design.team, public: 100 - design.you - design.team };
   }
 
+  let lastLook = null;
   function renderPreview() {
     const alloc = allocation();
     const ticker = design.ticker || 'COIN';
     previewBadge.replaceChildren(coinBadge(design, config.COIN_COLORS));
+    const look = `${design.iconId}:${design.colorId}`;
+    if (lastLook && look !== lastLook) animate(previewBadge.firstChild, [{ transform: 'scale(0.8)' }, { transform: 'scale(1.08)', offset: 0.7 }, { transform: 'scale(1)' }], { duration: 240 });
+    lastLook = look;
     previewName.textContent = `${design.name.trim() || 'Your coin'} (${ticker})`;
     const price0 = alloc.public > 0 ? uc.virtualL / ((design.supply * alloc.public) / 100) : 0;
     previewPrice.textContent = `Starts at ${price(price0)} each`;
@@ -289,6 +293,7 @@ export function mount(root, ctx) {
       return;
     }
     market.selected = id;
+    market.justLaunched = id; // the Lab celebrates once when it first shows the coin
     const coin = market.session.getState().coins[id];
     const panel = resultPanel({
       mood: 'celebrating',
