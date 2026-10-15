@@ -53,6 +53,10 @@ svg {
   max-width: 100%;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 button,
 input,
 select,

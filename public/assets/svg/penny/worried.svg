@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- Penny, the Market Lab mascot: an original round coin with a sprout. Expression: worried. -->
+  <defs>
+    <linearGradient id="penny-face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD466"/>
+      <stop offset="1" stop-color="#F5A524"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="60" cy="113" rx="28" ry="4.5" fill="#0F1C17" opacity="0.1"/>
+  <path d="M60 22 C60 16 60 12 60 9" stroke="#076B4D" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <path d="M60 13 C52 4 42 7 41 11 C47 16 54 16 60 13 Z" fill="#0DA678"/>
+  <path d="M60 11 C66 3 76 5 78 9 C73 15 66 15 60 11 Z" fill="#14B886"/>
+  <circle cx="60" cy="65" r="44" fill="#D98A0B"/>
+  <circle cx="60" cy="61" r="44" fill="url(#penny-face)"/>
+  <circle cx="60" cy="61" r="35.5" fill="none" stroke="#FFF0C7" stroke-width="3" opacity="0.85"/>
+  <path d="M33 45 A32 32 0 0 1 50 30" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <path d="M39 48 L52 43.5" stroke="#0F1C17" stroke-width="3" stroke-linecap="round"/>
+  <path d="M68 43.5 L81 48" stroke="#0F1C17" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="47" cy="59" rx="4.6" ry="5.8" fill="#0F1C17"/>
+  <ellipse cx="73" cy="59" rx="4.6" ry="5.8" fill="#0F1C17"/>
+  <circle cx="48.6" cy="56.8" r="1.7" fill="#FFFFFF"/>
+  <circle cx="74.6" cy="56.8" r="1.7" fill="#FFFFFF"/>
+  <path d="M50 77 Q55 71.5 60 75 Q65 78.5 70 73" stroke="#0F1C17" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M91 36 C91 36 85.5 43.5 85.5 47 A5.5 5.5 0 0 0 96.5 47 C96.5 43.5 91 36 91 36 Z" fill="#7CC4F2"/>
+</svg>

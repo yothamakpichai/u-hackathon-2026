@@ -54,6 +54,22 @@ const ICONS = {
     ['path', { d: 'M4 13l2.5-7h11L20 13v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z' }],
     ['path', { d: 'M4 13h4.5l1 2h5l1-2H20' }],
   ],
+  speaker: [
+    ['path', { d: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4z', fill: 'currentColor' }],
+    ['path', { d: 'M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11' }],
+  ],
+  'speaker-off': [
+    ['path', { d: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4z', fill: 'currentColor' }],
+    ['path', { d: 'M16 9.5l5 5M21 9.5l-5 5' }],
+  ],
+  stop: [['rect', { x: 7, y: 7, width: 10, height: 10, rx: 2, fill: 'currentColor' }]],
+  check: [['path', { d: 'M5 12.5l4.5 4.5L19 7.5' }]],
+  close: [['path', { d: 'M6.5 6.5l11 11M17.5 6.5l-11 11' }]],
+  'arrow-right': [['path', { d: 'M5 12h14M13 6l6 6-6 6' }]],
+  unlock: [
+    ['rect', { x: 5, y: 11, width: 14, height: 9, rx: 2 }],
+    ['path', { d: 'M8.5 11V8a3.5 3.5 0 0 1 6.8-1.2' }],
+  ],
 };
 
 export function icon(name, { size = 24, label = '', className = '' } = {}) {
@@ -172,4 +188,148 @@ export const reducedMotion = () => reducedQuery.matches;
 export function animate(el, keyframes, options = {}) {
   if (reducedMotion() || typeof el.animate !== 'function') return null;
   return el.animate(keyframes, { duration: 240, easing: EASE_OUT, fill: 'backwards', ...options });
+}
+
+// Penny, the mascot: happy, thinking, worried or celebrating. Decorative (alt=""): her words are text.
+export const PENNY_MOODS = ['happy', 'thinking', 'worried', 'celebrating'];
+
+export function penny(mood = 'happy', { size = 72, className = '' } = {}) {
+  const img = h('img', {
+    class: `penny ${className}`.trim(),
+    src: `assets/svg/penny/${PENNY_MOODS.includes(mood) ? mood : 'happy'}.svg`,
+    alt: '',
+    width: size,
+    height: size,
+  });
+  img.dataset.mood = mood;
+  return img;
+}
+
+export function setPennyMood(img, mood) {
+  if (!img || img.dataset.mood === mood) return;
+  img.dataset.mood = mood;
+  img.src = `assets/svg/penny/${mood}.svg`;
+  animate(img, [{ transform: 'scale(0.9)' }, { transform: 'scale(1)' }], { duration: 200 });
+}
+
+// Segmented progress: done, current and upcoming steps.
+export function progress({ total, current, label }) {
+  const bar = h('div', {
+    class: 'progress',
+    role: 'progressbar',
+    'aria-label': label,
+    'aria-valuemin': 0,
+    'aria-valuemax': total,
+    'aria-valuenow': current,
+    'aria-valuetext': `${label}: step ${Math.min(current + 1, total)} of ${total}`,
+  });
+  for (let i = 0; i < total; i++) {
+    bar.append(h('span', { class: `progress__seg${i < current ? ' is-done' : i === current ? ' is-current' : ''}` }));
+  }
+  return bar;
+}
+
+// One multiple-choice question, shared by the Money Health Check, the lesson quiz and event checks.
+// Narrated prompt (captions always shown), three options, feedback that never relies on colour alone,
+// then a Next button. onAnswer(correct, chosenIndex) fires once.
+export function questionCard({ audio, audioId, prompt, options, answerIndex, explain, onAnswer, onNext, nextLabel = 'Next' }) {
+  const mascot = penny('thinking', { size: 72, className: 'question__penny' });
+  const bubble = h('div', { class: 'bubble question__bubble' }, [
+    audio.line({ id: audioId, text: prompt, tag: 'h2', className: 'question__prompt', autoplay: true }),
+  ]);
+  const letters = ['A', 'B', 'C', 'D'];
+  const feedback = h('div', { class: 'feedback', role: 'status' });
+  let answered = false;
+
+  const buttons = options.map((text, i) =>
+    h('button', { class: 'option', type: 'button', onClick: () => choose(i) }, [
+      h('span', { class: 'option__key', 'aria-hidden': 'true', text: letters[i] }),
+      h('span', { class: 'option__text', text }),
+      h('span', { class: 'option__mark' }),
+    ]),
+  );
+
+  function choose(i) {
+    if (answered) return;
+    answered = true;
+    const correct = i === answerIndex;
+    buttons.forEach((b, j) => {
+      b.disabled = true;
+      const mark = b.querySelector('.option__mark');
+      if (j === answerIndex) {
+        b.classList.add('is-correct');
+        mark.replaceChildren(icon('check', { size: 20 }), h('span', { class: 'visually-hidden', text: ' (correct answer)' }));
+      } else if (j === i) {
+        b.classList.add('is-wrong');
+        mark.replaceChildren(icon('close', { size: 20 }), h('span', { class: 'visually-hidden', text: ' (your answer)' }));
+      } else {
+        b.classList.add('is-dim');
+      }
+    });
+    setPennyMood(mascot, correct ? 'happy' : 'worried');
+
+    const next = h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: () => onNext && onNext(correct) }, [
+      nextLabel,
+      icon('arrow-right', { size: 20 }),
+    ]);
+    feedback.className = `feedback ${correct ? 'feedback--correct' : 'feedback--wrong'}`;
+    feedback.replaceChildren(
+      h('p', { class: 'feedback__title' }, [
+        icon(correct ? 'check' : 'close', { size: 22 }),
+        correct ? 'Correct!' : 'Not quite',
+      ]),
+      audio.line({ id: `${audioId}-explain`, text: explain, className: 'feedback__explain', autoplay: true }),
+      next,
+    );
+    animate(feedback, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }]);
+    next.focus({ preventScroll: true });
+    feedback.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
+    if (onAnswer) onAnswer(correct, i);
+  }
+
+  return h('div', { class: 'question' }, [
+    h('div', { class: 'penny-says question__header' }, [mascot, bubble]),
+    h('div', { class: 'options', role: 'group', 'aria-label': 'Answers' }, buttons),
+    feedback,
+  ]);
+}
+
+// End-of-step panel: Penny, a heading, one line of text and the next actions.
+export function resultPanel({ mood = 'happy', title, text, actions = [] }) {
+  return h('div', { class: 'result' }, [
+    penny(mood, { size: 120, className: 'result__penny' }),
+    h('h2', { class: 'result__title', text: title }),
+    h('p', { class: 'result__text', text }),
+    h('div', { class: 'result__actions' }, actions.filter(Boolean)),
+  ]);
+}
+
+// Celebration (BRIEF §10: unlock, coin launch, report). A short confetti burst over `host`,
+// which must be position: relative. Nothing happens under prefers-reduced-motion.
+const CONFETTI = ['mint', 'blue', 'pink', 'gold', 'violet', 'coral'];
+
+export function celebrate(host, { pieces = 36 } = {}) {
+  if (reducedMotion() || !host || typeof host.animate !== 'function') return;
+  const layer = h('div', { class: 'confetti', 'aria-hidden': 'true' });
+  host.append(layer);
+  const anims = [];
+  for (let i = 0; i < pieces; i++) {
+    const bit = h('span', { class: `confetti__bit confetti__bit--${CONFETTI[i % CONFETTI.length]}${i % 3 === 0 ? ' is-round' : ''}` });
+    bit.style.left = `${20 + Math.random() * 60}%`;
+    layer.append(bit);
+    const dx = (Math.random() - 0.5) * 320;
+    const dy = 140 + Math.random() * 220;
+    const spin = (Math.random() - 0.5) * 720;
+    anims.push(
+      bit.animate(
+        [
+          { transform: 'translate(0, 0) rotate(0deg)', opacity: 1 },
+          { transform: `translate(${dx * 0.6}px, ${-dy * 0.55}px) rotate(${spin * 0.5}deg)`, opacity: 1, offset: 0.35 },
+          { transform: `translate(${dx}px, ${dy * 0.35}px) rotate(${spin}deg)`, opacity: 0 },
+        ],
+        { duration: 1100 + Math.random() * 500, delay: Math.random() * 120, easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)', fill: 'both' },
+      ).finished,
+    );
+  }
+  Promise.allSettled(anims).then(() => layer.remove());
 }
