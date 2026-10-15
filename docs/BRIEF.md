@@ -348,3 +348,13 @@ README.md (written last, for judges)                               — Yotha
 - Verification is proportionate: one happy path plus one failure path per feature, plus the sim unit checks. No exhaustive test suites, no refactors, no documentation beyond the README and DECISIONS.
 - Never force push, never change remotes, never write files with PowerShell redirection, never commit secrets.
 - When the brief is ambiguous, choose the option with fewer moving parts, record it in `docs/DECISIONS.md` and continue without asking.
+
+## 14. Depth layer (v2.1)
+
+Learning Path (Yotha; route #/path, shown right after tier choice; owns path.js and public/data/path.json). Per tier: 3 units × 4 nodes. Unit 1 Money basics, Unit 2 Markets & prices, Unit 3 Crypto & blockchain (wallets and keys as concepts only, never real seed phrases; blocks, fees, confirmations, links to #/explorer). Node types: lesson (cards + quiz, same shape as lessons.json), mission (opens #/lab with a goal, completed from the Lab run metrics), checkpoint (5-question quiz). Nodes unlock in order; the Money Health Check acts as a placement test that can unlock Unit 1 checkpoint directly. XP 10/20/30 by node type, a daily goal of 30 XP, and a daily streak 🔥 (consecutive Asia/Bangkok dates with ≥ 1 node completed), all in localStorage with try/catch. No hearts, no punishment, no locked "coming soon" content: every node shown must be playable when unlocked.
+
+Missions read store.lab[tier].metrics = { maxSingleExposurePct, minCashPct, panicSellsAfterNegativeEvents, heldBloopAtRug, coinLaunched: { lpLocked, outcome } | null, quizCorrect, quizTotal, finalValue }. Joewee's Lab writes these.
+
+Tools in the Lab (Joewee, slice J5): SMA(7) and SMA(25) overlays (13+), volume bars (all), RSI(14) pane (16+ or desktop Advanced), a price-impact preview before every trade (all: "Buying L$X moves the price about Y%"), and a portfolio allocation chart with P/L (all). Indicator maths lives in sim/indicators.js with unit tests. Each tool has an ⓘ explainer saying what it shows and what it cannot tell you. Explorer tier defaults to volume plus price impact only.
+
+Slices: Y7 (60 min) Learning Path UI, XP, streak, daily goal, missions wiring. Y8 (30 min) generate path content for all tiers with bin/generate-content.mjs; generate audio only for Unit 1 within the remaining ElevenLabs quota (other cards are text-only, with no audio button). J5 (45 min) Lab tools.
