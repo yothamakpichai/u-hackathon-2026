@@ -21,6 +21,9 @@ const routes = {
   '/create': { name: 'create', title: 'Create a coin', load: () => import('./screens/create.js'), guard: needsUnlock },
   '/explorer': { name: 'explorer', title: 'Block explorer', load: () => import('./screens/explorer.js'), guard: needsUnlock },
   '/report': { name: 'report', title: 'Report card', load: () => import('./screens/report.js'), guard: needsUnlock },
+  // The Arena screen itself explains when it is closed or locked (BRIEF §15).
+  '/arena': { name: 'arena', title: 'Arena', load: () => import('./screens/arena.js'), guard: needsTier },
+  '/privacy': { name: 'privacy', title: 'Arena privacy', load: () => import('./screens/privacy.js') },
 };
 
 for (const el of document.querySelectorAll('[data-slot="product-name"]')) el.textContent = config.PRODUCT_NAME;

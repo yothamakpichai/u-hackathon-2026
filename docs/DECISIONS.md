@@ -52,3 +52,30 @@ Choices made where the brief was silent or ambiguous (BRIEF §13). Newest last.
     - **Levels:** 8–12 Explorer, 13–15 Trader, 16–19 Builder. Under 8 plays Explorer with a "play with a grown-up" message. 20 and over sees cards for parents, teachers and real markets, then picks any level, so adult judges are never blocked.
     - **Cake:** one candle per year, up to 20 in two rows, with the age written on the cake.
     - **Storage:** `store.birthYear` sits next to `store.tier`, in localStorage only, and an earlier choice is preselected on return.
+32. **Arena schema** (`bin/migrate.php`). It is idempotent, so run it any time. It only creates missing tables and adds missing columns (listed in `$columns`) inside the existing database. It never runs `CREATE DATABASE`, so a least-privilege user is enough. Seed rows (the market row and 4 coins) use `INSERT IGNORE`, so a rerun never resets a live market. Tables: `arena_users`, `arena_sessions`, `arena_market`, `arena_coins`, `arena_holdings`, `arena_trades` and `arena_candles`, all InnoDB utf8mb4.
+33. **Arena market** (`src/arena.php`).
+    - **Pools:** one constant-product pool per coin (VAULT, FUEL, ZOOMZ, PEG), with a 0.3% fee kept in the pool.
+    - **Lazy tick:** each request locks `arena_market` (`SELECT … FOR UPDATE`) and plays every whole 1-second tick since the last one, then saves. After a quiet spell it plays at most 90 ticks and jumps to now.
+    - **Bots:** they draw deterministic randomness from the market seed and the tick.
+      - A market maker trades toward a fair value that wanders, plus small two-sided flow.
+      - A momentum bot follows a fast against a slow average.
+      - A whale makes a rare large order, mostly sells.
+      - A wash bot buys and sells FUEL to itself every tick; these trades are flagged `wash`, which drives the real-vs-wash volume chart.
+    - **History:** candles are 10 seconds long, and trades and candles older than 2 hours are pruned.
+34. **Arena accounts and security.**
+    - **Accounts:** a username (3–16 letters, numbers or _, checked against reserved words, real coin names and a ROT13 blocklist), a password (8–128 characters, argon2id, bcrypt only if PHP lacks argon2) and a birth year (13 and over, checked on the server). No email or phone.
+    - **Sessions and CSRF:** a random token in the `__Host-arena` cookie (Secure, HttpOnly, SameSite=Lax, 7 days). Only its SHA-256 is stored, next to a per-session CSRF token that every change must send as `X-CSRF-Token`. Signup and login need a JSON body and a matching Origin.
+    - **Rate limits:**
+
+      | What | Limit |
+      |---|---|
+      | Signups per IP | 30 an hour |
+      | Logins per IP | 60 per 15 minutes |
+      | Logins per username | 5 per 15 minutes |
+      | Reads per IP | 120 a minute |
+      | Trades per IP | 30 a minute |
+
+      The per-IP limits are loose enough for a class behind one school IP.
+    - **Privacy:** failed logins take the same time whether or not the username exists. Players can delete their account, and the privacy notice is at `#/privacy`.
+35. **Arena entry** is checked in the browser: Trader level or above, and a best Money Health Score of 70+ from a finished market at Trader or Builder level. The Unit 2 checkpoint route doesn't exist yet, because the Learning Path wasn't built. The server can't verify the score, since the market runs in the browser, but it does enforce 13+ from the birth year.
+36. **`ARENA_ENABLED=1`** turns the Arena on, from a real environment variable or `.env`; `env()` now reads real environment variables first. When it's off, `action=status` answers `enabled:false`, every other action answers 404 `ARENA_OFF` without touching the database, the report card shows no invite, and `#/arena` says the Arena is closed.

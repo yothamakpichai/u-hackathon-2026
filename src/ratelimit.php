@@ -2,10 +2,12 @@
 // Fixed-window rate limits per visitor (BRIEF §9, §12), stored as small locked files in the private folder.
 declare(strict_types=1);
 
-function rate_limit(string $bucket, int $limit, int $windowSeconds): void
+// $key defaults to the visitor; pass one (for example a username) to limit something else.
+function rate_limit(string $bucket, int $limit, int $windowSeconds, ?string $key = null): void
 {
     $dir = private_path('ratelimit');
-    $file = $dir . '/' . $bucket . '-' . client_key() . '.json';
+    $id = $key === null ? client_key() : substr(hash('sha256', $key), 0, 32);
+    $file = $dir . '/' . $bucket . '-' . $id . '.json';
     $fh = @fopen($file, 'c+');
     if ($fh === false) {
         send_error(503, 'STORAGE', 'Saving is paused right now. Try again in a minute.');

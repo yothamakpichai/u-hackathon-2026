@@ -2,6 +2,7 @@
 // learned", today's leaderboard for this tier, and a replay. Built on the run the Lab saves in store.lab[tier].
 import { h, icon, penny, stateView, delta, money, animate, celebrate, announce } from '../ui.js';
 import { scoreRun, learned } from '../score.js';
+import { arenaEnabled, arenaScore } from './arena.js';
 
 const ENTER = [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }];
 const API = 'api/leaderboard.php';
@@ -88,6 +89,23 @@ export function mount(root, ctx) {
     h('p', { class: 'board__privacy', text: 'Only a random nickname, your level, score and date are shared. No names, no accounts.' }),
   ]);
 
+  // The Arena invite appears only when the server has the Arena switched on (BRIEF §15).
+  const arenaSlot = h('div', { class: 'report-arena' });
+  if (tierInfo.rank >= 1) {
+    arenaEnabled().then((on) => {
+      if (!on || !alive) return;
+      const best = arenaScore(store.get());
+      const open = best !== null && best >= 70;
+      arenaSlot.replaceChildren(
+        h('section', { class: 'card arena-invite', 'aria-labelledby': 'arena-invite-title' }, [
+          h('h2', { class: 'report-section__title', id: 'arena-invite-title', text: 'The Arena' }),
+          h('p', { text: open ? 'You qualify! Trade in one live market with real players and bots. Simulated L$ only.' : `Score 70 or more at Trader or Builder level to unlock a live market with real players. Your best so far: ${best ?? 'no finished market yet'}.` }),
+          open ? h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: () => navigate('/arena') }, 'Enter the Arena') : null,
+        ]),
+      );
+    });
+  }
+
   const actions = h('div', { class: 'report-actions' }, [
     h('button', { class: 'btn btn--primary btn--lg btn--block', type: 'button', onClick: replay }, 'Replay today’s market'),
     h('button', { class: 'btn btn--block', type: 'button', onClick: () => navigate('/') }, 'Back to start'),
@@ -99,6 +117,7 @@ export function mount(root, ctx) {
     parts,
     lessons,
     board,
+    arenaSlot,
     actions,
   );
   [hero, parts, lessons, board].forEach((el, i) => animate(el, ENTER, { delay: 60 * i }));

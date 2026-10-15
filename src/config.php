@@ -1,9 +1,14 @@
 <?php
 // Settings from ../u-hackathon-2026-private/.env (BRIEF §11) and the private folders for writable state.
+// A real environment variable (for example one set in Plesk) wins over the same key in .env.
 declare(strict_types=1);
 
 function env(string $key, ?string $default = null): ?string
 {
+    $real = getenv($key);
+    if (is_string($real) && $real !== '') {
+        return $real;
+    }
     static $values = null;
     if ($values === null) {
         $values = [];
