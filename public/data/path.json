@@ -1,0 +1,2175 @@
+{
+  "explorer": {
+    "units": [
+      {
+        "id": "1",
+        "title": "Money Basics",
+        "intro": "Learn what money can do, how needs and wants differ, why waiting can help, and how to make a simple plan.",
+        "nodes": [
+          {
+            "id": "u1-l1",
+            "type": "lesson",
+            "title": "Earn, Save, Spend, Share",
+            "lesson": {
+              "title": "Earn, Save, Spend, Share",
+              "cards": [
+                {
+                  "title": "Four jobs for money",
+                  "body": "Money has four jobs. You can earn it. You can save it. You can spend it. You can share it. Most days, you use more than one.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "Tap: what does sharing mean?",
+                    "reveal": "Sharing means giving some of your money to others, like a gift for a friend or help for a cause."
+                  }
+                },
+                {
+                  "title": "Needs and wants",
+                  "body": "A need is something you must have to be safe and healthy. A want is something fun that you could live without. Both are okay. Needs come first.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "Which one is a need?",
+                    "options": [
+                      "A new toy",
+                      "Food for the week"
+                    ],
+                    "answerIndex": 1,
+                    "explain": "Food keeps you healthy. A toy is fun, but you can live without it."
+                  }
+                },
+                {
+                  "title": "Spend or save",
+                  "body": "Every time you get money, you choose. You can spend it today. You can keep some for later. Try both choices and see what changes.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "What do you do with your L$?",
+                    "options": [
+                      {
+                        "label": "Spend it today",
+                        "result": "You enjoy it now. Your pile of L$ gets smaller."
+                      },
+                      {
+                        "label": "Save some",
+                        "result": "Your pile stays. You can use it later."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Your lab money",
+                  "body": "In the lab, you start with L$1,000. Every L$ you spend leaves your pile. Slide to see how much is left after you spend.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "L$ you spend",
+                    "min": 0,
+                    "max": 1000,
+                    "step": 50,
+                    "start": 200,
+                    "formula": "subtract",
+                    "constant": 1000,
+                    "resultLabel": "L$ you still have",
+                    "unit": "L$",
+                    "valueUnit": ""
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "You have L$100. Lunch this week costs L$30. A toy costs L$80. Which one is the need?",
+                "options": [
+                  "The L$80 toy",
+                  "The L$30 lunch",
+                  "Both are needs"
+                ],
+                "answerIndex": 1,
+                "explain": "Lunch is food, and food is a need. The toy is a want. You can enjoy it, but you can live without it."
+              }
+            }
+          },
+          {
+            "id": "u1-l2",
+            "type": "lesson",
+            "title": "Waiting and Planning",
+            "lesson": {
+              "title": "Waiting and Planning",
+              "cards": [
+                {
+                  "title": "Why waiting helps",
+                  "body": "Waiting can feel slow. But it gives you time. You can gather more money. You can also check if you still want the thing.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "Tap: how can waiting help?",
+                    "reveal": "You can save enough for a bigger goal. You also avoid rushing into a buy that you might regret."
+                  }
+                },
+                {
+                  "title": "Now or later",
+                  "body": "Say you see a game you like. You can buy it right away. Or you can wait a week. See what each choice gives you.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "Buy now or wait a week?",
+                    "options": [
+                      {
+                        "label": "Buy now",
+                        "result": "You get it today. You might find a better one later."
+                      },
+                      {
+                        "label": "Wait a week",
+                        "result": "You get time to compare and to save more."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Save a little each week",
+                  "body": "Say you want a L$120 game. You can save it in small steps. Slide the weeks. More weeks means a smaller step each week.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "Weeks you save",
+                    "min": 2,
+                    "max": 12,
+                    "step": 2,
+                    "start": 6,
+                    "formula": "divide",
+                    "constant": 120,
+                    "resultLabel": "L$ to save each week",
+                    "unit": "L$",
+                    "valueUnit": ""
+                  }
+                },
+                {
+                  "title": "A simple plan",
+                  "body": "A plan has three steps. Say what you want. Check how much money you have. Decide how long you will wait. Use this plan in the lab too.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "You want a game. What helps your plan most?",
+                    "options": [
+                      "Check how much L$ you have",
+                      "Buy it right away"
+                    ],
+                    "answerIndex": 0,
+                    "explain": "Knowing your money tells you how long to save. A plan starts with the facts."
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "You save L$20 each week for a L$80 game. How many weeks until you can buy it?",
+                "options": [
+                  "2 weeks",
+                  "8 weeks",
+                  "4 weeks"
+                ],
+                "answerIndex": 2,
+                "explain": "After each week you have L$20, then L$40, then L$60, then L$80. That is 4 weeks."
+              }
+            }
+          },
+          {
+            "id": "u1-m",
+            "type": "mission",
+            "title": "Keep a cushion",
+            "goal": "Finish a market holding at least one coin, without letting your cash drop below 10% of your money.",
+            "check": [
+              {
+                "metric": "maxSingleExposurePct",
+                "op": ">",
+                "value": 0
+              },
+              {
+                "metric": "minCashPct",
+                "op": ">=",
+                "value": 10
+              }
+            ]
+          },
+          {
+            "id": "u1-c",
+            "type": "checkpoint",
+            "title": "Money Basics checkpoint",
+            "questions": [
+              {
+                "prompt": "Which one is an example of earning money?",
+                "options": [
+                  "Getting L$40 for helping a neighbor",
+                  "Giving L$40 to a friend as a gift",
+                  "Keeping L$40 in a jar"
+                ],
+                "answerIndex": 0,
+                "explain": "Earning means getting money for work or help. Giving a gift is sharing, and keeping money in a jar is saving."
+              },
+              {
+                "prompt": "You start the lab with L$1,000. You keep L$700 and do not spend it. What is that called?",
+                "options": [
+                  "Earning",
+                  "Sharing",
+                  "Saving"
+                ],
+                "answerIndex": 2,
+                "explain": "Money you keep for later is savings. You did not spend it, and you did not give it away."
+              },
+              {
+                "prompt": "Which one is a want, not a need?",
+                "options": [
+                  "A third pair of fancy sneakers",
+                  "Water to drink",
+                  "Medicine when you are sick"
+                ],
+                "answerIndex": 0,
+                "explain": "Water and medicine keep you healthy, so they are needs. A third pair of fancy sneakers is fun, but you can live without it."
+              },
+              {
+                "prompt": "Why can waiting before you buy something help?",
+                "options": [
+                  "It makes every price go down",
+                  "It gives you time to compare and save more",
+                  "It makes your money grow by itself"
+                ],
+                "answerIndex": 1,
+                "explain": "Waiting gives you time to think, compare and save. It does not change prices, and saved money does not grow by magic."
+              },
+              {
+                "prompt": "You have L$50 and want a L$90 toy. You save L$10 each week. How many weeks do you wait?",
+                "options": [
+                  "4 weeks",
+                  "9 weeks",
+                  "5 weeks"
+                ],
+                "answerIndex": 0,
+                "explain": "You need L$40 more, because L$90 minus L$50 is L$40. Saving L$10 each week, that takes 4 weeks."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "title": "Markets and Prices",
+        "intro": "Learn how prices come from buyers and sellers, why rare things can cost more, and why spreading your L$ around helps.",
+        "nodes": [
+          {
+            "id": "u2-l1",
+            "type": "lesson",
+            "title": "Buyers, Sellers and Scarcity",
+            "lesson": {
+              "title": "Buyers, Sellers and Scarcity",
+              "cards": [
+                {
+                  "title": "Who sets a price?",
+                  "body": "A price is what a buyer and a seller agree on. Say you sell a sticker for L$5. A friend says yes. Then L$5 is the price.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "What if nobody says yes?",
+                    "reveal": "The seller can ask for less. The price falls until a buyer agrees."
+                  }
+                },
+                {
+                  "title": "Buyers and sellers",
+                  "body": "Every coin in the lab has buyers and sellers. When more people want to buy, the price tends to rise. When more want to sell, it tends to fall.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "Which crowd is bigger?",
+                    "options": [
+                      {
+                        "label": "More buyers",
+                        "result": "↑ Many people want the coin, so the price tends to rise."
+                      },
+                      {
+                        "label": "More sellers",
+                        "result": "↓ Many people offer the coin, so the price tends to fall."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Scarcity",
+                  "body": "Scarce means there is not much of something. VAULT has a hard cap of 21,000,000 coins. No more can ever be made. Make more of something, and each one is worth less.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "Which coin is harder to find?",
+                    "options": [
+                      "One anyone can make more of",
+                      "One with a hard cap"
+                    ],
+                    "answerIndex": 1,
+                    "explain": "A hard cap means the number can never grow, so each coin stays rare."
+                  }
+                },
+                {
+                  "title": "The lab pool",
+                  "body": "Each coin trades in a pool with L$. The price is the L$ in the pool divided by the coins in it. This pool holds L$1,200. Slide the number of coins.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "Coins in the pool",
+                    "min": 100,
+                    "max": 600,
+                    "step": 100,
+                    "start": 300,
+                    "formula": "divide",
+                    "constant": 1200,
+                    "resultLabel": "Price of one coin",
+                    "unit": "L$",
+                    "valueUnit": ""
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "A pool holds L$1,200 and 200 coins. Then 200 more coins join, with no extra L$. What happens to one coin's price?",
+                "options": [
+                  "It stays at L$6",
+                  "It falls from L$6 to L$3",
+                  "It rises from L$6 to L$12"
+                ],
+                "answerIndex": 1,
+                "explain": "Price is the L$ in the pool divided by the coins. L$1,200 over 400 coins is L$3. More coins means each is worth less."
+              }
+            }
+          },
+          {
+            "id": "u2-l2",
+            "type": "lesson",
+            "title": "Price Moves and Spreading Out",
+            "lesson": {
+              "title": "Price Moves and Spreading Out",
+              "cards": [
+                {
+                  "title": "Prices follow minds",
+                  "body": "A price changes when people change their minds. Good news can bring more buyers. Scary news can bring more sellers. The coin itself may be just the same as before.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "Does a drop mean the coin broke?",
+                    "reveal": "Not always. Sometimes many people just sell at once. Nothing about the coin changed."
+                  }
+                },
+                {
+                  "title": "Big trades, big moves",
+                  "body": "Remember the pool? A trade puts coins in or takes coins out. The bigger the trade, the more the price moves. This is called price impact.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "Someone sells coins into the pool.",
+                    "options": [
+                      {
+                        "label": "A small sale",
+                        "result": "↓ The price dips a little."
+                      },
+                      {
+                        "label": "A big sale",
+                        "result": "↓ The price drops much more."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Do not use one basket",
+                  "body": "Think of eggs in one basket. If it drops, they all break. Spread your L$ over a few places. Keep some in L$ or PEG too. One bad day then hurts less.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "Which plan spreads your L$1,000 better?",
+                    "options": [
+                      "L$300 VAULT, L$300 EDUU, L$400 in L$",
+                      "All L$1,000 in one coin"
+                    ],
+                    "answerIndex": 0,
+                    "explain": "With several places, one coin having a bad day cannot take everything."
+                  }
+                },
+                {
+                  "title": "How much in one coin?",
+                  "body": "The Money Health Score likes spreading out. A good habit is to keep no coin above half your money. Slide to see the L$ in one coin, out of L$1,000.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "Share of your L$1,000 in one coin",
+                    "min": 0,
+                    "max": 100,
+                    "step": 10,
+                    "start": 50,
+                    "formula": "multiply",
+                    "constant": 10,
+                    "resultLabel": "L$ in that one coin",
+                    "unit": "L$",
+                    "valueUnit": "%"
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "All of your L$1,000 sits in one coin, and its price falls. What would spreading your L$ out have done?",
+                "options": [
+                  "Stopped that coin's price from falling",
+                  "Promised you a profit",
+                  "Made the drop hurt less overall"
+                ],
+                "answerIndex": 2,
+                "explain": "Spreading out does not control any one price. It means one falling coin holds less of your money, so the hit is smaller."
+              }
+            }
+          },
+          {
+            "id": "u2-m",
+            "type": "mission",
+            "title": "Spread it out",
+            "goal": "Finish a market holding coins, with no single coin ever above half of your money.",
+            "check": [
+              {
+                "metric": "maxSingleExposurePct",
+                "op": ">",
+                "value": 0
+              },
+              {
+                "metric": "maxSingleExposurePct",
+                "op": "<=",
+                "value": 50
+              }
+            ]
+          },
+          {
+            "id": "u2-c",
+            "type": "checkpoint",
+            "title": "Markets and Prices checkpoint",
+            "questions": [
+              {
+                "prompt": "Ten friends all want the same rare card. Only one is for sale. What tends to happen to its price?",
+                "options": [
+                  "It tends to rise",
+                  "It tends to fall",
+                  "It must stay the same"
+                ],
+                "answerIndex": 0,
+                "explain": "Many buyers and few sellers push a price up. When more people want something than there is to go around, buyers offer more."
+              },
+              {
+                "prompt": "VAULT has a hard cap of 21,000,000 coins. What does that mean?",
+                "options": [
+                  "Every player owns 21,000,000 coins",
+                  "VAULT always costs exactly L$21",
+                  "No more VAULT can ever be made"
+                ],
+                "answerIndex": 2,
+                "explain": "A hard cap is a limit on how many coins can ever exist. Because VAULT is capped, it stays scarce."
+              },
+              {
+                "prompt": "A pool holds L$600 and 300 coins. What is the price of one coin?",
+                "options": [
+                  "L$2",
+                  "L$200",
+                  "L$900"
+                ],
+                "answerIndex": 0,
+                "explain": "Price is the L$ in the pool divided by the coins in it. L$600 divided by 300 coins is L$2 for each coin."
+              },
+              {
+                "prompt": "A coin drops fast after scary news. Its design did not change. What could explain the drop?",
+                "options": [
+                  "The pool has stopped working for good",
+                  "Many people may have sold at once",
+                  "The coin is now broken forever"
+                ],
+                "answerIndex": 1,
+                "explain": "Prices follow what buyers and sellers do. A rush of sellers can pull a price down even when nothing about the coin changed."
+              },
+              {
+                "prompt": "You have L$1,000. Which plan keeps no coin above half of your money?",
+                "options": [
+                  "L$400 in VAULT, L$300 in EDUU, L$300 in PEG",
+                  "L$600 in VAULT, L$400 in PEG",
+                  "L$1,000 in EDUU"
+                ],
+                "answerIndex": 0,
+                "explain": "Half of L$1,000 is L$500. Only the plan with three smaller piles keeps every coin at or under that, so no single coin holds too much."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "3",
+        "title": "Crypto Made Simple",
+        "intro": "Learn how a blockchain is a shared notebook, and how lockers, keys and tiny fees fit in.",
+        "nodes": [
+          {
+            "id": "u3-l1",
+            "type": "lesson",
+            "title": "The Shared Notebook",
+            "lesson": {
+              "title": "The Shared Notebook",
+              "cards": [
+                {
+                  "title": "A Shared Notebook",
+                  "body": "Imagine a notebook that a whole club can read. Every trade gets written down. Nobody can secretly rub out a line. A blockchain works like this notebook.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "Who keeps the notebook?",
+                    "reveal": "Many computers each keep a copy. They check each other, so no single person owns it."
+                  }
+                },
+                {
+                  "title": "Pages Called Blocks",
+                  "body": "Trades are written in groups. Each group is called a block. When a page is full, the next page links to it. The pages form a chain.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "What do we call one group of trades on a page?",
+                    "options": [
+                      "A locker",
+                      "A block"
+                    ],
+                    "answerIndex": 1,
+                    "explain": "Trades are grouped into blocks, and the blocks link together into a chain."
+                  }
+                },
+                {
+                  "title": "Editing an Old Page",
+                  "body": "Say someone tries to change a page from last week. Every other copy still shows the old page. The club notices right away.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "What does the club do?",
+                    "options": [
+                      {
+                        "label": "Edit an old page",
+                        "result": "The other copies disagree, so the edit is ignored."
+                      },
+                      {
+                        "label": "Add a new line",
+                        "result": "Everyone agrees, so it is saved on the newest page."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Many Copies Keep Truth",
+                  "body": "Say 100 friends each hold a copy. A cheater changes a few of them. Most copies still show the truth, so the club can spot the change.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "Copies the cheater changed",
+                    "min": 0,
+                    "max": 40,
+                    "step": 10,
+                    "start": 20,
+                    "formula": "subtract",
+                    "constant": 100,
+                    "resultLabel": "Copies still showing the truth",
+                    "unit": "%",
+                    "valueUnit": "%"
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "A friend says one person can quietly erase a trade from a blockchain. What is true?",
+                "options": [
+                  "Old pages are thrown away every day",
+                  "Many copies exist, so a secret edit gets noticed",
+                  "The person who made the coin can erase anything"
+                ],
+                "answerIndex": 1,
+                "explain": "Lots of computers keep the same notebook. If one copy is changed, the other copies disagree, so a secret edit does not stick."
+              }
+            },
+            "explore": true
+          },
+          {
+            "id": "u3-l2",
+            "type": "lesson",
+            "title": "Lockers, Keys and Fees",
+            "lesson": {
+              "title": "Lockers, Keys and Fees",
+              "cards": [
+                {
+                  "title": "Your Locker",
+                  "body": "In the lab, your coins sit in a locker. That locker is called a wallet. The notebook shows what is inside. Only your secret key can open it.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "What is a secret key?",
+                    "reveal": "A secret code that proves the locker is yours. It is what lets you send coins out."
+                  }
+                },
+                {
+                  "title": "Keep the Key Secret",
+                  "body": "Think of a real locker. If you hand over the key, anyone can empty it. The notebook cannot undo that. Keep your key private.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "A stranger asks for your key.",
+                    "options": [
+                      {
+                        "label": "Share it",
+                        "result": "They can empty the locker, and nobody can undo it."
+                      },
+                      {
+                        "label": "Keep it secret",
+                        "result": "Your locker stays yours. Real helpers never need your key."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Small Fees",
+                  "body": "When coins move, a tiny fee pays the computers that check the notebook. Say each send costs L$0.50. Slide to see the total for many sends.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "Number of sends",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1,
+                    "start": 4,
+                    "formula": "multiply",
+                    "constant": 0.5,
+                    "resultLabel": "Total fees paid",
+                    "unit": "L$",
+                    "valueUnit": ""
+                  }
+                },
+                {
+                  "title": "Lost Keys",
+                  "body": "Keep your key somewhere safe and private. Nobody runs the notebook. So nobody can reset a lost key or open your locker for you.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "You lose your secret key. Can a club member reset it?",
+                    "options": [
+                      "No, so keep it safe",
+                      "Yes, they just ask the notebook"
+                    ],
+                    "answerIndex": 0,
+                    "explain": "No one is in charge of the notebook, so no one can reset a key."
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "You hold L$200 of VAULT in your locker. A message asks for your secret key to protect it. What now?",
+                "options": [
+                  "Send half of the key to be careful",
+                  "Send the key because they sound kind",
+                  "Keep the key private and ignore the message"
+                ],
+                "answerIndex": 2,
+                "explain": "Your key is the only thing that opens your locker. Anyone who has it can empty the locker, so you never share it, even with kind voices."
+              }
+            },
+            "explore": true
+          },
+          {
+            "id": "u3-m",
+            "type": "mission",
+            "title": "Ask why",
+            "goal": "Answer at least 2 of Penny’s market questions right in one market.",
+            "check": [
+              {
+                "metric": "quizCorrect",
+                "op": ">=",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "id": "u3-c",
+            "type": "checkpoint",
+            "title": "Crypto Made Simple checkpoint",
+            "questions": [
+              {
+                "prompt": "Which idea best describes a blockchain?",
+                "options": [
+                  "A shared notebook that many computers keep",
+                  "A secret locker only one person can see",
+                  "A coin that is always worth L$1.00"
+                ],
+                "answerIndex": 0,
+                "explain": "A blockchain is a notebook of trades. Many computers keep the same copy and check each other, so no one person controls it."
+              },
+              {
+                "prompt": "What is a block?",
+                "options": [
+                  "The key that opens a locker",
+                  "A fee paid after every trade",
+                  "A group of trades written on one page"
+                ],
+                "answerIndex": 2,
+                "explain": "A block is one page of grouped trades. Blocks link together in order, and that linked line of pages is the chain."
+              },
+              {
+                "prompt": "One computer's copy says you own 500 VAULT that you never had. Every other copy disagrees. What happens?",
+                "options": [
+                  "The fake line is not accepted",
+                  "The fake line is accepted by everyone",
+                  "The notebook closes for the day"
+                ],
+                "answerIndex": 0,
+                "explain": "The other copies still show the true record. A single changed copy does not match them, so the club ignores the fake line."
+              },
+              {
+                "prompt": "Each send costs a L$0.50 fee. You make 6 sends. How much do you pay in fees?",
+                "options": [
+                  "L$0.50",
+                  "L$3.00",
+                  "L$6.50"
+                ],
+                "answerIndex": 1,
+                "explain": "Six sends times L$0.50 each is L$3.00. Small fees can add up when you make many sends."
+              },
+              {
+                "prompt": "In the locker idea, who should hold your secret key?",
+                "options": [
+                  "Only you, kept private",
+                  "Any friend who asks for it",
+                  "Everyone, like a public sign"
+                ],
+                "answerIndex": 0,
+                "explain": "The secret key works like the only key to your locker. Whoever holds it can empty the locker, so you keep it private."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "trader": {
+    "units": [
+      {
+        "id": "1",
+        "title": "Money Basics",
+        "intro": "Plan your money, see how interest grows, and learn how rising prices and the choices you skip shape every money decision.",
+        "nodes": [
+          {
+            "id": "u1-l1",
+            "type": "lesson",
+            "title": "Budgets and Opportunity Cost",
+            "lesson": {
+              "title": "Budgets and Opportunity Cost",
+              "cards": [
+                {
+                  "title": "A budget is a plan",
+                  "body": "A budget is a plan for your money. You start the lab with L$1,000. A plan says how much to spend, how much to save, and how much to keep ready.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "Why plan before you trade?",
+                    "reveal": "A plan lets you decide calmly, before a fast price move makes you feel rushed."
+                  }
+                },
+                {
+                  "title": "Split your L$1,000",
+                  "body": "Every L$ you put into coins is a L$ you cannot use elsewhere. Drag to set how much goes into coins. The rest of your L$1,000 stays free.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "L$ you put into coins",
+                    "min": 0,
+                    "max": 1000,
+                    "step": 50,
+                    "start": 300,
+                    "formula": "subtract",
+                    "constant": 1000,
+                    "resultLabel": "L$ still free",
+                    "unit": "L$",
+                    "valueUnit": ""
+                  }
+                },
+                {
+                  "title": "Opportunity cost",
+                  "body": "Opportunity cost is the best thing you give up when you choose. Money is limited, so every choice skips another one. It is not a fee. It is the road not taken.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "You put L$200 into ZOOMZ. What is the opportunity cost?",
+                    "options": [
+                      "The 0.3% fee the pool takes",
+                      "The best other use of that L$200"
+                    ],
+                    "answerIndex": 1,
+                    "explain": "Opportunity cost is the next best choice you gave up. The pool fee is a separate cost."
+                  }
+                },
+                {
+                  "title": "Spend now or save",
+                  "body": "Every choice gives something and skips something. Switch between the two choices to see what each one gives and what it gives up.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "Where does your L$100 go?",
+                    "options": [
+                      {
+                        "label": "Spend it now",
+                        "result": "You enjoy it today, but that L$100 is not there for a later choice."
+                      },
+                      {
+                        "label": "Save it",
+                        "result": "You skip the treat today, but you keep L$100 ready for later."
+                      }
+                    ]
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "Your budget is L$1,000. You keep L$150 in PEG and put L$500 into VAULT. How much is left for other choices?",
+                "options": [
+                  "L$650",
+                  "L$350",
+                  "L$850"
+                ],
+                "answerIndex": 1,
+                "explain": "Add what you have set aside: L$150 plus L$500 is L$650. Take that from L$1,000 and L$350 is left."
+              }
+            }
+          },
+          {
+            "id": "u1-l2",
+            "type": "lesson",
+            "title": "Interest and Inflation",
+            "lesson": {
+              "title": "Interest and Inflation",
+              "cards": [
+                {
+                  "title": "What interest is",
+                  "body": "Interest is a payment for letting someone use your money. Simple interest is paid only on your starting amount. So it stays the same size each year.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "What does 5 percent on L$1,000 pay?",
+                    "reveal": "L$50 each year. It is always the same, because it is counted on the starting L$1,000 only."
+                  }
+                },
+                {
+                  "title": "Waiting with simple interest",
+                  "body": "Here L$1,000 earns 5 percent simple interest. That is L$50 every year. Drag to choose how many years you wait and watch the total grow.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "Years you wait",
+                    "min": 1,
+                    "max": 10,
+                    "step": 1,
+                    "start": 3,
+                    "formula": "multiply",
+                    "constant": 50,
+                    "resultLabel": "Total simple interest earned",
+                    "unit": "L$",
+                    "valueUnit": ""
+                  }
+                },
+                {
+                  "title": "Interest on interest",
+                  "body": "Compound interest is paid on your starting amount plus the interest you already earned. Each year the pile is bigger, so the next payment is bigger too. Compare both with 10 percent on L$1,000.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "Compare 10 percent on L$1,000.",
+                    "options": [
+                      {
+                        "label": "Simple interest",
+                        "result": "Year 2 pays L$100 again. After two years you have L$1,200."
+                      },
+                      {
+                        "label": "Compound interest",
+                        "result": "Year 2 pays L$110, which is interest on interest. After two years you have L$1,210."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Prices rise over time",
+                  "body": "Inflation means prices rise over time. If a snack costs L$10 now and L$11 next year, the same L$10 buys less. Money that sits still slowly loses buying power.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "Prices rise while your L$100 sits in a drawer. What happens?",
+                    "options": [
+                      "It buys a little less later",
+                      "It buys a little more later"
+                    ],
+                    "answerIndex": 0,
+                    "explain": "When prices rise, each L$ buys less. The number on your money stays the same."
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "You earn 5 percent simple interest on L$2,000 for 2 years. How much interest do you earn in total?",
+                "options": [
+                  "L$100",
+                  "L$210",
+                  "L$200"
+                ],
+                "answerIndex": 2,
+                "explain": "Simple interest is counted on the starting L$2,000 only. That is L$100 each year, so L$200 over two years."
+              }
+            }
+          },
+          {
+            "id": "u1-m",
+            "type": "mission",
+            "title": "Keep a cushion",
+            "goal": "Finish a market holding at least one coin, without letting your cash drop below 10% of your money.",
+            "check": [
+              {
+                "metric": "maxSingleExposurePct",
+                "op": ">",
+                "value": 0
+              },
+              {
+                "metric": "minCashPct",
+                "op": ">=",
+                "value": 10
+              }
+            ]
+          },
+          {
+            "id": "u1-c",
+            "type": "checkpoint",
+            "title": "Money Basics checkpoint",
+            "questions": [
+              {
+                "prompt": "You start with L$1,000 and plan to keep L$250 as cash. How much can go into coins?",
+                "options": [
+                  "L$750",
+                  "L$250",
+                  "L$1,250"
+                ],
+                "answerIndex": 0,
+                "explain": "A budget splits your money. Take the L$250 you keep from L$1,000 and L$750 is left for coins."
+              },
+              {
+                "prompt": "You can hold L$100 in PEG or put it into FUEL. You pick FUEL. What is the opportunity cost?",
+                "options": [
+                  "The price of FUEL today",
+                  "The coins FUEL burns",
+                  "What you could have done with that L$100 in PEG"
+                ],
+                "answerIndex": 2,
+                "explain": "Opportunity cost is the best choice you gave up. Here that is the other use of the L$100, not the coin you picked."
+              },
+              {
+                "prompt": "L$1,000 earns 10 percent compound interest. Year 1 pays L$100. What does year 2 pay?",
+                "options": [
+                  "L$110",
+                  "L$100",
+                  "L$200"
+                ],
+                "answerIndex": 0,
+                "explain": "In year 2 you earn interest on L$1,100, which includes the first interest. 10 percent of L$1,100 is L$110."
+              },
+              {
+                "prompt": "A snack costs L$20 today and L$22 next year. What does this show?",
+                "options": [
+                  "Compound interest",
+                  "Inflation",
+                  "A budget"
+                ],
+                "answerIndex": 1,
+                "explain": "Prices rising over time is inflation. Next year, the same L$20 buys less than it buys today."
+              },
+              {
+                "prompt": "Your savings earn 2 percent a year, but prices rise 4 percent a year. What is true?",
+                "options": [
+                  "Your savings buy a little less each year",
+                  "Your savings buy more each year",
+                  "Your savings stay the same in buying power"
+                ],
+                "answerIndex": 0,
+                "explain": "Prices grow faster than your interest. So even though your L$ total grows, it buys a little less each year."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "title": "Markets and Prices",
+        "intro": "How prices form, how pools react to trades, why spreading your money helps, and how hype rises and fades.",
+        "nodes": [
+          {
+            "id": "u2-l1",
+            "type": "lesson",
+            "title": "Supply, Demand and Pools",
+            "lesson": {
+              "title": "Supply, Demand and Pools",
+              "cards": [
+                {
+                  "title": "A tug of war",
+                  "body": "A price is a tug of war. Demand is how many people want a coin. Supply is how many coins are out there. When more people want it and few are available, the price tends to rise.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "What if supply grows but demand stays?",
+                    "reveal": "Each coin tends to be worth less, because there are more coins to go around. VAULT has a hard cap for this reason."
+                  }
+                },
+                {
+                  "title": "The pool sets the price",
+                  "body": "Each lab coin trades in a pool with L$. Price equals the L$ in the pool divided by the coins in the pool. Say the pool holds L$1,000. Slide the coins and watch the price.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "Coins left in a L$1,000 pool",
+                    "min": 50,
+                    "max": 500,
+                    "step": 50,
+                    "start": 100,
+                    "formula": "divide",
+                    "constant": 1000,
+                    "resultLabel": "Price per coin",
+                    "unit": "L$",
+                    "valueUnit": ""
+                  }
+                },
+                {
+                  "title": "Big trades, big moves",
+                  "body": "The pool keeps the L$ and the coins multiplied together the same. A buyer adds L$ and takes coins out. Fewer coins left means a higher price. The more you take, the more it moves. That is price impact.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "Compare a small buy and a big buy.",
+                    "options": [
+                      {
+                        "label": "Small buy",
+                        "result": "↑ Few coins leave the pool, so the price barely moves."
+                      },
+                      {
+                        "label": "Big buy",
+                        "result": "↑ Many coins leave the pool, so the price jumps a lot."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Spot the bigger move",
+                  "body": "Price impact depends on the size of your trade compared with the pool. A small pool feels a big trade much more than a large pool does.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "Which trade moves a small pool's price more?",
+                    "options": [
+                      "A buy of L$5",
+                      "A buy of L$500"
+                    ],
+                    "answerIndex": 1,
+                    "explain": "A bigger trade takes more coins out of the pool, so the price moves further."
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "A pool holds L$2,000 and 200 coins. Price equals L$ in the pool divided by coins in the pool. What is the price?",
+                "options": [
+                  "L$100",
+                  "L$10",
+                  "L$0.10"
+                ],
+                "answerIndex": 1,
+                "explain": "L$2,000 divided by 200 coins is L$10 per coin. Divide the L$ in the pool by the coins in the pool."
+              }
+            }
+          },
+          {
+            "id": "u2-l2",
+            "type": "lesson",
+            "title": "Spreading Risk and Hype",
+            "lesson": {
+              "title": "Spreading Risk and Hype",
+              "cards": [
+                {
+                  "title": "All your eggs",
+                  "body": "Concentration risk means one coin holds most of your money. If that coin falls, your whole pile feels it. Diversifying means spreading your money across different coins, so one surprise cannot sink everything.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "Why not just pick the best coin?",
+                    "reveal": "Nobody knows ahead of time which coin will do best. Spreading protects you from being wrong about one."
+                  }
+                },
+                {
+                  "title": "Half is the limit",
+                  "body": "The Money Health Score likes it when no coin is above half of your money for most of the market. Say you have L$1,000. Slide the share held in one coin and see what is left.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "Share of money in one coin",
+                    "min": 0,
+                    "max": 100,
+                    "step": 10,
+                    "start": 80,
+                    "formula": "subtract",
+                    "constant": 100,
+                    "resultLabel": "Share left for everything else",
+                    "unit": "%",
+                    "valueUnit": "%"
+                  }
+                },
+                {
+                  "title": "The hype cycle",
+                  "body": "Hype is buying because everyone else is buying. ZOOMZ shows how it works. The price can climb fast while the crowd grows. When the crowd stops, the price usually falls back just as fast.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "Flip the hype cycle.",
+                    "options": [
+                      {
+                        "label": "Crowd growing",
+                        "result": "↑ Each new buyer pushes the price up, which draws in more buyers."
+                      },
+                      {
+                        "label": "Crowd fading",
+                        "result": "↓ Buyers slow down, sellers rush in, and the price drops quickly."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Ask a calmer question",
+                  "body": "When a coin has risen all week and everyone is talking about it, pause. A rising price alone does not tell you why it is rising. Look for real demand behind it.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "A coin is everywhere in the news. What is the better question?",
+                    "options": [
+                      "Is this real demand or just a crowd?",
+                      "How do I get in before it ends?"
+                    ],
+                    "answerIndex": 0,
+                    "explain": "Knowing why a price moves helps you tell lasting demand from hype."
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "You hold L$800 of ORBIT and L$200 of PEG. What is the main risk in this mix?",
+                "options": [
+                  "No risk, because you hold two different coins",
+                  "PEG will always move as much as ORBIT",
+                  "Concentration risk: one coin's fall hits most of your money"
+                ],
+                "answerIndex": 2,
+                "explain": "Most of your money sits in one coin, so a fall in ORBIT hits hard. Holding PEG helps a little, but the mix is still concentrated."
+              }
+            }
+          },
+          {
+            "id": "u2-m",
+            "type": "mission",
+            "title": "Stay calm",
+            "goal": "Finish a market holding coins, with no coin above half of your money and no panic sale after bad news.",
+            "check": [
+              {
+                "metric": "maxSingleExposurePct",
+                "op": ">",
+                "value": 0
+              },
+              {
+                "metric": "maxSingleExposurePct",
+                "op": "<=",
+                "value": 50
+              },
+              {
+                "metric": "panicSellsAfterNegativeEvents",
+                "op": "==",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "id": "u2-c",
+            "type": "checkpoint",
+            "title": "Markets and Prices checkpoint",
+            "questions": [
+              {
+                "prompt": "Lots of people want VAULT, but no new VAULT can ever be made. What does that tend to do to its price?",
+                "options": [
+                  "Pushes it up",
+                  "Pushes it down",
+                  "Nothing at all"
+                ],
+                "answerIndex": 0,
+                "explain": "When demand rises and supply cannot grow, buyers compete for the same coins. That tends to push the price up."
+              },
+              {
+                "prompt": "Two traders buy from the same small pool. One spends L$20, the other L$2,000. Who moves the price more?",
+                "options": [
+                  "The L$20 buyer, because small trades are faster",
+                  "Both move it the same amount",
+                  "The L$2,000 buyer, who takes far more coins out"
+                ],
+                "answerIndex": 2,
+                "explain": "A bigger trade takes more coins out of the pool, so the price moves further. That is price impact."
+              },
+              {
+                "prompt": "A pool holds L$600 and 200 coins. What is the price of one coin?",
+                "options": [
+                  "L$3",
+                  "L$30",
+                  "L$0.33"
+                ],
+                "answerIndex": 0,
+                "explain": "Price is the L$ in the pool divided by the coins in the pool. L$600 divided by 200 is L$3."
+              },
+              {
+                "prompt": "Which mix of L$1,000 best avoids concentration risk?",
+                "options": [
+                  "L$800 in ORBIT and L$200 in PEG",
+                  "L$400 VAULT, L$300 FUEL, L$300 PEG",
+                  "All of it in whichever coin rose most today"
+                ],
+                "answerIndex": 1,
+                "explain": "No coin is above half, and some money sits in PEG. The other mixes put most or all of the money in one coin."
+              },
+              {
+                "prompt": "ZOOMZ rose fast because everyone bought since others were buying. What usually follows when the crowd stops?",
+                "options": [
+                  "Buying slows and the price often falls back quickly",
+                  "The price keeps rising because it rose before",
+                  "The pool pays back late buyers"
+                ],
+                "answerIndex": 0,
+                "explain": "Hype needs a growing crowd. When new buyers stop arriving, the price often falls back as fast as it climbed."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "3",
+        "title": "Crypto and Blockchain",
+        "intro": "Learn what wallets and keys really are, how blocks and confirmations work, why fees change, and how a block explorer shows every transaction.",
+        "nodes": [
+          {
+            "id": "u3-l1",
+            "type": "lesson",
+            "title": "Wallets and Keys",
+            "lesson": {
+              "title": "Wallets and Keys",
+              "cards": [
+                {
+                  "title": "What a wallet is",
+                  "body": "A wallet does not hold coins like a purse. Your coins live on the blockchain, a shared public record. Your wallet holds keys. A key proves the coins are yours and lets you send them.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "What does a private key do?",
+                    "reveal": "It signs your sends, like a secret signature that only you can make. Without it, nobody can move your coins."
+                  }
+                },
+                {
+                  "title": "Two kinds of keys",
+                  "body": "Your public address is like a mailbox number. Anyone can use it to send you coins. Your private key is different. Recovery words are a backup of it. Whoever holds them controls your coins.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "Who may you give your recovery words to?",
+                    "options": [
+                      "Anyone who says they are support",
+                      "Nobody, ever"
+                    ],
+                    "answerIndex": 1,
+                    "explain": "Nobody legitimate asks for them. Real support never needs your keys or recovery words."
+                  }
+                },
+                {
+                  "title": "Spotting the trick",
+                  "body": "A message says your account is locked and you must send your recovery words right now. That is a trick. Hurry and pressure are warning signs. Nobody legitimate asks for your keys or recovery words.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "You get that message. What do you do?",
+                    "options": [
+                      {
+                        "label": "Send the words",
+                        "result": "Whoever gets them can move all your coins, and a send cannot be undone."
+                      },
+                      {
+                        "label": "Keep them private",
+                        "result": "Your coins stay yours. You can ignore the message and move on."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Signing a send",
+                  "body": "Every send needs your key to sign it. Say your wallet holds L$1,000 of coins. Slide to choose how much you send. Whatever you do not send stays with you.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "L$ you send",
+                    "min": 0,
+                    "max": 1000,
+                    "step": 50,
+                    "start": 200,
+                    "formula": "subtract",
+                    "constant": 1000,
+                    "resultLabel": "L$ left in your wallet",
+                    "unit": "L$",
+                    "valueUnit": ""
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "Someone says they work for the lab and need your recovery words to fix a problem. What is true?",
+                "options": [
+                  "Sharing is safe if they know your username",
+                  "Nobody legitimate asks, so keep them private",
+                  "Share only half of the words to be careful"
+                ],
+                "answerIndex": 1,
+                "explain": "Recovery words give full control of your coins. No legitimate helper ever needs them, and sharing even part of them is a risk."
+              }
+            },
+            "explore": true
+          },
+          {
+            "id": "u3-l2",
+            "type": "lesson",
+            "title": "Blocks, Fees and Explorers",
+            "lesson": {
+              "title": "Blocks, Fees and Explorers",
+              "cards": [
+                {
+                  "title": "Blocks and confirmations",
+                  "body": "Transactions are grouped into blocks, and blocks link together in a chain. When a new block lands on top of yours, that is one more confirmation. More confirmations mean a transaction is harder to undo.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "Why wait for more confirmations?",
+                    "reveal": "Each block stacked on top makes the record harder to change, so your transaction gets safer to rely on."
+                  }
+                },
+                {
+                  "title": "The block explorer",
+                  "body": "A block explorer is a public page that shows every transaction. You can see the addresses, the amount, the fee and the number of confirmations. Anyone can look. It shows addresses, not private keys.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "What can you see on a block explorer?",
+                    "options": [
+                      "Every transaction, open to anyone",
+                      "Other people's private keys"
+                    ],
+                    "answerIndex": 0,
+                    "explain": "It is a public record of transactions. Private keys are never shown anywhere."
+                  }
+                },
+                {
+                  "title": "Why fees change",
+                  "body": "Each block has limited room. When many people send at once, they compete for space. Senders who pay a higher fee get in sooner. When things are quiet, fees fall.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "How busy is the network?",
+                    "options": [
+                      {
+                        "label": "Very busy",
+                        "result": "Many senders compete for room, so fees rise and waits get longer."
+                      },
+                      {
+                        "label": "Quiet",
+                        "result": "Few senders, so blocks have spare room and fees stay low."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Fees in the lab",
+                  "body": "Every trade in the lab pays a pool fee of 0.3 percent. On a small trade it is tiny. On a big trade it adds up. Slide to see the fee for each trade size.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "L$ you trade",
+                    "min": 100,
+                    "max": 1000,
+                    "step": 100,
+                    "start": 500,
+                    "formula": "multiply",
+                    "constant": 0.003,
+                    "resultLabel": "Pool fee you pay",
+                    "unit": "L$",
+                    "valueUnit": ""
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "You sent L$200 of VAULT and want proof it went through. What do you check?",
+                "options": [
+                  "Your recovery words, to see the balance",
+                  "The coin's price chart on its own",
+                  "The block explorer, for the transaction and its confirmations"
+                ],
+                "answerIndex": 2,
+                "explain": "A block explorer shows the transaction and how many confirmations it has. Recovery words should never be used to check anything."
+              }
+            },
+            "explore": true
+          },
+          {
+            "id": "u3-m",
+            "type": "mission",
+            "title": "Read the news",
+            "goal": "Answer at least 3 of Penny’s market questions right in one market.",
+            "check": [
+              {
+                "metric": "quizCorrect",
+                "op": ">=",
+                "value": 3
+              }
+            ]
+          },
+          {
+            "id": "u3-c",
+            "type": "checkpoint",
+            "title": "Crypto and Blockchain checkpoint",
+            "questions": [
+              {
+                "prompt": "A friendly stranger offers to check your coins if you send them your private key. What is the best reply?",
+                "options": [
+                  "No. Keys and recovery words are never shared",
+                  "Send it now and change it later",
+                  "Send it only if they say please"
+                ],
+                "answerIndex": 0,
+                "explain": "A private key controls your coins, and a send cannot be undone. Nobody legitimate asks for it, so the answer is always no."
+              },
+              {
+                "prompt": "What does a wallet actually hold?",
+                "options": [
+                  "The coins themselves, like cash in a purse",
+                  "A full copy of every transaction ever made",
+                  "The keys that prove and sign for your coins"
+                ],
+                "answerIndex": 2,
+                "explain": "Coins live on the blockchain. A wallet holds the keys that prove they are yours and let you sign a send."
+              },
+              {
+                "prompt": "Your L$300 send now has many blocks on top of it. What does that tell you?",
+                "options": [
+                  "It is much harder to undo, as an explorer shows",
+                  "The fee will be refunded to you",
+                  "The coin's price must be rising"
+                ],
+                "answerIndex": 0,
+                "explain": "Each block on top is another confirmation. More confirmations make a transaction harder to change, and a block explorer shows the count."
+              },
+              {
+                "prompt": "Many people all send coins at the same moment. What usually happens to fees?",
+                "options": [
+                  "They fall, because there is more business",
+                  "They rise, as senders compete for limited block room",
+                  "They stay fixed no matter how busy it is"
+                ],
+                "answerIndex": 1,
+                "explain": "Blocks have limited room. When many senders compete, those paying higher fees get in first, so fees tend to rise."
+              },
+              {
+                "prompt": "You trade L$1,000 in a lab pool with a fee of 0.3 percent. How much fee do you pay?",
+                "options": [
+                  "L$3",
+                  "L$30",
+                  "L$0.30"
+                ],
+                "answerIndex": 0,
+                "explain": "0.3 percent of L$1,000 is L$1,000 times 0.003, which is L$3. Bigger trades pay bigger fees."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "builder": {
+    "units": [
+      {
+        "id": "1",
+        "title": "Money Basics",
+        "intro": "Learn how money grows over long periods, how rising prices eat into it, why risk and return travel together, and why a cushion matters.",
+        "nodes": [
+          {
+            "id": "u1-l1",
+            "type": "lesson",
+            "title": "Growth, time and inflation",
+            "lesson": {
+              "title": "Growth, time and inflation",
+              "cards": [
+                {
+                  "title": "Growth on growth",
+                  "body": "Compound growth means you earn on your earlier earnings too. Say L$1,000 grows 10% each year. Year one adds L$100. Year two adds L$110, because your base is now L$1,100.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "Tap: what do you hold after two years?",
+                    "reveal": "You hold L$1,210. Growth without compounding would give only L$1,200."
+                  }
+                },
+                {
+                  "title": "Time is the engine",
+                  "body": "Compounding is slow at first, then it speeds up. Each year the base is bigger, so each year adds more. Over long periods, the number of years matters a lot.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "Same rate. One saver starts ten years earlier. Who usually ends with more?",
+                    "options": [
+                      "Both end with the same",
+                      "The early starter"
+                    ],
+                    "answerIndex": 1,
+                    "explain": "Early money gets more rounds of earning on earlier earnings."
+                  }
+                },
+                {
+                  "title": "Prices drift upward",
+                  "body": "Inflation means prices tend to rise over time. If a snack costs L$10 now, it may cost more later. Money that just sits still can buy less each year.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "Leave L$100 untouched for ten years.",
+                    "options": [
+                      {
+                        "label": "Prices rise",
+                        "result": "↓ Your L$100 buys less than it did before."
+                      },
+                      {
+                        "label": "Prices stay flat",
+                        "result": "Your L$100 buys the same as before."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Real return",
+                  "body": "Real return is what you earn after inflation. Say your savings earn 5% a year. Inflation takes a bite out of that. Slide inflation up and watch your real return shrink toward zero. If inflation went higher than 5%, it would turn negative.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "Inflation rate, with savings at 5%",
+                    "min": 0,
+                    "max": 5,
+                    "step": 1,
+                    "start": 2,
+                    "formula": "subtract",
+                    "constant": 5,
+                    "resultLabel": "Real return, roughly",
+                    "unit": "%",
+                    "valueUnit": "%"
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "Your L$1,000 earns 4% a year while prices rise 6% a year. What happens to what it can buy?",
+                "options": [
+                  "It buys more, because 4% is a gain",
+                  "It buys less, because the real return is negative",
+                  "It buys the same, because the L$ number grows"
+                ],
+                "answerIndex": 1,
+                "explain": "Real return is about 4% minus 6%, so roughly minus 2%. Your L$ number grows, but each L$ buys a little less."
+              }
+            }
+          },
+          {
+            "id": "u1-l2",
+            "type": "lesson",
+            "title": "Risk, return and safety cushions",
+            "lesson": {
+              "title": "Risk, return and safety cushions",
+              "cards": [
+                {
+                  "title": "Risk and return",
+                  "body": "Higher possible return comes with bigger possible swings. PEG aims for L$1.00 and moves little. ZOOMZ can leap, and it can drop just as far. A chance of more comes with a chance of less.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "A coin promises big gains and no risk.",
+                    "reveal": "Treat that as a red flag. Real chances of more always come with real chances of less."
+                  }
+                },
+                {
+                  "title": "Two styles of coin",
+                  "body": "Speculation means betting on a price move that nobody can be sure of. It can pay, and it can cost. Compare two styles of coin and notice the trade.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "Compare two kinds of coin.",
+                    "options": [
+                      {
+                        "label": "Steady, like PEG",
+                        "result": "Small swings. Small upside too."
+                      },
+                      {
+                        "label": "Hype, like ZOOMZ",
+                        "result": "↑ Can climb fast, then ↓ fade just as fast."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Emergency savings",
+                  "body": "An emergency fund is money set aside for surprises, like a broken bike. It should be steady and easy to reach. In the lab, that means L$ or PEG. Coins that swing could be down on the day you need cash.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "A surprise costs L$200. Which money covers it best?",
+                    "options": [
+                      "L$ or PEG set aside",
+                      "ZOOMZ coins bought on hype"
+                    ],
+                    "answerIndex": 0,
+                    "explain": "Steady money is there at the value you expect, when you need it."
+                  }
+                },
+                {
+                  "title": "Your steady share",
+                  "body": "The Money Health Score asks you to keep at least 10% of your money in L$ or PEG, and no coin above half. Slide to see what a steady share means out of L$1,000.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "Share of L$1,000 kept steady",
+                    "min": 0,
+                    "max": 50,
+                    "step": 5,
+                    "start": 10,
+                    "formula": "multiply",
+                    "constant": 10,
+                    "resultLabel": "Kept in L$ or PEG",
+                    "unit": "L$",
+                    "valueUnit": "%"
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "A friend puts all L$1,000 into one meme coin because it might double. What do risk and return say?",
+                "options": [
+                  "A big possible gain means a loss is unlikely",
+                  "One coin lowers risk because there is less to track",
+                  "A big possible gain comes with a big possible loss"
+                ],
+                "answerIndex": 2,
+                "explain": "Chances of more and chances of less travel together. Putting everything in one coin also leaves nothing steady for surprises."
+              }
+            }
+          },
+          {
+            "id": "u1-m",
+            "type": "mission",
+            "title": "Keep a cushion",
+            "goal": "Finish a market holding at least one coin, without letting your cash drop below 10% of your money.",
+            "check": [
+              {
+                "metric": "maxSingleExposurePct",
+                "op": ">",
+                "value": 0
+              },
+              {
+                "metric": "minCashPct",
+                "op": ">=",
+                "value": 10
+              }
+            ]
+          },
+          {
+            "id": "u1-c",
+            "type": "checkpoint",
+            "title": "Money Basics checkpoint",
+            "questions": [
+              {
+                "prompt": "L$1,000 grows 10% a year. After year one you hold L$1,100. How much does year two add?",
+                "options": [
+                  "L$110",
+                  "L$100",
+                  "L$200"
+                ],
+                "answerIndex": 0,
+                "explain": "Year two earns 10% of L$1,100, which is L$110. Earning on your earlier earnings is what makes growth compound."
+              },
+              {
+                "prompt": "Your savings earn 3% a year while prices rise 5% a year. What is your real return, roughly?",
+                "options": [
+                  "About 3%",
+                  "About 8%",
+                  "About minus 2%"
+                ],
+                "answerIndex": 2,
+                "explain": "Real return is what you earn minus inflation. Three minus five is about minus two, so your money buys a little less."
+              },
+              {
+                "prompt": "Which lab coin is built to move little, with a smaller chance of big gains?",
+                "options": [
+                  "PEG",
+                  "ZOOMZ",
+                  "BLOOP"
+                ],
+                "answerIndex": 0,
+                "explain": "PEG aims to stay at L$1.00, so it swings little. Hype coins like ZOOMZ can move far in both directions."
+              },
+              {
+                "prompt": "You hold L$1,000. Which setup best keeps an emergency cushion?",
+                "options": [
+                  "All of it in one coin that might double",
+                  "L$150 in PEG and the rest spread over coins",
+                  "Nothing in L$ or PEG, so every L$ can grow"
+                ],
+                "answerIndex": 1,
+                "explain": "Steady money in L$ or PEG covers surprises without selling coins on a bad day. Spreading the rest also limits one coin's damage."
+              },
+              {
+                "prompt": "Two players earn the same yearly growth. Mia invests L$500 now. Leo invests L$500 ten years later. Who ends ahead?",
+                "options": [
+                  "Mia, because her money had more years to compound",
+                  "Leo, because later money grows faster",
+                  "Both, because they put in the same L$"
+                ],
+                "answerIndex": 0,
+                "explain": "Growth on growth needs time. Mia's L$500 gets ten extra rounds of earning on earlier earnings, so she usually ends ahead."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "title": "Markets and Prices",
+        "intro": "Learn how pools set prices, why big trades slip, how volume can mislead, and what token unlocks do to supply.",
+        "nodes": [
+          {
+            "id": "u2-l1",
+            "type": "lesson",
+            "title": "Pools, Slippage, Market Makers",
+            "lesson": {
+              "title": "Pools, Slippage, Market Makers",
+              "cards": [
+                {
+                  "title": "Pools and liquidity",
+                  "body": "Liquidity is how easily you can trade without moving the price. In the lab, each coin trades in a pool against L$. The pool follows x times y equals k, plus a 0.3% fee.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "How does the pool set a price?",
+                    "reveal": "Price equals L$ in the pool divided by coins in the pool. A pool with L$1,000 and 1,000 coins prices each coin at L$1."
+                  }
+                },
+                {
+                  "title": "Slippage",
+                  "body": "Slippage is the gap between the price you expected and the price you get. It grows when your trade is a bigger share of the pool. Try a L$120 trade in pools of different sizes.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "L$ held in the pool",
+                    "min": 200,
+                    "max": 1000,
+                    "step": 200,
+                    "start": 600,
+                    "formula": "divide",
+                    "constant": 12000,
+                    "resultLabel": "Your L$120 trade as share of pool",
+                    "unit": "%",
+                    "valueUnit": ""
+                  }
+                },
+                {
+                  "title": "Deep and thin pools",
+                  "body": "Thin pools hold little L$ and few coins. Deep pools hold a lot. Market makers are the people who add to pools, so they make pools deeper.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "Your L$100 buy lands in which pool?",
+                    "options": [
+                      {
+                        "label": "Deep pool",
+                        "result": "↑ Price moves a little. Slippage is small."
+                      },
+                      {
+                        "label": "Thin pool",
+                        "result": "↑ Price jumps more. Slippage is large."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Market makers",
+                  "body": "A market maker adds both L$ and coins to a pool. In return, they earn a share of the 0.3% fee on every trade. They also carry risk, because the price can move against them.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "Why do pools pay market makers a fee?",
+                    "options": [
+                      "They guarantee every trader a profit",
+                      "They make trading smoother for everyone"
+                    ],
+                    "answerIndex": 1,
+                    "explain": "Their L$ and coins make the pool deeper, so trades move the price less."
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "In a pool that follows x times y equals k, why does a big trade get a worse price per coin?",
+                "options": [
+                  "The fee grows much larger for big trades",
+                  "Each coin you take makes the remaining coins cost more",
+                  "Market makers add a surcharge to big trades"
+                ],
+                "answerIndex": 1,
+                "explain": "Taking more coins out leaves fewer in the pool, so the price per coin keeps rising as you trade. Thin pools show this most."
+              }
+            }
+          },
+          {
+            "id": "u2-l2",
+            "type": "lesson",
+            "title": "Volume, Wash Trades, Unlocks",
+            "lesson": {
+              "title": "Volume, Wash Trades, Unlocks",
+              "cards": [
+                {
+                  "title": "Volume can mislead",
+                  "body": "Volume is how much was traded. High volume sounds like high demand. But wash trading breaks that link. One trader buys from and sells to itself, so volume grows with no real demand.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "Where does this happen in the lab?",
+                    "reveal": "An NPC bot wash trades FUEL. The wash-volume overlay marks the trades that go in circles."
+                  }
+                },
+                {
+                  "title": "Two kinds of busy",
+                  "body": "Look at volume and price together. Real demand pulls the price. Wash trades do not, because no new buyer ever arrives.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "Volume doubles. What do you see?",
+                    "options": [
+                      {
+                        "label": "Many real buyers",
+                        "result": "↑ Price rises as real demand takes coins from the pool."
+                      },
+                      {
+                        "label": "One bot trading itself",
+                        "result": "Price barely moves. Volume looks busy, but nothing real changed."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Unlocks and vesting",
+                  "body": "An unlock releases coins that the team and early investors held back. ORBIT unlocks 25% of its locked coins at once. The rest vests, which means it is released little by little.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "Percent of locked coins released",
+                    "min": 0,
+                    "max": 100,
+                    "step": 5,
+                    "start": 25,
+                    "formula": "subtract",
+                    "constant": 100,
+                    "resultLabel": "Percent still locked",
+                    "unit": "%",
+                    "valueUnit": "%"
+                  }
+                },
+                {
+                  "title": "Reading volume honestly",
+                  "body": "Ask three questions. Does price move with volume? Are many different traders involved? Is an unlock coming? Busy volume with a flat price and few traders deserves a closer look.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "Volume is huge, price is flat, one trader dominates. Best reading?",
+                    "options": [
+                      "Volume may be inflated, so look closer",
+                      "This proves strong real demand"
+                    ],
+                    "answerIndex": 0,
+                    "explain": "Real demand usually moves the price. A flat price with one busy trader is a wash-trading clue."
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "ORBIT's team coins unlock and the circulating supply grows. Why might the price drop?",
+                "options": [
+                  "Unlocking destroys part of the supply",
+                  "The pool stops following x times y equals k",
+                  "Some insiders may sell their newly freed coins"
+                ],
+                "answerIndex": 2,
+                "explain": "An unlock adds coins that can be sold. If some insiders sell, extra selling can push the price down, even though the coin itself has not changed."
+              }
+            }
+          },
+          {
+            "id": "u2-m",
+            "type": "mission",
+            "title": "Dodge the rug",
+            "goal": "Finish a market holding coins, with no BLOOP when it is rug pulled and no panic sale after bad news.",
+            "check": [
+              {
+                "metric": "maxSingleExposurePct",
+                "op": ">",
+                "value": 0
+              },
+              {
+                "metric": "heldBloopAtRug",
+                "op": "==",
+                "value": false
+              },
+              {
+                "metric": "panicSellsAfterNegativeEvents",
+                "op": "==",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "id": "u2-c",
+            "type": "checkpoint",
+            "title": "Markets and Prices checkpoint",
+            "questions": [
+              {
+                "prompt": "A pool holds L$2,000 and 1,000 coins. What is the price of one coin?",
+                "options": [
+                  "L$2.00",
+                  "L$0.50",
+                  "L$3,000"
+                ],
+                "answerIndex": 0,
+                "explain": "Price equals L$ in the pool divided by coins in the pool. L$2,000 divided by 1,000 coins is L$2.00 per coin."
+              },
+              {
+                "prompt": "A friend adds L$500 and matching coins to a pool. What does she earn?",
+                "options": [
+                  "A fixed payment from the lab",
+                  "Interest paid by the lab",
+                  "A share of the trading fees"
+                ],
+                "answerIndex": 2,
+                "explain": "Market makers earn a share of the 0.3% fee on trades. Their result is not fixed, because the price can move against them."
+              },
+              {
+                "prompt": "FUEL volume triples in a day, but the price barely moves and one trader makes most trades. Best reading?",
+                "options": [
+                  "Volume may be wash trading",
+                  "Real demand is surging",
+                  "The coin must be safe"
+                ],
+                "answerIndex": 0,
+                "explain": "Real demand usually moves price. Lots of volume from one trader with a flat price is the pattern wash trading leaves."
+              },
+              {
+                "prompt": "ORBIT's team coins unlock 25% at once, then the rest slowly over time. What is the slow release called?",
+                "options": [
+                  "Burning",
+                  "Vesting",
+                  "Halving"
+                ],
+                "answerIndex": 1,
+                "explain": "Vesting releases locked coins little by little. It spreads new supply over time instead of freeing everything on one day."
+              },
+              {
+                "prompt": "You can trade L$120 in a pool holding L$200, or in one holding L$1,000. Which pool gives more slippage?",
+                "options": [
+                  "The L$200 pool: your trade is a bigger share",
+                  "The L$1,000 pool: it holds more L$",
+                  "Both the same, because the trade is equal"
+                ],
+                "answerIndex": 0,
+                "explain": "Slippage depends on your trade compared with the pool. L$120 is a large share of L$200, but a small share of L$1,000."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "3",
+        "title": "Crypto and Blockchain",
+        "intro": "Learn how keys and addresses work, why changing an old block breaks the chain, and how fees, confirmations and explorers help you check claims.",
+        "nodes": [
+          {
+            "id": "u3-l1",
+            "type": "lesson",
+            "title": "Keys, Addresses and Hashes",
+            "lesson": {
+              "title": "Keys, Addresses and Hashes",
+              "cards": [
+                {
+                  "title": "What a wallet holds",
+                  "body": "A wallet does not hold coins like a purse. The coins are records on the chain. The wallet holds keys. Keys prove which records are yours. Think of a keyring, not a pocket.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "Tap to meet the two parts",
+                    "reveal": "The public address is like an account number you can share. The private key is a secret that signs your moves. Never share it."
+                  }
+                },
+                {
+                  "title": "Share or keep secret",
+                  "body": "Say a friend wants to send you L$50 of VAULT in the lab. They need somewhere to send it. They do not need your secret. Anyone with your private key can move everything you own.",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "What can you safely share so someone can send you VAULT?",
+                    "options": [
+                      "Your private key",
+                      "Your public address"
+                    ],
+                    "answerIndex": 1,
+                    "explain": "A public address only receives. A private key lets anyone spend, so it stays secret."
+                  }
+                },
+                {
+                  "title": "Hashes are fingerprints",
+                  "body": "A hash turns any data into a short fingerprint. The same data always gives the same hash. Change one letter and the hash comes out completely different. You cannot work backwards from a hash to the data.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "Edit one letter in a message.",
+                    "options": [
+                      {
+                        "label": "Same message",
+                        "result": "You get the same hash every single time."
+                      },
+                      {
+                        "label": "One letter changed",
+                        "result": "A completely different hash appears."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Edits break the chain",
+                  "body": "Each block stores the hash of the block before it. Edit an old block and its hash changes. The next block no longer matches, and neither do all after it. Slide to pick which of 100 blocks to edit.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "Block you edit, out of 100",
+                    "min": 1,
+                    "max": 100,
+                    "step": 1,
+                    "start": 40,
+                    "formula": "subtract",
+                    "constant": 100,
+                    "resultLabel": "Share of chain after it that breaks",
+                    "unit": "%",
+                    "valueUnit": ""
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "Someone edits one old block in a long chain. Its hash changes. What happens to the blocks that come after it?",
+                "options": [
+                  "They quietly update to match the edit",
+                  "They stop matching, so the edit is easy to spot",
+                  "They stay valid and nothing looks different"
+                ],
+                "answerIndex": 1,
+                "explain": "Each block stores the hash of the one before it. When an old hash changes, every later link fails to match, so the edit shows."
+              }
+            },
+            "explore": true
+          },
+          {
+            "id": "u3-l2",
+            "type": "lesson",
+            "title": "Confirmations, Fees, Explorers",
+            "lesson": {
+              "title": "Confirmations, Fees, Explorers",
+              "cards": [
+                {
+                  "title": "What confirmations mean",
+                  "body": "When you send coins, your move waits in a queue. Then it lands in a block. That is one confirmation. Each new block on top adds another. More confirmations make a move harder to undo.",
+                  "interaction": {
+                    "type": "reveal",
+                    "prompt": "Tap: why does waiting help?",
+                    "reveal": "Each new block sits on top of yours. To undo your move, someone must redo every block above it."
+                  }
+                },
+                {
+                  "title": "Why fees change",
+                  "body": "Every move pays a fee to the people who keep the chain running. Blocks have limited room. When many people send at once, they compete for space, and fees rise.",
+                  "interaction": {
+                    "type": "toggle",
+                    "prompt": "Pick how busy the chain is.",
+                    "options": [
+                      {
+                        "label": "Quiet chain",
+                        "result": "Few moves compete, so a small fee gets in fast."
+                      },
+                      {
+                        "label": "Busy chain",
+                        "result": "Many moves compete, so you pay more to be picked sooner."
+                      }
+                    ]
+                  }
+                },
+                {
+                  "title": "Fee maths",
+                  "body": "Say a fee is a share of what you send. You send L$200 of PEG. Slide the fee rate and watch the cost. Always read the fee before you confirm a move.",
+                  "interaction": {
+                    "type": "slider",
+                    "label": "Fee rate in percent",
+                    "min": 0.5,
+                    "max": 5,
+                    "step": 0.5,
+                    "start": 1,
+                    "formula": "multiply",
+                    "constant": 2,
+                    "resultLabel": "Fee on your L$200 send",
+                    "unit": "L$",
+                    "valueUnit": "%"
+                  }
+                },
+                {
+                  "title": "Check claims on an explorer",
+                  "body": "A block explorer is a public page that lists moves on a chain. Anyone can look. Say a post claims BLOOP is safe. Check the facts instead: who holds the coins, and is the pool locked?",
+                  "interaction": {
+                    "type": "choice",
+                    "prompt": "A post says BLOOP is safe. What is the better check?",
+                    "options": [
+                      "Look up holders and pool lock on the explorer",
+                      "Count how many people liked the post"
+                    ],
+                    "answerIndex": 0,
+                    "explain": "Explorer data is public and hard to fake. Likes only show hype."
+                  }
+                }
+              ],
+              "quiz": {
+                "id": "quiz",
+                "prompt": "A trader says they sent you L$500 of PEG and shows a screenshot. How do you check it really happened?",
+                "options": [
+                  "Trust the screenshot because it looks real",
+                  "Ask them for your private key to confirm",
+                  "Look up the move on a block explorer"
+                ],
+                "answerIndex": 2,
+                "explain": "A screenshot is easy to fake. An explorer shows the public record of the move, including how many confirmations it has."
+              }
+            },
+            "explore": true
+          },
+          {
+            "id": "u3-m",
+            "type": "mission",
+            "title": "Honest launch",
+            "goal": "Launch your own coin with its pool locked, so nobody can pull its money out.",
+            "check": [
+              {
+                "metric": "coinLaunched.lpLocked",
+                "op": "==",
+                "value": true
+              }
+            ]
+          },
+          {
+            "id": "u3-c",
+            "type": "checkpoint",
+            "title": "Crypto and Blockchain checkpoint",
+            "questions": [
+              {
+                "prompt": "A message says: send your private key to claim a L$100 reward. What does this tell you?",
+                "options": [
+                  "A scam, because nobody real needs your private key",
+                  "It is normal, since rewards are checked with keys",
+                  "It is fine if the message is polite"
+                ],
+                "answerIndex": 0,
+                "explain": "A private key lets anyone spend everything you own. A real reward only needs your public address, so a request for the key is a scam sign."
+              },
+              {
+                "prompt": "One comma is changed in an old block's data. What happens to its hash and to the next block?",
+                "options": [
+                  "The hash barely changes and the next block still matches",
+                  "The hash stays the same and nothing breaks",
+                  "The hash changes completely and the next block stops matching"
+                ],
+                "answerIndex": 2,
+                "explain": "Any tiny change gives a totally different hash. The next block stored the old hash, so it no longer matches, and the break spreads onward."
+              },
+              {
+                "prompt": "Why is a move with six confirmations safer than a move with one?",
+                "options": [
+                  "More blocks sit on top, so undoing it is harder",
+                  "Each confirmation adds a little L$ to your balance",
+                  "Confirmations lock your private key away"
+                ],
+                "answerIndex": 0,
+                "explain": "Every new block stacks on top of yours. Undoing your move would mean redoing all of those blocks, so each confirmation adds safety."
+              },
+              {
+                "prompt": "Many people send VAULT at the same moment and blocks are full. What usually happens to fees?",
+                "options": [
+                  "They fall, because there is more traffic",
+                  "They rise, because moves compete for limited space",
+                  "They stay exactly the same"
+                ],
+                "answerIndex": 1,
+                "explain": "Blocks have limited room. When many moves compete, people offer higher fees to be picked first."
+              },
+              {
+                "prompt": "An explorer shows one holder has 60% of a coin and its pool is not locked. What does this suggest?",
+                "options": [
+                  "Two red flags that a rug pull is possible",
+                  "A healthy sign, since the owner believes in it",
+                  "Nothing, because holder lists cannot be trusted"
+                ],
+                "answerIndex": 0,
+                "explain": "A huge holder can sell fast, and an unlocked pool can be emptied. Together they are the red flags to look for before trusting a coin."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

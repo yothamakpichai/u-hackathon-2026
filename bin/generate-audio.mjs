@@ -41,8 +41,31 @@ function clips() {
     ev.filter(([, e]) => e.question.explain).map(([id, e]) => [`${id}-question-explain`, e.question.explain]),
     TIERS.flatMap((t) => gate[t].map((q) => [`gate-${t}-${q.id}-explain`, q.explain])),
     TIERS.map((t) => [`lesson-${t}-quiz-explain`, lessons[t].quiz.explain]),
+    pathUnitOne(),
   ];
   return groups.flat().map(([id, text]) => ({ id, text, speech: speakable(text) }));
+}
+
+// Learning Path (BRIEF §14 Y8): audio for Unit 1 only. Later units are text-only, so they get no Listen button.
+function pathUnitOne() {
+  let path = {};
+  try {
+    path = read('path.json');
+  } catch {
+    return [];
+  }
+  const out = [];
+  for (const t of TIERS) {
+    for (const n of path[t]?.units?.[0]?.nodes || []) {
+      const id = `path-${t}-${n.id}`;
+      if (n.type === 'lesson') {
+        n.lesson.cards.forEach((c, i) => out.push([`${id}-${i + 1}`, c.body]));
+        out.push([`${id}-quiz`, n.lesson.quiz.prompt], [`${id}-quiz-explain`, n.lesson.quiz.explain]);
+      }
+      if (n.type === 'checkpoint') n.questions.forEach((q, i) => out.push([`${id}-q${i + 1}`, q.prompt], [`${id}-q${i + 1}-explain`, q.explain]));
+    }
+  }
+  return out;
 }
 
 // The caption stays as written; only what Penny says is adjusted, so "L$50" is read as "50 Lab Dollars".
@@ -139,7 +162,7 @@ await Promise.all([worker(), worker(), worker()]);
 const next = {};
 for (const c of all) if (manifest[c.id] === c.text && existsSync(mp3(c.id))) next[c.id] = c.text;
 writeFileSync(MANIFEST, `${JSON.stringify(next, null, 2)}\n`);
-for (const f of readdirSync(AUDIO)) if (/^(gate|lesson|event)-[a-z0-9_-]+\.mp3$/.test(f) && !ids.has(f.slice(0, -4))) unlinkSync(join(AUDIO, f));
+for (const f of readdirSync(AUDIO)) if (/^(gate|lesson|event|path)-[a-z0-9_-]+\.mp3$/.test(f) && !ids.has(f.slice(0, -4))) unlinkSync(join(AUDIO, f));
 
 const size = Object.keys(next).reduce((n, id) => n + statSync(mp3(id)).size, 0);
 const after = await (await api('/v1/user/subscription')).json();

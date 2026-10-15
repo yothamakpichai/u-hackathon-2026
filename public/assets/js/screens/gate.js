@@ -111,7 +111,7 @@ export function mount(root, ctx) {
           mood: 'celebrating',
           title: 'Lab unlocked!',
           text: `You got ${score} of ${questions.length} right. Today’s market is open.`,
-          actions: [openLab()],
+          actions: [openLab(), h('button', { class: 'btn btn--block', type: 'button', onClick: () => navigate('/path') }, 'Open the Learning Path')],
         });
         show(panel, '.result__title');
         celebrate(panel);

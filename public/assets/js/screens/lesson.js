@@ -72,21 +72,7 @@ export function mount(root, ctx) {
       const c = lesson.cards[i];
       const last = i === lesson.cards.length - 1;
       setProgress(i);
-      const next = h('button', { class: 'btn btn--block', type: 'button', onClick: () => (last ? quiz() : card(i + 1)) }, [
-        last ? 'Quiz time' : 'Next',
-        icon('arrow-right', { size: 20 }),
-      ]);
-      // The Next button is always available; it turns primary once the card's interaction is done.
-      const done = () => next.classList.add('btn--primary');
-      const node = h('article', { class: 'card lesson-card' }, [
-        h('h2', { class: 'lesson-card__title', text: c.title }),
-        h('div', { class: 'penny-says lesson-card__say' }, [
-          penny(i % 2 ? 'thinking' : 'happy', { size: 56 }),
-          h('div', { class: 'bubble bubble--body' }, [audio.line({ id: `lesson-${tier}-${i + 1}`, text: c.body, autoplay: true })]),
-        ]),
-        interaction(c.interaction, done),
-        next,
-      ]);
+      const node = lessonCard({ card: c, index: i, audio, audioId: `lesson-${tier}-${i + 1}`, nextLabel: last ? 'Quiz time' : 'Next', onNext: () => (last ? quiz() : card(i + 1)) });
       show(node, i > 0 ? '.lesson-card__title' : null);
     }
 
@@ -147,6 +133,22 @@ export function mount(root, ctx) {
     audio.stop();
     view.remove();
   };
+}
+
+// One lesson card: title, Penny's narrated body, the micro-interaction and Next. Shared with the Learning Path.
+// The Next button is always available; it turns primary once the card's interaction is done.
+export function lessonCard({ card, index, audio, audioId, nextLabel, onNext }) {
+  const next = h('button', { class: 'btn btn--block', type: 'button', onClick: onNext }, [nextLabel, icon('arrow-right', { size: 20 })]);
+  const done = () => next.classList.add('btn--primary');
+  return h('article', { class: 'card lesson-card' }, [
+    h('h2', { class: 'lesson-card__title', text: card.title }),
+    h('div', { class: 'penny-says lesson-card__say' }, [
+      penny(index % 2 ? 'thinking' : 'happy', { size: 56 }),
+      h('div', { class: 'bubble bubble--body' }, [audio.line({ id: audioId, text: card.body, autoplay: true })]),
+    ]),
+    interaction(card.interaction, done),
+    next,
+  ]);
 }
 
 // Micro-interactions. Each calls done() the first time the learner tries it.

@@ -1,6 +1,8 @@
 // Money Health Score (BRIEF §6): 0–100, scoring wisdom rather than profit, each part with a one-line reason.
 // Pure functions with no DOM, so score.test.mjs can run them in Node. Input is the run the Lab saves in
 // store.lab[tier] (docs/DECISIONS-sim.md) plus store.check[tier] and store.lesson[tier] (DECISIONS.md #11).
+// When the run carries metrics (BRIEF §14), the report uses exactly those numbers, the same ones the Learning Path
+// missions check, so a mission and the report card never disagree. Older runs without metrics use the raw data.
 
 const TICKS_PER_SECOND = 10;
 const PANIC_WINDOW = 10 * TICKS_PER_SECOND; // "no sell-everything within 10 s after a negative event"
@@ -18,10 +20,11 @@ function knowledge({ run, check, lesson }) {
   const lessonAsked = lesson?.done ? 1 : 0;
   const lessonRight = lesson?.done && lesson.quizCorrect ? 1 : 0;
   const quiz = run.quiz || [];
-  const quizRight = quiz.filter((q) => q.correct).length;
-  const asked = checkAsked + lessonAsked + quiz.length;
+  const quizAsked = run.metrics ? run.metrics.quizTotal : quiz.length;
+  const quizRight = run.metrics ? run.metrics.quizCorrect : quiz.filter((q) => q.correct).length;
+  const asked = checkAsked + lessonAsked + quizAsked;
   const right = checkRight + lessonRight + quizRight;
-  const where = ['the check', lessonAsked && 'the lesson quiz', quiz.length && `Penny’s ${plural(quiz.length, 'market question')}`].filter(Boolean);
+  const where = ['the check', lessonAsked && 'the lesson quiz', quizAsked && `Penny’s ${plural(quizAsked, 'market question')}`].filter(Boolean);
   const list = where.length > 1 ? `${where.slice(0, -1).join(', ')} and ${where.at(-1)}` : where[0];
   return {
     value: asked ? (30 * right) / asked : 0,
@@ -31,6 +34,17 @@ function knowledge({ run, check, lesson }) {
 
 function riskManagement({ run, bought }) {
   if (!bought) return { value: 0, reason: 'You never bought a coin, so there was no risk to manage. Try spreading L$ across a few coins.' };
+  const m = run.metrics;
+  if (m) {
+    const top = m.maxSingleExposurePct;
+    const cash = m.minCashPct;
+    const spread = top <= 50 ? 1 : Math.max(0, (100 - top) / 50);
+    const cushion = cash >= 10 ? 1 : Math.max(0, cash / 10);
+    return {
+      value: 12.5 * spread + 12.5 * cushion,
+      reason: `At its biggest, one coin was ${Math.round(top)}% of your money (aim for 50% or less), and your cash never fell below ${Math.round(cash)}% (aim for 10% or more).`,
+    };
+  }
   const r = run.risk || {};
   const ticks = r.ticks || 0;
   if (!ticks) return { value: 0, reason: 'The market closed before there was time to judge your risk.' };
@@ -66,6 +80,13 @@ function scamAvoidance({ run, tier }) {
 
 function composure({ run, bought }) {
   if (!bought) return { value: 0, reason: 'You held no coins through the news, so composure wasn’t tested.' };
+  if (run.metrics) {
+    const n = run.metrics.panicSellsAfterNegativeEvents;
+    return {
+      value: Math.max(0, 15 - 5 * n),
+      reason: n ? `You sold a whole coin within 10 seconds of bad news ${plural(n, 'time')}. Each panic sale costs 5 points.` : 'You never sold a whole coin in a panic after bad news.',
+    };
+  }
   const trades = run.trades || [];
   const panics = (run.events || [])
     .filter((e) => SHOCKS.includes(e.id))
@@ -81,11 +102,12 @@ function composure({ run, bought }) {
 }
 
 function returns({ run }) {
-  const change = run.startValue > 0 ? run.value / run.startValue - 1 : 0;
+  const value = run.metrics?.finalValue ?? run.value;
+  const change = run.startValue > 0 ? value / run.startValue - 1 : 0;
   const signed = `${change >= 0 ? '+' : '−'}${Math.abs(change * 100).toFixed(1)}%`;
   return {
     value: 10 * Math.min(1, Math.max(0, change / 0.5)),
-    reason: `You finished with ${L(run.value)}, ${signed}. ${change > 0 ? 'Full points need +50%.' : 'Only gains score here, and they are worth just 10 points.'}`,
+    reason: `You finished with ${L(value)}, ${signed}. ${change > 0 ? 'Full points need +50%.' : 'Only gains score here, and they are worth just 10 points.'}`,
   };
 }
 

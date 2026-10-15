@@ -48,4 +48,12 @@ const points = (s) => Object.fromEntries(s.parts.map((p) => [p.id, p.points]));
   assert.equal(learned({ run, tier: 'builder' })[0], 'An unlocked pool and one creator holding most coins are rug pull red flags.');
 }
 
+// With metrics (BRIEF §14), the report uses the same numbers as the missions.
+{
+  const run = { ...base, trades: [buy], metrics: { maxSingleExposurePct: 75, minCashPct: 5, panicSellsAfterNegativeEvents: 1, heldBloopAtRug: false, coinLaunched: null, quizCorrect: 1, quizTotal: 2, finalValue: 1100 } };
+  const s = scoreRun({ run, check: { score: 3, total: 3, passed: true, skipped: false }, tier: 'trader' });
+  assert.deepEqual(points(s), { knowledge: 24, risk: 13, scams: 20, composure: 10, returns: 2 });
+  assert.match(s.parts[1].reason, /75% of your money/);
+}
+
 console.log('score: ok');

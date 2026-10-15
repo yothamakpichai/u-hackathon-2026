@@ -155,6 +155,83 @@ const EVENT_ENTRY = {
   },
 };
 
+const LESSON = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['title', 'cards', 'quiz'],
+  properties: {
+    title: str(40, 'Lesson title, at most 6 words.'),
+    cards: list(4, {
+      type: 'object',
+      additionalProperties: false,
+      required: ['title', 'body', 'interaction'],
+      properties: { title: str(36, 'At most 5 words.'), body: str(300, 'At most 45 words. Penny reads it aloud.'), interaction: INTERACTION },
+    }),
+    quiz: question(3),
+  },
+};
+
+// Learning Path (BRIEF §14): per tier 3 units, each with 2 lessons and a 5-question checkpoint. Missions are not
+// generated: they are exact conditions on the Lab's run metrics, written by hand in MISSIONS below.
+const UNIT_TOPICS = {
+  explorer: [
+    'Money basics: earning, saving, spending and sharing; needs and wants; why waiting can pay; making a simple plan before buying.',
+    'Markets and prices: prices come from buyers and sellers; scarcity; why prices change; not putting all your money in one place.',
+    'Crypto and blockchain as ideas: a blockchain is a shared notebook nobody can secretly rub out; blocks; small fees; a wallet and its secret key are like a locker and its key, and you never share the key.',
+  ],
+  trader: [
+    'Money basics: budgets; interest and compound interest; inflation (prices rising over time); opportunity cost.',
+    'Markets and prices: supply and demand; pools and price impact; diversification and concentration risk; hype cycles.',
+    'Crypto and blockchain: wallets and keys as concepts (a private key or recovery words must never be shared, and nobody legitimate asks for them); blocks and confirmations; fees; a block explorer shows every transaction.',
+  ],
+  builder: [
+    'Money basics: compound interest over long periods; inflation and real returns; risk and return go together; emergency savings.',
+    'Markets and prices: liquidity and slippage; market makers; wash trading; token unlocks and vesting; reading volume honestly.',
+    'Crypto and blockchain: wallets, public addresses and private keys as concepts; hashes and why changing an old block breaks every later one; confirmations and fees; using a block explorer to check claims.',
+  ],
+};
+const PATH_UNIT = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['title', 'intro', 'lessons', 'checkpoint'],
+  properties: {
+    title: str(32, 'Unit title, at most 4 words.'),
+    intro: str(170, 'What this unit teaches, at most 25 words.'),
+    lessons: list(2, LESSON),
+    checkpoint: { type: 'object', additionalProperties: false, required: ['questions'], properties: { questions: list(5, question(3)) } },
+  },
+};
+// One unit per call keeps each reply well inside the output limit.
+const pathSpec = (tier, u) => ({
+  tool: `write_path_${tier}_${u + 1}`,
+  describe: `Unit ${u + 1} of the ${tier} Learning Path: 2 lessons and a 5-question checkpoint.`,
+  schema: PATH_UNIT,
+  ask: `Write unit ${u + 1} of 3 of the Learning Path for the ${tier} tier. Its topic: ${UNIT_TOPICS[tier][u]}
+The whole path, for context: ${UNIT_TOPICS[tier].map((x, i) => `${i + 1}. ${x.split(':')[0]}`).join('; ')}.
+- 2 lessons that build on each other, then a checkpoint of exactly 5 questions covering both lessons.
+- Each lesson: exactly 4 cards using each interaction type once (reveal, choice, toggle, slider), then 1 quiz question.
+- The slider maths must be exactly right at every position, and its label, resultLabel and units must describe that maths.
+- Use lab examples (L$, the lab coins) where they help. Never show, invent or ask for a real recovery phrase, key or password.`,
+});
+const PATH_FILES = Object.fromEntries(TIERS.flatMap((tier) => [0, 1, 2].map((u) => [`path_${tier}_${u + 1}`, pathSpec(tier, u)])));
+const MISSIONS = {
+  explorer: [
+    { title: 'Keep a cushion', goal: 'Finish a market holding at least one coin, without letting your cash drop below 10% of your money.', check: [{ metric: 'maxSingleExposurePct', op: '>', value: 0 }, { metric: 'minCashPct', op: '>=', value: 10 }] },
+    { title: 'Spread it out', goal: 'Finish a market holding coins, with no single coin ever above half of your money.', check: [{ metric: 'maxSingleExposurePct', op: '>', value: 0 }, { metric: 'maxSingleExposurePct', op: '<=', value: 50 }] },
+    { title: 'Ask why', goal: 'Answer at least 2 of Penny’s market questions right in one market.', check: [{ metric: 'quizCorrect', op: '>=', value: 2 }] },
+  ],
+  trader: [
+    { title: 'Keep a cushion', goal: 'Finish a market holding at least one coin, without letting your cash drop below 10% of your money.', check: [{ metric: 'maxSingleExposurePct', op: '>', value: 0 }, { metric: 'minCashPct', op: '>=', value: 10 }] },
+    { title: 'Stay calm', goal: 'Finish a market holding coins, with no coin above half of your money and no panic sale after bad news.', check: [{ metric: 'maxSingleExposurePct', op: '>', value: 0 }, { metric: 'maxSingleExposurePct', op: '<=', value: 50 }, { metric: 'panicSellsAfterNegativeEvents', op: '==', value: 0 }] },
+    { title: 'Read the news', goal: 'Answer at least 3 of Penny’s market questions right in one market.', check: [{ metric: 'quizCorrect', op: '>=', value: 3 }] },
+  ],
+  builder: [
+    { title: 'Keep a cushion', goal: 'Finish a market holding at least one coin, without letting your cash drop below 10% of your money.', check: [{ metric: 'maxSingleExposurePct', op: '>', value: 0 }, { metric: 'minCashPct', op: '>=', value: 10 }] },
+    { title: 'Dodge the rug', goal: 'Finish a market holding coins, with no BLOOP when it is rug pulled and no panic sale after bad news.', check: [{ metric: 'maxSingleExposurePct', op: '>', value: 0 }, { metric: 'heldBloopAtRug', op: '==', value: false }, { metric: 'panicSellsAfterNegativeEvents', op: '==', value: 0 }] },
+    { title: 'Honest launch', goal: 'Launch your own coin with its pool locked, so nobody can pull its money out.', check: [{ metric: 'coinLaunched.lpLocked', op: '==', value: true }] },
+  ],
+};
+
 const FILES = {
   gate: {
     tool: 'write_gate',
@@ -168,21 +245,7 @@ const FILES = {
   lessons: {
     tool: 'write_lessons',
     describe: 'One lesson per tier.',
-    schema: byTier({
-      type: 'object',
-      additionalProperties: false,
-      required: ['title', 'cards', 'quiz'],
-      properties: {
-        title: str(40, 'Lesson title, at most 6 words.'),
-        cards: list(4, {
-          type: 'object',
-          additionalProperties: false,
-          required: ['title', 'body', 'interaction'],
-          properties: { title: str(36, 'At most 5 words.'), body: str(300, 'At most 45 words. Penny reads it aloud.'), interaction: INTERACTION },
-        }),
-        quiz: question(3),
-      },
-    }),
+    schema: byTier(LESSON),
     ask: `Write one lesson per tier. A player sees it after missing the check, so it teaches the tier's lens from zero, step by step, and builds up to the quiz.
 - Exactly 4 cards. Use each interaction type exactly once per lesson: reveal, choice, toggle and slider.
 - The card body introduces the idea and, when it helps, invites the interaction ("Slide to see...").
@@ -208,6 +271,7 @@ const FILES = {
 Events, what the player sees, and the tiers that get each one:
 ${EVENTS.map((e) => `- ${e.id} (${e.coin}; tiers: ${e.tiers.join(', ')}): ${EVENT_NOTES[e.id]}`).join('\n')}`,
   },
+  ...PATH_FILES,
   tutor_faq: {
     tool: 'write_tutor_faq',
     describe: 'Suggested "Ask Penny" questions and answers per tier.',
@@ -322,14 +386,12 @@ function check(name, data) {
     if (seen.size !== q.options.length) errors.push(`${path}: two options are the same`);
     if (q.options.some((o) => /\b(all|none|both) of (the|these) (above|answers|options)\b/i.test(o))) errors.push(`${path}: no "all/none of the above"`);
   }
-  if (name === 'lessons') {
-    for (const t of TIERS) {
-      const types = data[t].cards.map((c) => c.interaction.type).sort().join(',');
-      if (types !== 'choice,reveal,slider,toggle') errors.push(`$.${t}.cards: use reveal, choice, toggle and slider once each (got ${types})`);
-      data[t].cards.forEach((c, i) => {
-        if (c.interaction.type === 'slider') errors.push(...sliderErrors(c.interaction, `$.${t}.cards[${i}].interaction`));
-      });
-    }
+  for (const [path, lesson] of allLessons(name, data)) {
+    const types = lesson.cards.map((c) => c.interaction.type).sort().join(',');
+    if (types !== 'choice,reveal,slider,toggle') errors.push(`${path}.cards: use reveal, choice, toggle and slider once each (got ${types})`);
+    lesson.cards.forEach((c, i) => {
+      if (c.interaction.type === 'slider') errors.push(...sliderErrors(c.interaction, `${path}.cards[${i}].interaction`));
+    });
   }
   if (name === 'events') {
     for (const e of EVENTS) for (const t of e.tiers) if (!MUST_MENTION[e.id].test(data[e.id][t].narration)) errors.push(`$.${e.id}.${t}.narration: must explain the event's idea (expected ${MUST_MENTION[e.id]})`);
@@ -354,14 +416,20 @@ function sliderErrors(s, path) {
 const positions = (s) => Array.from({ length: Math.round((s.max - s.min) / s.step) + 1 }, (_, i) => +(s.min + i * s.step).toFixed(6));
 const compute = (s, x) => (s.formula === 'divide' ? s.constant / x : s.formula === 'multiply' ? x * s.constant : s.constant - x);
 
+// Every lesson in a file, as [path, lesson].
+function* allLessons(name, data) {
+  if (name === 'lessons') for (const t of TIERS) yield [`$.${t}`, data[t]];
+  if (name.startsWith('path_')) for (const [l, lesson] of data.lessons.entries()) yield [`$.lessons[${l}]`, lesson];
+}
+
 // Every multiple-choice question in a file, as [path, {prompt, options, answerIndex}].
 function* questions(name, data) {
   if (name === 'gate') for (const t of TIERS) for (const [i, q] of data[t].entries()) yield [`$.${t}[${i}]`, q];
-  if (name === 'lessons')
-    for (const t of TIERS) {
-      for (const [i, c] of data[t].cards.entries()) if (c.interaction.type === 'choice') yield [`$.${t}.cards[${i}].interaction`, c.interaction];
-      yield [`$.${t}.quiz`, data[t].quiz];
-    }
+  for (const [path, lesson] of allLessons(name, data)) {
+    for (const [i, c] of lesson.cards.entries()) if (c.interaction.type === 'choice') yield [`${path}.cards[${i}].interaction`, c.interaction];
+    yield [`${path}.quiz`, lesson.quiz];
+  }
+  if (name.startsWith('path_')) for (const [i, q] of data.checkpoint.questions.entries()) yield [`$.checkpoint.questions[${i}]`, q];
   if (name === 'events') for (const e of EVENTS) for (const t of e.tiers) yield [`$.${e.id}.${t}.question`, data[e.id][t].question];
 }
 
@@ -439,12 +507,11 @@ const REVIEW_TOOL = {
 
 async function review(name, data) {
   const sliders = [];
-  if (name === 'lessons')
-    for (const t of TIERS)
-      data[t].cards.forEach((c, i) => {
-        const s = c.interaction;
-        if (s.type === 'slider') sliders.push(`$.${t}.cards[${i}]: "${s.label}" at ${[s.min, s.start, s.max].map((x) => `${x}${s.valueUnit} → "${s.resultLabel}" ${+compute(s, x).toFixed(2)}${s.unit}`).join('; ')}`);
-      });
+  for (const [path, lesson] of allLessons(name, data))
+    lesson.cards.forEach((c, i) => {
+      const s = c.interaction;
+      if (s.type === 'slider') sliders.push(`${path}.cards[${i}]: "${s.label}" at ${[s.min, s.start, s.max].map((x) => `${x}${s.valueUnit} → "${s.resultLabel}" ${+compute(s, x).toFixed(2)}${s.unit}`).join('; ')}`);
+    });
   const { use } = await claude({
     system: `You are the strict content reviewer for Market Lab, an educational market simulation for kids aged 8 to 16. Check content against these canonical facts and rules.\n\nFacts:\n${facts.facts.map((f) => `- [${f.id}] ${f.text}`).join('\n')}\n\nRules:\n${facts.rules.map((r) => `- ${r}`).join('\n')}`,
     messages: [
@@ -502,7 +569,8 @@ async function generate(name) {
       // Stable key order: events in scenario order, tiers youngest first.
       const pick = (keys, obj) => Object.fromEntries(keys.filter((k) => k in obj).map((k) => [k, obj[k]]));
       const out = name === 'events' ? Object.fromEntries(EVENTS.map((e) => [e.id, pick(TIERS, data[e.id])])) : pick(TIERS, data);
-      writeFileSync(join(DATA, `${name}.json`), `${JSON.stringify(out, null, 2)}\n`);
+      if (name.startsWith('path_')) writePath(name.split('_')[1], Number(name.split('_')[2]), data);
+      else writeFileSync(join(DATA, `${name}.json`), `${JSON.stringify(out, null, 2)}\n`);
       return { name, ok: true, attempts: attempt, warnings };
     }
     problems.forEach((p) => log(name, `  - ${p}`));
@@ -512,6 +580,30 @@ async function generate(name) {
     );
   }
   return { name, ok: false, attempts: ATTEMPTS, warnings: [] };
+}
+
+// path.json = { tier: { units: [{ id, title, intro, nodes: [lesson, lesson, mission, checkpoint] }] } }.
+// Each call writes its own unit into the file (synchronously, so parallel calls can't interleave).
+function writePath(tier, unitNo, u) {
+  let all = {};
+  try {
+    all = JSON.parse(readFileSync(join(DATA, 'path.json'), 'utf8'));
+  } catch {}
+  const id = String(unitNo);
+  const units = all[tier]?.units ? [...all[tier].units] : [];
+  units[unitNo - 1] = {
+    id,
+    title: u.title,
+    intro: u.intro,
+    nodes: [
+      ...u.lessons.map((l, j) => ({ id: `u${id}-l${j + 1}`, type: 'lesson', title: l.title, lesson: { ...l, quiz: { id: 'quiz', ...l.quiz } }, ...(id === '3' && { explore: true }) })),
+      { id: `u${id}-m`, type: 'mission', ...MISSIONS[tier][unitNo - 1] },
+      { id: `u${id}-c`, type: 'checkpoint', title: `${u.title} checkpoint`, questions: u.checkpoint.questions },
+    ],
+  };
+  all[tier] = { units };
+  const ordered = Object.fromEntries(TIERS.filter((x) => x in all).map((x) => [x, all[x]]));
+  writeFileSync(join(DATA, 'path.json'), `${JSON.stringify(ordered, null, 2)}\n`);
 }
 
 function log(name, msg) {
@@ -543,7 +635,7 @@ if (unknown.length) {
 // --check runs the rule checks on the files as they are, for example after a human edit. No API calls.
 if (process.argv.includes('--check')) {
   let bad = 0;
-  for (const n of wanted) {
+  for (const n of wanted.filter((x) => !x.startsWith('path_'))) {
     const data = read(`${n}.json`);
     if (n === 'lessons') for (const t of TIERS) delete data[t]?.quiz?.id;
     if (n === 'tutor_faq') for (const t of TIERS) for (const x of data[t] || []) delete x.source;

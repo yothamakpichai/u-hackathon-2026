@@ -79,3 +79,21 @@ Choices made where the brief was silent or ambiguous (BRIEF §13). Newest last.
     - **Privacy:** failed logins take the same time whether or not the username exists. Players can delete their account, and the privacy notice is at `#/privacy`.
 35. **Arena entry** is checked in the browser: Trader level or above, and a best Money Health Score of 70+ from a finished market at Trader or Builder level. The Unit 2 checkpoint route doesn't exist yet, because the Learning Path wasn't built. The server can't verify the score, since the market runs in the browser, but it does enforce 13+ from the birth year.
 36. **`ARENA_ENABLED=1`** turns the Arena on, from a real environment variable or `.env`; `env()` now reads real environment variables first. When it's off, `action=status` answers `enabled:false`, every other action answers 404 `ARENA_OFF` without touching the database, the report card shows no invite, and `#/arena` says the Arena is closed.
+37. **`public/js/…` in §16 means `public/assets/js/…`**, where every other module already lives (the same idea as #1 for data). `buildings.js` and `avatar.js` go there, and screens import them as `../buildings.js` and `../avatar.js`.
+38. **Daily loop** (`assets/js/progress.js`, checked by `progress.test.mjs`).
+    - **How buildings count:** each building calls `logAction(store, { kind, xp, ref })` for an action the app can see; `ref` makes it count once. `store.progress` = `{ xp, days: { 'YYYY-MM-DD': { xp, actions } }, refs }`.
+    - **XP:** lesson 10, mission 20, checkpoint 30, finished market 10, Money Check 20.
+    - **Daily goal and streak:** the goal is 30 XP a Bangkok day. The streak counts consecutive Bangkok days with at least one action, and lasts until the end of the next day.
+    - **Joewee's actions:** `syncActions()` also counts finished Coach chapters (`store.coach`) and finished markets (`store.lab[tier].at`) once each, so his modules don't have to call anything. Piggy, Farm and Future should call `logAction`.
+39. **Learning Path** (`#/path`, `screens/path.js`). `path.json` holds per tier 3 units of [lesson, lesson, mission, checkpoint].
+    - **Unlocking:** nodes open in order. A passed Money Health Check, or 4+ of the 5 knowledge items in the Money Check, opens the Unit 1 checkpoint directly.
+    - **Checkpoints:** passing takes 4 of 5, and a miss can be retried at once with no penalty.
+    - **Missions:** starting one stores `startedAt` and opens the Lab. The mission completes when a market finished after `startedAt` has `store.lab[tier].metrics` meeting every condition. Finishing a unit calls Joewee's `mintBadge(store, { kind: 'unit', ref, tier })`.
+    - **Storage:** `store.path[tier]` = `{ done: { id: { at, xp } }, missions: { id: { startedAt } } }`.
+    - **Entry:** for now, from the check result and the report card; Town's school opens it from Y11.
+40. **Path content** comes from `bin/generate-content.mjs path_<tier>_<unit>`: one unit per call (a whole tier ran out of output tokens), with the same checks, review and blind answers as every file. Missions are not generated. They are exact metric conditions written by hand in `MISSIONS`, so they always match what the Lab measures, and every mission needs at least one coin held, so doing nothing never passes. Audio exists for Unit 1 only (`path-<tier>-<node>-…`); later units are text-only, without a Listen button.
+41. **The report card reads `store.lab[tier].metrics`** (BRIEF §14), the same numbers the missions check.
+    - **Risk management:** 12.5 if the biggest single coin stayed at 50% or less (scaled down to 0 at 100%), plus 12.5 if cash never fell below 10% (scaled).
+    - **Composure:** 15 minus 5 per `panicSellsAfterNegativeEvents`.
+    - **Knowledge and returns:** knowledge uses `quizCorrect` / `quizTotal`, and returns use `finalValue`.
+    - **Older runs** without metrics keep the earlier rules (#21).
