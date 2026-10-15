@@ -63,7 +63,7 @@
       "supply": { "initial": 1000000, "max": 2000000 },
       "vesting": { "locked": 1000000, "cliffShare": 0.25, "linearTicks": 2500, "sellShare": 0.04 },
       "agents": { "retail": 30, "momentum": 5, "value": 6, "panic": 6 },
-      "params": { "retail": { "buyBias": 0.02 } }
+      "params": { "retail": { "buyBias": 0.02 }, "insider": { "sellTicks": 1 } }
     },
     {
       "id": "ZOOMZ",

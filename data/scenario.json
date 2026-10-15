@@ -35,7 +35,7 @@
       "at": 140,
       "tiers": ["explorer", "trader", "builder"],
       "negative": true,
-      "effect": { "poolShare": 0.12, "ticks": 30, "fear": 1 }
+      "effect": { "poolShare": 0.12, "ticks": 1, "fear": 1 }
     },
     {
       "id": "rug_pull",

@@ -16,11 +16,11 @@ Decisions for `public/assets/js/sim/` and `data/coins.json`, `agents.json`, `sce
 
 | Coin | How it works |
 |---|---|
-| VAULT | Mints 0.12 per tick, capped at 21M; miners sell half. `halving` halves issuance. `whale_dump` sells 12% of the pool over 3 s. |
+| VAULT | Mints 0.12 per tick, capped at 21M; miners sell half. `halving` halves issuance. `whale_dump` sells 12% of the pool in the event's own tick, so the drop is already on the chart when Penny announces it. Spread over 3 s, selling on the popup front-ran the drop and beat holding, which taught the opposite of composure. |
 | EDUU | Fixed max supply. Learner rewards are released from a 10M pool; learners sell 20%. |
 | PEG | Deep AMM pool. The arb agent mints or redeems at 1:1, so supply moves with it, and closes 2% of the gap each tick. `depeg_scare` sells PEG down to 0.96. |
-| FUEL | Issuance minus burn. 0.05% of the coins in every swap are burned, wash trades included. The burn is kept small so fake volume barely moves the price. A wash bot trades all session; `volume` includes wash and `washVolume` is the wash part. |
-| ORBIT | `unlock` releases 25% of the locked supply at the cliff, then linear vesting. Insiders sell 4% of each unlock. |
+| FUEL | Issuance minus burn. 0.05% of the coins in every swap are burned, wash trades included. A wash bot trades all session; `volume` includes wash and `washVolume` is the wash part. The bot alternates buy-first and sell-first round trips. One-way round trips left their fees in the pool and lifted the price about 8% per session; alternating cancels that, leaving about +1% from the burn. |
+| ORBIT | `unlock` releases 25% of the locked supply at the cliff, then linear vesting. Insiders sell 4% of each unlock; the cliff sale lands in the unlock tick, for the same reason as the whale dump. |
 | ZOOMZ | Bonding curve, then AMM. Hype buyers pump it and later take profit; value agents keep the fade sideways. |
 | BLOOP | Launched straight on an AMM pool with an unlocked LP held by its creator (the classic rug). It does not use the curve because a graduated curve's LP is burned and can't be pulled; that contrast is the lesson. `rug_pull` pulls 99% of the liquidity and dumps the creator's bag. Afterwards NPCs never buy it, and the player can only sell (error `RUGGED`). |
 
@@ -31,8 +31,8 @@ Decisions for `public/assets/js/sim/` and `data/coins.json`, `agents.json`, `sce
 
 | Event | Result |
 |---|---|
-| `whale_dump` | −20 to −23%, recovering to about −8% |
-| `unlock` | −9 to −19%, then a slow slide |
+| `whale_dump` | −21 to −24% at once, recovering to −7 to −10% |
+| `unlock` | About −23% at once, then a partial recovery and a slow slide |
 | `hype_wave` | +300 to +400% about 30 s later, then fades |
 | BLOOP before the rug | +140 to +730% |
 | `rug_pull` | About −100% |
@@ -43,9 +43,11 @@ A full session runs in under 0.1 s.
 ## API notes (additive to §5; nothing in §5 changed)
 
 - `session.quote(coinId, side, amount)` returns the same shape as `swap()` without trading. It is for the trade-panel preview.
-- `session.finish()` closes the market early ("Finish now") and fires `close` with the final state.
-- `on()` returns an unsubscribe function. A listener that throws doesn't break the tick; its error is rethrown asynchronously.
+- `session.finish()` closes the market early ("Finish now") and fires `close` with the final state. `close` fires exactly once, even if a listener calls `finish()`.
+- `on()` returns an unsubscribe function; calling it twice is harmless. A listener that throws doesn't break the tick; its error is rethrown asynchronously.
 - `swap()` errors are `{ code, message }`, with plain messages that say what to do next. `createCoin()` throws a `SimError` with the same fields.
+- Swap error codes: `MARKET_CLOSED`, `UNKNOWN_COIN`, `OWN_COIN`, `BAD_SIDE`, `BAD_AMOUNT`, `INSUFFICIENT_CASH`, `INSUFFICIENT_COINS`, `RUGGED`, `NO_LIQUIDITY`. `NO_LIQUIDITY` covers a bonding curve that can't pay out in full; it is refused rather than filled for nothing.
+- `createSession()` throws `BAD_SEED` when there is no seed, so a forgotten seed can't silently give every day the same market. Pass `dailySeed()`.
 - `createCoin()` also accepts `hype` (0–1). §2 gives Trader a "launch hype" knob, but §5's signature doesn't include it.
 - Tier ids are `explorer` | `trader` | `builder` (case-insensitive).
 - `iconId` (0–23) and `colorId` (0–11) are indexes into the glyph set and the coin colour tokens. EDUU uses `colorId` 0, which should map to the primary `#0DA678`.
@@ -55,7 +57,7 @@ A full session runs in under 0.1 s.
 ## Create a coin
 
 - One coin per session. Knobs a tier can't see keep safe defaults: allocation you/team/public 10/10/80, hype 0.4, LP locked, vesting on.
-- The creator's own allocation is locked and never tradable by the player, so no user can dump on holders. It is listed in `portfolio.created` and is not counted in `portfolio.value`.
+- The player can't trade their own coin at all (`OWN_COIN`). A review found that buying it at launch and selling 10 s later returned +257 to +499%, a textbook dev dump. Their allocation is locked, listed in `portfolio.created`, and not counted in `portfolio.value`.
 - The team share vests over 60 s, and the NPC team sells half of it.
 - **Trust** comes only from the design: insider share above 20%, an unlocked LP (Builder) and vesting (Builder). Trust scales how much hype buyers want the coin. `launch.factors` lists the reasons, so J3 can explain the outcome.
 - **Left for J3:** the NPC copycat attack, and the ticker blocklist and profanity list.

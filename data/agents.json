@@ -27,6 +27,6 @@
     "hype": { "actProb": 0.1, "sizeL": [30, 300], "exitHype": 0.25, "exitProb": 0.01, "exitFrac": [0.2, 0.6], "cashL": [1000, 4000] },
     "arb": { "strength": 0.02, "deadband": 0.0005 },
     "rugger": {},
-    "wash": { "tradeProb": 0.8, "sizeL": [150, 600], "cashL": [40000, 40000] }
+    "wash": { "tradeProb": 0.8, "sizeL": [150, 600], "cashL": [40000, 40000], "holdL": [40000, 40000] }
   }
 }

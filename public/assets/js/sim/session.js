@@ -22,6 +22,9 @@ const fmt = (n) => (n >= 100 ? n.toFixed(0) : n >= 1 ? n.toFixed(2) : n.toPrecis
 export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario }) {
   tier = String(tier ?? '').toLowerCase();
   if (!TIERS.includes(tier)) throw new SimError('BAD_TIER', `Unknown tier "${tier}".`);
+  if (seed == null || (typeof seed !== 'string' && !Number.isFinite(Number(seed)))) {
+    throw new SimError('BAD_SEED', 'Missing or invalid seed. Pass dailySeed().');
+  }
   const baseSeed = typeof seed === 'string' ? hashString(seed) : Number(seed) >>> 0;
 
   const { tickMs, ticks, ticksPerDay: TPD, candleTicks: C, startCash } = scenario;
@@ -402,7 +405,8 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     trackRisk(t);
 
     now = t + 1;
-    if (now >= ticks) {
+    const ended = now >= ticks;
+    if (ended) {
       closed = true;
     } else {
       const slot = now % TPD;
@@ -417,7 +421,8 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     }
 
     for (const ev of toEmit) emit('event', ev);
-    if (closed) emit('close', getState());
+    // Only the natural end closes here; finish() called from a listener has already sent 'close'.
+    if (ended) emit('close', getState());
     return true;
   }
 
@@ -425,6 +430,10 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     if (closed) return fail('MARKET_CLOSED', 'The market has closed. Open your report card to see how you did.');
     const c = byId.get(coinId);
     if (!c || !isVisible(c)) return fail('UNKNOWN_COIN', 'That coin is not in this market.');
+    // A creator trading their own coin could pump and dump it on the buyers (BRIEF §1, §3.5).
+    if (c.user) {
+      return fail('OWN_COIN', `You launched ${c.ticker}, so you can watch it but not trade it. That keeps it fair for everyone who buys it.`);
+    }
     if (side !== 'buy' && side !== 'sell') return fail('BAD_SIDE', 'Choose Buy or Sell.');
     if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
       return fail('BAD_AMOUNT', 'Enter an amount bigger than zero.');
@@ -441,6 +450,11 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
       const held = pf.holdings[coinId] ?? 0;
       if (amount > held * (1 + 1e-9)) {
         return fail('INSUFFICIENT_COINS', `You have ${fmt(held)} ${c.ticker} to sell. Try a smaller amount.`);
+      }
+      // A bonding curve can only pay out the real L$ it holds; refuse rather than fill for nothing.
+      const inEff = Math.min(amount, held) * (1 - c.burnRate) * (1 - c.pool.fee);
+      if ((c.pool.x * inEff) / (c.pool.y + inEff) > realL(c.pool)) {
+        return fail('NO_LIQUIDITY', `The ${c.ticker} pool only holds L$${realL(c.pool).toFixed(2)} of real money right now, so it can't pay for that many coins. Try selling fewer.`);
       }
     }
     return { ok: true, c };
@@ -509,8 +523,9 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     const ticker = String(opts.ticker ?? '').trim().toUpperCase();
     if (!/^[A-Z]{3,5}$/.test(ticker)) throw new SimError('BAD_TICKER', 'Use 3 to 5 letters (A to Z) for the ticker.');
     if (byId.has(ticker)) throw new SimError('TICKER_TAKEN', `${ticker} is already in this market. Pick another ticker.`);
-    const iconId = Number(opts.iconId);
-    const colorId = Number(opts.colorId);
+    const toId = (v) => (typeof v === 'number' || (typeof v === 'string' && v.trim() !== '') ? Number(v) : NaN);
+    const iconId = toId(opts.iconId);
+    const colorId = toId(opts.colorId);
     if (!Number.isInteger(iconId) || iconId < 0 || iconId >= uc.iconCount) throw new SimError('BAD_ICON', 'Pick an icon.');
     if (!Number.isInteger(colorId) || colorId < 0 || colorId >= uc.colorCount) throw new SimError('BAD_COLOR', 'Pick a colour.');
     const supply = Number(opts.supply);
@@ -655,7 +670,10 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
   function on(name, cb) {
     if (!listeners[name]) throw new SimError('BAD_EVENT', `Unknown session event "${name}".`);
     listeners[name].push(cb);
+    let active = true;
     return () => {
+      if (!active) return;
+      active = false;
       const i = listeners[name].indexOf(cb);
       if (i >= 0) listeners[name].splice(i, 1);
     };

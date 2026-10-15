@@ -99,11 +99,18 @@ export const STEPS = {
     m.sell(a, c, q);
   },
 
-  // Wash-trading bot: buys and sells the same coins straight back. Volume, no real demand.
+  // Wash-trading bot: trades the same coins straight back. Volume, no real demand.
+  // It alternates which leg goes first so the fees it pays don't push the price one way.
   wash(a, c, m, u1, u2) {
     const p = a.p;
     if (u1 >= p.tradeProb) return;
-    const got = m.buy(a, c, logUniform(u2, p.sizeL), true);
-    if (got > 0) m.sell(a, c, got, true);
+    const L = logUniform(u2, p.sizeL);
+    if (u1 < p.tradeProb / 2) {
+      const got = m.buy(a, c, L, true);
+      if (got > 0) m.sell(a, c, got, true);
+    } else {
+      const back = m.sell(a, c, L / m.price(c), true);
+      if (back > 0) m.buy(a, c, back, true);
+    }
   },
 };

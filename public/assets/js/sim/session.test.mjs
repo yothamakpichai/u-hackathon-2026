@@ -21,12 +21,11 @@ function run(seed, tier, actions = {}, until = Infinity) {
   return { s, results };
 }
 
-// One scripted player: trades, launches a coin, buys it and trades through events.
+// One scripted player: trades, launches a coin and trades through events.
 const SCRIPT = {
   10: (s) => s.swap('VAULT', 'buy', 300),
   360: (s) => s.swap('ZOOMZ', 'buy', 150),
   400: (s) => s.createCoin({ name: 'Moon Pie', ticker: 'PIE', iconId: 3, colorId: 7, supply: 1e6, allocation: { you: 20, team: 10, public: 70 }, hype: 0.7, lpLocked: false, vesting: true }),
-  410: (s) => s.swap('PIE', 'buy', 50),
   700: (s) => s.swap('VAULT', 'sell', s.getState().portfolio.holdings.VAULT / 2),
   1500: (s) => s.swap('ZOOMZ', 'sell', s.getState().portfolio.holdings.ZOOMZ),
   2060: (s) => s.swap('PEG', 'buy', 200),
@@ -191,6 +190,8 @@ test('createCoin launches an honest coin on the bonding curve', () => {
   assert.equal(c.supply, 1_000_000);
   assert.ok(c.launch.trust > 0 && c.launch.trust <= 1.1);
   assert.equal(s.getState().portfolio.created[0].coins, 100_000);
+  assert.equal(s.swap('MEOW', 'buy', 50).error.code, 'OWN_COIN', 'creators cannot pump and dump their own coin');
+  assert.equal(s.quote('MEOW', 'buy', 50).error.code, 'OWN_COIN');
   for (let i = 0; i < 600; i++) s.tick();
   c = s.getState().coins.MEOW;
   assert.ok(c.holders > 0 && c.totalVolume > 0, 'agents react to the launch');
@@ -225,7 +226,41 @@ test('createCoin launches an honest coin on the bonding curve', () => {
   const once = fresh();
   once.createCoin(ok);
   assert.equal(err(() => once.createCoin({ ...ok, ticker: 'MORE' })), 'LIMIT');
+  assert.equal(err(() => fresh().createCoin({ ...ok, iconId: null })), 'BAD_ICON');
   assert.equal(err(() => createSession({ seed: 1, tier: 'grownup', ...config() })), 'BAD_TIER');
+  assert.equal(err(() => createSession({ tier: 'explorer', ...config() })), 'BAD_SEED');
+});
+
+test('close fires once, even when a listener ends the market early', () => {
+  const s = createSession({ seed: SEEDS[0], tier: 'explorer', ...config() });
+  let closes = 0;
+  s.on('close', () => closes++);
+  s.on('event', (e) => {
+    if (e.id === 'halving') s.finish();
+  });
+  while (s.tick());
+  s.finish();
+  assert.equal(closes, 1);
+
+  const off = s.on('event', () => {});
+  off();
+  off(); // calling unsubscribe twice is harmless
+});
+
+test('a dump is already on the chart when its event fires', () => {
+  // Penny announces what the chart shows, so panic-selling on the popup can't front-run the drop.
+  for (const [id, coin, tier] of [['whale_dump', 'VAULT', 'explorer'], ['unlock', 'ORBIT', 'trader']]) {
+    const at = tickOf(id);
+    const s = createSession({ seed: SEEDS[1], tier, ...config() });
+    for (let i = 0; i < at; i++) s.tick();
+    const before = s.getState().coins[coin].price;
+    let atEvent = null;
+    s.on('event', (e) => {
+      if (e.id === id) atEvent = s.getState().coins[coin].price;
+    });
+    s.tick();
+    assert.ok(atEvent <= before * 0.92, `${id}: ${before} → ${atEvent} when the event fires`);
+  }
 });
 
 test('a greedy design earns less trust than a fair one', () => {
