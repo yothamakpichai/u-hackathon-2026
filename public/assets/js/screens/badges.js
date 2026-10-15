@@ -25,8 +25,11 @@ const UNITS = {
   3: { title: 'Chain Explorer', color: 'indigo', shape: 'blocks' },
 };
 
-export function badgeInfo(id) {
+export function badgeInfo(id, record) {
   const [kind, a, b] = String(id).split(':');
+  if (kind === 'cow') {
+    return { id, kind, title: record?.meta?.title || 'Cow birth certificate', how: record?.meta?.how || 'A cow born on your farm.', color: 'gold', shape: 'cow' };
+  }
   if (kind === 'coach' && COACH[a]) return { id, kind, ...COACH[a] };
   if (kind === 'unit' && UNITS[b]) {
     const tier = a.charAt(0).toUpperCase() + a.slice(1);
@@ -36,7 +39,7 @@ export function badgeInfo(id) {
 }
 
 // Coach badges are one per chapter; unit badges are per level, because each level's units differ.
-export const badgeId = ({ kind, ref, tier }) => (kind === 'unit' ? `unit:${tier}:${ref}` : `coach:${ref}`);
+export const badgeId = ({ kind, ref, tier }) => (kind === 'unit' ? `unit:${tier}:${ref}` : kind === 'cow' ? `cow:${ref}` : `coach:${ref}`);
 
 export const listBadges = (store) => Object.values(store.get().badges || {}).sort((x, y) => x.at - y.at);
 
@@ -47,11 +50,11 @@ export const setChainSink = (fn) => {
 };
 
 // Mint once. Resolves to the stored badge record (or the existing one when already minted).
-export async function mintBadge(store, { kind, ref, tier }) {
+export async function mintBadge(store, { kind, ref, tier, meta = null }) {
   const id = badgeId({ kind, ref, tier });
   const existing = store.get().badges?.[id];
   if (existing) return existing;
-  if (!badgeInfo(id)) return null;
+  if (!badgeInfo(id, { meta })) return null;
   const at = Date.now();
   const owner = store.get().nickname || 'you';
   let hash = null;
@@ -60,7 +63,7 @@ export async function mintBadge(store, { kind, ref, tier }) {
   } catch {
     hash = null; // no Web Crypto: the badge still mints, the card says the fingerprint is missing
   }
-  const record = { id, kind, ref: String(ref), tier, at, hash, onChain: false };
+  const record = { id, kind, ref: String(ref), tier, at, hash, onChain: false, ...(meta ? { meta: { title: String(meta.title).slice(0, 60), how: String(meta.how).slice(0, 120) } } : {}) };
   try {
     record.onChain = Boolean(chainSink?.(id));
   } catch {
@@ -79,6 +82,7 @@ const SHAPES = {
   wave: [['path', { d: 'M32 52c5-7 11-7 16 0s11 7 16 0', class: 'badge-art__line' }], ['path', { d: 'M32 42c5-7 11-7 16 0s11 7 16 0', class: 'badge-art__line badge-art__soft' }]],
   shield: [['path', { d: 'M48 30l15 6v10c0 9-6 15-15 19-9-4-15-10-15-19V36z', class: 'badge-art__fill' }], ['path', { d: 'M42 47l4 4 8-9', class: 'badge-art__tick' }]],
   coin: [['circle', { cx: 48, cy: 48, r: 14, class: 'badge-art__fill' }], ['circle', { cx: 48, cy: 48, r: 8, class: 'badge-art__hole' }]],
+  cow: [['ellipse', { cx: 48, cy: 50, rx: 13, ry: 12, class: 'badge-art__fill' }], ['ellipse', { cx: 34, cy: 40, rx: 6, ry: 3.5, class: 'badge-art__fill' }], ['ellipse', { cx: 62, cy: 40, rx: 6, ry: 3.5, class: 'badge-art__fill' }], ['ellipse', { cx: 48, cy: 56, rx: 8, ry: 5, class: 'badge-art__hole' }]],
   blocks: [['rect', { x: 32, y: 42, width: 10, height: 10, rx: 2, class: 'badge-art__fill' }], ['rect', { x: 46, y: 42, width: 10, height: 10, rx: 2, class: 'badge-art__fill' }], ['rect', { x: 60, y: 42, width: 6, height: 10, rx: 2, class: 'badge-art__fill' }], ['path', { d: 'M42 47h4M56 47h4', class: 'badge-art__line' }]],
 };
 
@@ -103,7 +107,7 @@ export function mintedNote(promise) {
   const text = h('p', { class: 'badge-note__text', text: 'Minting your badge…' });
   const box = h('div', { class: 'badge-note', role: 'status' }, [text]);
   promise.then((record) => {
-    const info = record && badgeInfo(record.id);
+    const info = record && badgeInfo(record.id, record);
     if (!info) {
       box.remove();
       return;

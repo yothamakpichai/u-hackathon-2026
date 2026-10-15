@@ -183,6 +183,20 @@ The sim records raw data; it does not compute the score.
   - Amounts are shown as "THB", because the baht sign (U+0E3F) is in the Thai Unicode block that `bin/check.mjs` rejects.
   - Inputs persist in `store.future`.
 
+## Piggy Bank and Farm (slice J11, BRIEF §16)
+
+- **Piggy rules.** `sim/piggy.js` holds them, tested. Points ("seeds") go to log (2, three a day), plan (3, two a day), reflect (3, once a day) and streak (2, on the first action of a day that continues a streak). The daily cap is 12.
+  - The reward API has no amount parameter, so the amount can never change the reward.
+  - Challenges: Calendar saves the date's number. Birthday year saves 1 to 365 from a start date the user picks ("your birthday or today"), so no birth date is stored. 52 weeks saves 10 × the week number.
+  - `store.piggy = { goals, entries, reflections, challenges, rewards, monthlyExpenses }`. `entries[].verified` (set by the parent link) shows a "Verified by a parent" chip only.
+  - Adults (20+ from the birth year) see an emergency fund of 3–6 months of expenses. There are no leaderboards and no comparisons.
+- **Farm rules.** `sim/farm.js` computes feed = piggy seeds + 5 per finished lesson + 5 per Coach chapter + 3 per finished Lab run.
+  - Cows are born at 5, 60 and 150 feed, and grow from calf to young (15) to grown (35) on the feed earned since birth.
+  - Traits (name, coat, pattern, bell, horns, a rare star in about 1 in 10, milk 2–4 litres) are seeded from the cow id and the farm's seed.
+  - Grown cows give milk once per Bangkok day, sold at 5 coins a litre.
+- **Birth certificates.** Each birth mints a soulbound certificate through `mintBadge(store, { kind: 'cow', ref, meta })`. It's a badge id `cow:<id>`, shown in the explorer gallery with its hash, and on today's chain when a market is open.
+- **Routes.** `#/piggy` and `#/farm` are registered through `public/js/buildings.js` (not on main yet).
+
 ## Config location
 
 - The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.

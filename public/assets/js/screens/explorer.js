@@ -28,7 +28,7 @@ function badgeGallery(store) {
   const records = listBadges(store);
   const list = records.length
     ? h('ul', { class: 'badge-grid' }, records.map((rec) => {
-        const info = badgeInfo(rec.id);
+        const info = badgeInfo(rec.id, rec);
         if (!info) return null;
         return h('li', { class: 'badge-card' }, [
           badgeArt(info),

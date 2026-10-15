@@ -1952,3 +1952,251 @@
   display: grid;
   gap: var(--sp-2);
 }
+
+/* ---- Piggy Bank and Farm (BRIEF §16) ---------------------------------------------------------- */
+
+[data-route="piggy"] .app-main,
+[data-route="farm"] .app-main {
+  max-width: 64rem;
+}
+
+.piggy-screen,
+.farm-screen,
+.piggy,
+.piggy-card,
+.farm-feed,
+.farm-milk {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.piggy-screen,
+.farm-screen {
+  gap: var(--sp-4);
+}
+
+@media (min-width: 900px) {
+  .piggy {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.piggy-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--sp-3);
+}
+
+.piggy-stat {
+  display: grid;
+  gap: 2px;
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.piggy-stat__label {
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.piggy-stat__value {
+  font-size: var(--fs-xl);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+
+.piggy-goals,
+.piggy-challenges,
+.piggy-history,
+.farm-cows,
+.farm-feed__parts {
+  display: grid;
+  gap: var(--sp-3);
+  padding: 0;
+  list-style: none;
+}
+
+.piggy-goal {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.piggy-goal__body {
+  display: grid;
+  gap: var(--sp-1);
+}
+
+.piggy-goal__name,
+.piggy-challenge__title {
+  font-weight: 800;
+}
+
+.piggy-bar {
+  height: 12px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+}
+
+.piggy-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary-500);
+}
+
+.piggy-empty {
+  color: var(--ink-500);
+}
+
+.piggy-add summary {
+  min-height: var(--tap);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.piggy-add[open] {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.piggy-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.piggy-icon {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  border: 2px solid transparent;
+  border-radius: var(--r-md);
+  background: transparent;
+}
+
+.piggy-icon[aria-pressed="true"] {
+  border-color: var(--primary-600);
+  background: var(--primary-50);
+}
+
+.piggy-challenge {
+  display: grid;
+  gap: var(--sp-1);
+  padding: var(--sp-3);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.piggy-challenge .btn {
+  justify-self: start;
+}
+
+.piggy-done {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--gain-700);
+  font-weight: 700;
+}
+
+.piggy-prompt {
+  font-weight: 700;
+}
+
+.piggy-answer {
+  padding: var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.piggy-textarea {
+  font: 500 var(--fs-md) / var(--lh-body) var(--font-body);
+  resize: vertical;
+}
+
+.piggy-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-3);
+}
+
+.piggy-entry__kind {
+  font-weight: 900;
+}
+
+.piggy-entry__kind.is-gain { color: var(--gain-600); }
+.piggy-entry__kind.is-loss { color: var(--loss-600); }
+
+.piggy-farm,
+.farm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.farm-feed__total {
+  font-size: var(--fs-lg);
+}
+
+.farm-feed__total strong {
+  font-size: var(--fs-2xl);
+}
+
+.farm-feed__parts {
+  gap: 2px;
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+}
+
+.farm-cows {
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+}
+
+.farm-cow {
+  position: relative;
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.farm-cow__body {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-1);
+}
+
+.farm-cow__name {
+  font-size: var(--fs-xl);
+}
+
+.farm-cow__traits {
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+}
+
+.farm-art {
+  display: block;
+  width: 100%;
+  max-width: 16rem;
+  height: auto;
+  margin-inline: auto;
+}
+
+.farm-coins {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-lg);
+  font-weight: 800;
+}
+
+.farm-milk .btn {
+  justify-self: start;
+}
