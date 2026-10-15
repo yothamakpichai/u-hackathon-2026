@@ -308,6 +308,8 @@ README.md (written last, for judges)                               — Yotha
 - `#/create`
 - `#/explorer`
 - `#/report`
+- `#/arena` (Y10; shows only "closed" unless the server sets `ARENA_ENABLED=1`)
+- `#/privacy` (Arena privacy notice)
 
 **Security:**
 - **CSP:** `default-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self'; font-src 'self'; style-src 'self'; script-src 'self'; frame-ancestors 'none'; base-uri 'none'`.
