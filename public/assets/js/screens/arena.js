@@ -1,8 +1,10 @@
-// Arena (BRIEF §15): one live market on the server, shared by real players and four bots, polled every 1.5 s.
-// Simulated L$ only. Entry needs Trader level or above and a Money Health Score of 70 or more. Accounts are a
-// username, a password and a birth year; no email or phone. The server decides prices, balances and trades.
+// Arena (BRIEF §15, §16): one live market on the server, shared by real players and four bots, polled every 1.5 s.
+// Simulated L$ only. It needs a free Penny account (api/account.php). Kids enter at Trader level or above with a
+// Money Health Score of 70+ in the Market Lab or a passed Unit 2 checkpoint; adults (20+) skip the score gate.
+// The server decides prices, balances and trades, and checks 13+ from the account's birth year.
 import { h, icon, stateView, money, price, delta, number, announce } from '../ui.js';
 import { scoreRun } from '../score.js';
+import * as sync from '../sync.js';
 
 const API = 'api/arena.php';
 const POLL_MS = 1500;
@@ -36,12 +38,12 @@ export function mount(root, ctx) {
   const { store, navigate, config, tier } = ctx;
   let alive = true;
   let timer = null;
-  let csrf = null;
   let coin = 'VAULT';
   let side = 'buy';
   let polling = false;
   let last = null;
   let onVisible = null;
+  let adultNote = null;
 
   const body = h('div', { class: 'arena__body' });
   const view = h('section', { class: 'screen arena' }, [
@@ -61,7 +63,7 @@ export function mount(root, ctx) {
       res = await fetch(`${API}?action=${action}${query}`, {
         method,
         credentials: 'same-origin',
-        headers: method === 'POST' ? { 'Content-Type': 'application/json', ...(csrf && { 'X-CSRF-Token': csrf }) } : {},
+        headers: method === 'POST' ? { 'Content-Type': 'application/json', ...(sync.csrfToken() && { 'X-CSRF-Token': sync.csrfToken() }) } : {},
         body: method === 'POST' ? JSON.stringify(data || {}) : undefined,
       });
     } catch {
@@ -81,108 +83,53 @@ export function mount(root, ctx) {
       if (alive) show(stateView({ kind: 'empty', title: 'The Arena is closed right now', body: 'Today’s market is open, and you can practise there any time.', actions: [back('Open today’s market', '/lab')] }));
       return;
     }
-    if (config.getTier(tier)?.rank < 1) {
+    const s = store.get();
+    const thisYear = Number(new Intl.DateTimeFormat('en-US', { timeZone: config.TIME_ZONE, year: 'numeric' }).format(new Date()));
+    const adult = s.birthYear ? thisYear - Number(s.birthYear) >= 20 : false;
+    if (!adult && config.getTier(tier)?.rank < 1) {
       show(stateView({ kind: 'empty', title: 'The Arena opens at Trader level', body: 'It is for players aged 13 and up. Keep exploring today’s market: every run makes you a sharper trader.', actions: [back('Open today’s market', '/lab')] }));
       return;
     }
-    const best = arenaScore(store.get());
-    if (best === null || best < ENTRY_SCORE) {
+    const best = arenaScore(s);
+    const unitTwo = ['trader', 'builder'].some((t) => s.path?.[t]?.done?.['u2-c']);
+    if (!adult && !unitTwo && (best === null || best < ENTRY_SCORE)) {
       show(
         stateView({
           kind: 'empty',
           title: `Score ${ENTRY_SCORE} or more to enter`,
-          body: `${best === null ? 'You haven’t finished a market at Trader or Builder level yet.' : `Your best Money Health Score is ${best}.`} Spread your risk, stay calm after bad news and answer Penny’s questions, then finish today’s market with ${ENTRY_SCORE}+ to unlock the Arena.`,
-          actions: [back('Open today’s market', '/lab')],
+          body: `${best === null ? 'You haven’t finished a market at Trader or Builder level yet.' : `Your best Money Health Score is ${best}.`} Spread your risk, stay calm after bad news and answer Penny’s questions, then finish today’s market with ${ENTRY_SCORE}+. Passing the Unit 2 checkpoint at School opens it too.`,
+          actions: [back('Open today’s market', '/lab'), h('button', { class: 'btn', type: 'button', onClick: () => navigate('/path') }, 'Go to School')],
         }),
       );
       return;
     }
+    adultNote = adult ? h('p', { class: 'arena-adult', text: 'Kids unlock this at Money Health Score 70.' }) : null;
     try {
-      const me = await api('me');
-      csrf = me.csrf;
+      if (!(await sync.accountsAvailable())) {
+        if (alive) show(stateView({ kind: 'empty', title: 'Accounts aren’t available right now', body: 'The Arena needs a free account. Everything else still works as a guest.', actions: [back('Open today’s market', '/lab')] }));
+        return;
+      }
+      const user = await sync.refreshMe();
       if (!alive) return;
-      if (me.user) market(me.user);
-      else auth('signup');
+      if (user) market(user);
+      else needAccount();
     } catch (err) {
       if (alive) show(stateView({ kind: 'error', title: 'The Arena didn’t load', body: err.message, actions: [h('button', { class: 'btn', type: 'button', onClick: start }, 'Try again')] }));
     }
   }
 
-  // ---------------------------------------------------------------- sign up and log in
-
-  async function auth(mode) {
+  // The Arena needs a free account; the account screen brings the player back here.
+  function needAccount() {
     stop();
-    const error = h('p', { class: 'arena-error', role: 'alert', hidden: true });
-    const tabs = h('div', { class: 'segmented', role: 'group', 'aria-label': 'Account' }, [
-      h('button', { class: `segmented__btn${mode === 'signup' ? ' is-active' : ''}`, type: 'button', 'aria-pressed': String(mode === 'signup'), onClick: () => auth('signup') }, 'Create account'),
-      h('button', { class: `segmented__btn${mode === 'login' ? ' is-active' : ''}`, type: 'button', 'aria-pressed': String(mode === 'login'), onClick: () => auth('login') }, 'Log in'),
-    ]);
-    const field = (id, label, input, hint) => h('div', { class: 'arena-field' }, [h('label', { class: 'arena-label', for: id, text: label }), input, hint ? h('p', { class: 'arena-hint', text: hint }) : null]);
-    const username = h('input', { id: 'arena-user', class: 'arena-input', name: 'username', autocomplete: 'username', maxlength: 16, required: true, spellcheck: 'false' });
-    const password = h('input', { id: 'arena-pass', class: 'arena-input', name: 'password', type: 'password', autocomplete: mode === 'signup' ? 'new-password' : 'current-password', minlength: 8, maxlength: 128, required: true });
-    const fields = [
-      field('arena-user', 'Username', username, mode === 'signup' ? '3 to 16 letters, numbers or _. Not your real name.' : null),
-      field('arena-pass', 'Password', password, mode === 'signup' ? 'At least 8 characters. Don’t reuse a password from anywhere else.' : null),
-    ];
-
-    let year = null;
-    const quizAnswers = [];
-    if (mode === 'signup') {
-      const thisYear = Number(new Intl.DateTimeFormat('en-US', { timeZone: config.TIME_ZONE, year: 'numeric' }).format(new Date()));
-      year = h('select', { id: 'arena-year', class: 'arena-input' }, Array.from({ length: 98 }, (_, i) => thisYear - 3 - i).map((y) => h('option', { value: String(y), text: String(y), selected: y === store.get().birthYear })));
-      fields.push(field('arena-year', 'Birth year', year, 'Only used to check you are 13 or older.'));
-      let quiz = [];
-      try {
-        quiz = (await api('quiz')).quiz;
-      } catch {
-        quiz = [];
-      }
-      quiz.forEach((q, i) => {
-        quizAnswers[i] = null;
-        fields.push(
-          h('fieldset', { class: 'quiz' }, [
-            h('legend', { class: 'quiz__legend', text: `${i + 1}. ${q.prompt}` }),
-            ...q.options.map((opt, j) =>
-              h('label', { class: 'quiz__option' }, [h('input', { type: 'radio', name: `arena-q${i}`, value: String(j), onChange: () => (quizAnswers[i] = j) }), h('span', { text: opt })]),
-            ),
-          ]),
-        );
-      });
-    }
-
-    const submit = h('button', { class: 'btn btn--primary btn--lg btn--block', type: 'submit' }, mode === 'signup' ? 'Create my Arena account' : 'Log in');
-    const form = h('form', { class: 'card arena-auth', novalidate: true, onSubmit: send }, [
-      tabs,
-      h('p', { class: 'arena-auth__note', text: mode === 'signup' ? 'We keep only a username, a scrambled password and your birth year: no email, no phone, no real name.' : 'Welcome back! Log in with your Arena username.' }),
-      ...fields,
-      error,
-      submit,
-    ]);
-    show(form);
-    username.focus();
-
-    async function send(e) {
-      e.preventDefault();
-      error.hidden = true;
-      if (mode === 'signup' && quizAnswers.some((a) => a === null)) {
-        error.textContent = 'Answer the 3 screening questions first.';
-        error.hidden = false;
-        return;
-      }
-      submit.disabled = true;
-      try {
-        const data = { username: username.value.trim(), password: password.value };
-        if (mode === 'signup') Object.assign(data, { birthYear: Number(year.value), quiz: quizAnswers });
-        const res = await api(mode, { method: 'POST', data });
-        csrf = res.csrf;
-        if (alive) market(res.user);
-      } catch (err) {
-        error.textContent = err.message;
-        error.hidden = false;
-        submit.disabled = false;
-        password.value = '';
-      }
-    }
+    show(
+      adultNote,
+      stateView({
+        kind: 'empty',
+        title: 'The Arena needs a free account',
+        body: 'It’s a username, a password and your birth year: no email, no phone. Your progress then saves to your account too.',
+        actions: [h('button', { class: 'btn btn--primary', type: 'button', onClick: () => navigate('/account?next=/arena') }, 'Log in or create an account')],
+      }),
+    );
   }
 
   // ---------------------------------------------------------------- the live market
@@ -216,6 +163,7 @@ export function mount(root, ctx) {
     amount.addEventListener('input', renderPreview);
 
     show(
+      adultNote,
       h('div', { class: 'arena-top' }, [
         h('p', { class: 'arena-top__who' }, [`Signed in as `, h('strong', { text: user.username })]),
         h('button', { class: 'btn btn--sm btn--ghost', type: 'button', onClick: logout }, 'Log out'),
@@ -230,7 +178,7 @@ export function mount(root, ctx) {
           h('div', { class: 'card card--quiet' }, [
             h('h2', { class: 'arena-title', text: 'Who else is trading?' }),
             h('p', { class: 'arena-help', text: 'Four bots trade here all the time. A market maker keeps prices near a fair value, a momentum bot follows trends and makes moves bigger, a whale sometimes sells a huge pile at once, and a wash bot trades FUEL with itself to fake busy volume.' }),
-            h('button', { class: 'btn btn--sm btn--ghost', type: 'button', onClick: removeAccount }, 'Delete my Arena account'),
+            h('button', { class: 'btn btn--sm btn--ghost', type: 'button', onClick: removeAccount }, 'Delete my account'),
           ]),
         ]),
       ]),
@@ -309,7 +257,7 @@ export function mount(root, ctx) {
         render(res);
       } catch (err) {
         result.textContent = err.message;
-        if (err.code === 'SIGNED_OUT') auth('login');
+        if (err.code === 'SIGNED_OUT') needAccount();
       } finally {
         go.disabled = false;
       }
@@ -325,7 +273,7 @@ export function mount(root, ctx) {
         live.lastChild.textContent = 'Live';
         if (alive) render(res);
       } catch (err) {
-        if (err.code === 'SIGNED_OUT') return auth('login');
+        if (err.code === 'SIGNED_OUT') return needAccount();
         live.classList.add('is-off');
         live.lastChild.textContent = 'Reconnecting…';
       } finally {
@@ -397,21 +345,15 @@ export function mount(root, ctx) {
     }
 
     async function logout() {
-      try {
-        await api('logout', { method: 'POST' });
-      } catch {
-        // already signed out on the server
-      }
-      csrf = null;
-      auth('login');
+      await sync.signOut();
+      needAccount();
     }
 
     async function removeAccount() {
-      if (!confirm('Delete your Arena account, your coins and your place on the leaderboard? This can’t be undone.')) return;
+      if (!confirm('Delete your account? Your Arena coins, leaderboard place, saved progress and parent link are removed for good. Progress on this device stays.')) return;
       try {
-        await api('delete', { method: 'POST' });
-        csrf = null;
-        auth('signup');
+        await sync.deleteAccount();
+        needAccount();
       } catch (err) {
         result.textContent = err.message;
       }

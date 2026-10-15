@@ -1,32 +1,17 @@
 <?php
-// Arena API (BRIEF §15): accounts, sessions and the shared live market. Off unless ARENA_ENABLED=1.
+// Arena API (BRIEF §15, §16): the shared live market. Off unless ARENA_ENABLED=1. Accounts, log-in and the safety
+// quiz live in api/account.php (src/accounts.php); the Arena needs a signed-in account aged 13 or over.
 //   GET  ?action=status                         -> {enabled}
-//   GET  ?action=quiz                           -> the 3 screening questions (no answers)
-//   GET  ?action=me                             -> {user, csrf} or {user:null}
-//   POST ?action=signup {username, password, birthYear, quiz:[a,b,c]}
-//   POST ?action=login  {username, password}
-//   POST ?action=logout                          (X-CSRF-Token)
-//   POST ?action=delete                          (X-CSRF-Token) deletes the account, its sessions and holdings
 //   GET  ?action=state&coin=VAULT               -> prices, candles, trades, your portfolio, leaderboard
 //   POST ?action=trade  {coin, side, amount}     (X-CSRF-Token). amount = L$ to spend, or coins to sell
-// Accounts hold only a username, a password hash and a birth year: no email or phone (data minimisation for minors).
 declare(strict_types=1);
 
 require dirname(__DIR__, 2) . '/src/bootstrap.php';
 require REPO_ROOT . '/src/db.php';
 require REPO_ROOT . '/src/arena.php';
+require REPO_ROOT . '/src/accounts.php';
 
-const SESSION_COOKIE = '__Host-arena';
-const SESSION_DAYS = 7;
 const MIN_AGE = 13;
-const QUIZ = [
-    ['prompt' => 'Is the money in the Arena real?', 'options' => ['Yes, it is real money', 'No, it is simulated L$', 'Only at weekends'], 'answer' => 1],
-    ['prompt' => 'What should you never share with other players?', 'options' => ['Your password or personal details', 'Your favourite lab coin', 'Your Money Health Score'], 'answer' => 0],
-    ['prompt' => 'A player says a coin will “definitely 10x”. What is the smart move?', 'options' => ['Buy as much as you can now', 'Treat it as hype and check the facts', 'Tell your friends to buy it too'], 'answer' => 1],
-];
-const RESERVED = ['admin', 'administrator', 'mod', 'moderator', 'support', 'staff', 'system', 'root', 'bot', 'penny', 'cenedury', 'official', 'arena', 'teacher', 'marketlab'];
-// A small blocklist, stored ROT13 so the repo doesn't spell it out.
-const ROT13_BLOCK = ['shpx', 'fuvg', 'ovgpu', 'phag', 'qvpx', 'chffl', 'onfgneq', 'nffubyr', 'fyhg', 'juber', 'avttre', 'snttbg', 'encr', 'anmv', 'cbea', 'pbpx', 'gjng', 'jnax', 'cravf', 'frkl'];
 
 $action = is_string($_GET['action'] ?? null) ? $_GET['action'] : '';
 if ($action === 'status') {
@@ -38,40 +23,10 @@ if (!arena_on()) {
 }
 
 switch ($action) {
-    case 'quiz':
-        require_method('GET');
-        send_json(['ok' => true, 'quiz' => array_map(static fn(array $q): array => ['prompt' => $q['prompt'], 'options' => $q['options']], QUIZ)]);
-    case 'me':
-        require_method('GET');
-        $user = current_user(db());
-        send_json(['ok' => true, 'user' => $user ? public_user($user) : null, 'csrf' => $user['csrf'] ?? null]);
-    case 'signup':
-        require_method('POST');
-        same_origin();
-        rate_limit('arena-signup', 30, 3600); // per IP; a class behind one school IP still fits
-        signup(read_json());
-    case 'login':
-        require_method('POST');
-        same_origin();
-        rate_limit('arena-login', 60, 900); // per IP; the per-username limit in login() stops guessing
-        login(read_json());
-    case 'logout':
-        require_method('POST');
-        $user = require_user(db());
-        db()->prepare('DELETE FROM arena_sessions WHERE token_hash = ?')->execute([hash('sha256', (string) $_COOKIE[SESSION_COOKIE])]);
-        set_session_cookie('', -3600);
-        send_json(['ok' => true]);
-    case 'delete':
-        require_method('POST');
-        $user = require_user(db());
-        db()->prepare('DELETE FROM arena_trades WHERE user_id = ?')->execute([$user['user_id']]);
-        db()->prepare('DELETE FROM arena_users WHERE id = ?')->execute([$user['user_id']]);
-        set_session_cookie('', -3600);
-        send_json(['ok' => true]);
     case 'state':
         require_method('GET');
         rate_limit('arena-read', 120, 60);
-        $user = require_user(db(), false);
+        $user = arena_user(db(), false);
         $db = db();
         $db->beginTransaction();
         arena_advance($db);
@@ -79,7 +34,7 @@ switch ($action) {
         send_json(['ok' => true] + state($db, (int) $user['user_id'], coin_param($_GET['coin'] ?? 'VAULT')));
     case 'trade':
         require_method('POST');
-        $user = require_user(db());
+        $user = arena_user(db(), true);
         rate_limit('arena-trade', 30, 60);
         trade(db(), (int) $user['user_id'], read_json());
     default:
@@ -91,162 +46,14 @@ function arena_on(): bool
     return env('ARENA_ENABLED') === '1';
 }
 
-// POSTs must come from this site: a cross-site form can't send JSON, and the Origin, when present, must match.
-function same_origin(): void
+// A signed-in account, 13 or older by its birth year (checked here, not just in the app).
+function arena_user(PDO $db, bool $change): array
 {
-    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    $host = $_SERVER['HTTP_HOST'] ?? '';
-    if ($origin !== '' && parse_url($origin, PHP_URL_HOST) . (parse_url($origin, PHP_URL_PORT) ? ':' . parse_url($origin, PHP_URL_PORT) : '') !== $host) {
-        send_error(403, 'BAD_ORIGIN', 'This request has to come from the Arena page.');
-    }
-    if (!str_starts_with(strtolower($_SERVER['CONTENT_TYPE'] ?? ''), 'application/json')) {
-        send_error(415, 'BAD_INPUT', 'Send JSON.');
-    }
-}
-
-function current_user(PDO $db): ?array
-{
-    $token = $_COOKIE[SESSION_COOKIE] ?? '';
-    if (!is_string($token) || !preg_match('/^[a-f0-9]{64}$/', $token)) {
-        return null;
-    }
-    $st = $db->prepare('SELECT s.user_id, s.csrf, u.username, u.birth_year FROM arena_sessions s JOIN arena_users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > UTC_TIMESTAMP()');
-    $st->execute([hash('sha256', $token)]);
-    return $st->fetch() ?: null;
-}
-
-// The signed-in user; for changes, also a matching CSRF token and a same-site request.
-function require_user(PDO $db, bool $change = true): array
-{
-    $user = current_user($db);
-    if ($user === null) {
-        send_error(401, 'SIGNED_OUT', 'Please log in to the Arena again.');
-    }
-    if ($change) {
-        same_origin();
-        $sent = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-        if (!is_string($sent) || !hash_equals($user['csrf'], $sent)) {
-            send_error(403, 'BAD_CSRF', 'Please reload the page and try again.');
-        }
+    $user = require_user($db, $change);
+    if (age_of($user) < MIN_AGE) {
+        send_error(403, 'TOO_YOUNG', 'The Arena opens at age 13. Keep practising in the Market Lab!');
     }
     return $user;
-}
-
-function public_user(array $u): array
-{
-    return ['username' => $u['username'], 'birthYear' => (int) $u['birth_year']];
-}
-
-function set_session_cookie(string $value, int $seconds): void
-{
-    setcookie(SESSION_COOKIE, $value, ['expires' => time() + $seconds, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
-}
-
-function start_session(PDO $db, array $user): never
-{
-    $token = bin2hex(random_bytes(32));
-    $csrf = bin2hex(random_bytes(32));
-    $db->prepare('DELETE FROM arena_sessions WHERE expires_at < UTC_TIMESTAMP()')->execute();
-    $db->prepare('INSERT INTO arena_sessions (token_hash, user_id, csrf, expires_at) VALUES (?, ?, ?, UTC_TIMESTAMP() + INTERVAL ' . SESSION_DAYS . ' DAY)')
-        ->execute([hash('sha256', $token), $user['id'], $csrf]);
-    set_session_cookie($token, SESSION_DAYS * 86400);
-    send_json(['ok' => true, 'user' => public_user($user), 'csrf' => $csrf]);
-}
-
-function username_problem(string $name): ?string
-{
-    if (!preg_match('/^[A-Za-z][A-Za-z0-9_]{2,15}$/', $name)) {
-        return 'Usernames are 3 to 16 letters, numbers or _, starting with a letter.';
-    }
-    $lower = strtolower($name);
-    $tokens = preg_split('/[^a-z]+/', $lower, -1, PREG_SPLIT_NO_EMPTY);
-    $facts = json_decode((string) file_get_contents(REPO_ROOT . '/public/data/facts.json'), true) ?: [];
-    $brands = array_map('strtolower', array_merge($facts['banned']['words'] ?? [], $facts['banned']['tickers'] ?? []));
-    foreach ($tokens as $t) {
-        if (in_array($t, RESERVED, true) || in_array($t, $brands, true)) {
-            return 'That username is reserved. Please pick another one.';
-        }
-    }
-    foreach (ROT13_BLOCK as $word) {
-        if (str_contains($lower, str_rot13($word))) {
-            return 'Please pick a friendlier username.';
-        }
-    }
-    return null;
-}
-
-// argon2id (BRIEF §15); bcrypt only if this PHP build lacks argon2.
-function password_algo(): string
-{
-    return defined('PASSWORD_ARGON2ID') ? PASSWORD_ARGON2ID : PASSWORD_DEFAULT;
-}
-
-function bangkok_year(): int
-{
-    return (int) (new DateTimeImmutable('now', new DateTimeZone('Asia/Bangkok')))->format('Y');
-}
-
-function signup(array $in): never
-{
-    $username = is_string($in['username'] ?? null) ? trim($in['username']) : '';
-    $password = is_string($in['password'] ?? null) ? $in['password'] : '';
-    $year = is_int($in['birthYear'] ?? null) ? $in['birthYear'] : 0;
-    $quiz = is_array($in['quiz'] ?? null) ? array_values($in['quiz']) : [];
-
-    if ($problem = username_problem($username)) {
-        send_error(400, 'BAD_USERNAME', $problem);
-    }
-    if (mb_strlen($password) < 8 || mb_strlen($password) > 128) {
-        send_error(400, 'BAD_PASSWORD', 'Passwords are 8 to 128 characters.');
-    }
-    if (strcasecmp($password, $username) === 0) {
-        send_error(400, 'BAD_PASSWORD', 'Your password can’t be your username.');
-    }
-    $age = bangkok_year() - $year;
-    if ($year < 1900 || $age < 0) {
-        send_error(400, 'BAD_YEAR', 'Pick your birth year.');
-    }
-    if ($age < MIN_AGE) {
-        send_error(403, 'TOO_YOUNG', 'The Arena opens at age 13. Keep practising in the lab!');
-    }
-    foreach (QUIZ as $i => $q) {
-        if (($quiz[$i] ?? null) !== $q['answer']) {
-            send_error(400, 'QUIZ', 'Some screening answers aren’t right yet. Read them again and try once more.');
-        }
-    }
-
-    $hash = password_hash($password, password_algo());
-    $db = db();
-    try {
-        $db->prepare('INSERT INTO arena_users (username, username_key, password_hash, birth_year, cash) VALUES (?, ?, ?, ?, ?)')
-            ->execute([$username, strtolower($username), $hash, $year, ARENA_START_CASH]);
-    } catch (PDOException $e) {
-        if ($e->getCode() === '23000') {
-            send_error(409, 'TAKEN', 'That username is taken. Please pick another one.');
-        }
-        throw $e;
-    }
-    start_session($db, ['id' => (int) $db->lastInsertId(), 'username' => $username, 'birth_year' => $year]);
-}
-
-function login(array $in): never
-{
-    $username = is_string($in['username'] ?? null) ? trim($in['username']) : '';
-    $password = is_string($in['password'] ?? null) ? $in['password'] : '';
-    rate_limit('arena-login-user', 5, 900, strtolower($username));
-    $db = db();
-    $st = $db->prepare('SELECT id, username, password_hash, birth_year FROM arena_users WHERE username_key = ?');
-    $st->execute([strtolower($username)]);
-    $user = $st->fetch();
-    // Unknown usernames still cost one hash, so timing doesn't reveal which usernames exist.
-    $hash = $user['password_hash'] ?? password_hash('not-a-real-password', password_algo());
-    if (!password_verify($password, $hash) || !$user) {
-        send_error(401, 'BAD_LOGIN', 'That username and password don’t match.');
-    }
-    if (password_needs_rehash($user['password_hash'], password_algo())) {
-        $db->prepare('UPDATE arena_users SET password_hash = ? WHERE id = ?')->execute([password_hash($password, password_algo()), $user['id']]);
-    }
-    start_session($db, $user);
 }
 
 function coin_param(mixed $value): string

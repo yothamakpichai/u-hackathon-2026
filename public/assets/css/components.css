@@ -2801,3 +2801,81 @@ svg.is-flipped {
 .tutor-msg {
   white-space: pre-line;
 }
+
+/* Accounts and the parent link (BRIEF §16, Y12) */
+
+.account,
+.parent {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.account__card,
+.account__parent,
+.parent__piggy {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.account__saved,
+.account__note {
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+}
+
+.account__link {
+  font-size: var(--fs-sm);
+}
+
+.parent__stats,
+.parent__goals,
+.parent__entries {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.parent__stat,
+.parent__entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  min-height: var(--tap);
+  padding: var(--sp-1) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.parent__entry > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.arena-adult {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--amber-50);
+  color: var(--warning-700);
+  font-weight: 700;
+}
+
+.town-head__titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.town-account {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: var(--tap);
+  padding: 0 var(--sp-3);
+  border: 2px solid var(--line);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}

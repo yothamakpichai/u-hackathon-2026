@@ -123,3 +123,20 @@ Choices made where the brief was silent or ambiguous (BRIEF §13). Newest last.
     - **Future You:** `explain_future` recomputes Future You's seeded projection from `store.future` to get P10, P50 and P90 at the goal age, without changing Joewee's screen.
     - **Entry points:** "Ask Penny to review this run" on the report card, "Ask Penny about my result" on the result screen, and chips in the Ask Penny sheet when the data exists.
     - **Fix:** the cut-off-answer regex had lost its `s` and is fixed.
+48. **Optional accounts** (`src/accounts.php`, `api/account.php`). Guest play stays the default.
+    - **When accounts appear:** only when the database is set up (DB_* plus `bin/migrate.php`); `action=status` says so, and otherwise the app hides every account button.
+    - **Contents:** a username, a password (argon2id) and a birth year, with accounts from age 8. Signup also asks the 3 safety questions the Arena used, now covering the whole town.
+    - **Storage:** accounts reuse `arena_users` and `arena_sessions`. The session cookie is now `__Host-penny` (Secure, HttpOnly, SameSite=Lax, 30 days), the only cookie the app uses.
+    - **No email field:** `MAIL_PROVIDER` isn't configured, so the field stays hidden, and email recovery isn't built.
+49. **Saving across devices** (`assets/js/sync.js`). When signed in, the whole store is saved to `account_state` 4 seconds after each change. The server keeps the newest copy, so an older device can't overwrite newer progress.
+    - **On login:** an empty device loads the account's copy, an account with nothing saved takes this device's copy, and when both have progress the player chooses.
+    - **On page load:** a newer copy saved from another device replaces the one here.
+    - **Parent confirmations:** piggy entries a parent confirmed come back as `entries[].verified`, which Joewee's Piggy Bank already shows.
+50. **Parent link.** Each child has one active link, a random 64-hex token stored only as its hash.
+    - **Privacy:** the token sits in the URL fragment (`#/parent?t=…`), so web servers never log it.
+    - **What a parent can do:** see a read-only snapshot (Money Check, streak, XP, Learning Path steps, the last market's numbers, Piggy goals and entries), confirm entries, which adds a "verified" seal only, and set a new password, which logs out every device.
+    - **Switching it off:** a new link replaces the old one, and "Stop sharing" switches it off.
+    - **Sharing:** §16 allows "a QR code or link"; the app shares the link (Share or Copy) and doesn't vendor a QR library.
+51. **Arena (§16).** It needs an account, and the server checks 13+ from the account's birth year; `api/arena.php` now handles only status, state and trade.
+    - **Adults:** aged 20 and over (by the self-declared birth year), they skip the score gate and see "Kids unlock this at Money Health Score 70".
+    - **Kids:** they enter with a score of 70 or more, or with a passed Unit 2 checkpoint (`store.path[tier].done['u2-c']`).

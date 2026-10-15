@@ -7,6 +7,7 @@ import { BUILDINGS } from '../../../js/buildings.js';
 import { dataUri } from '../../../js/avatar.js';
 import { progressSummary, syncActions } from '../progress.js';
 import { arenaEnabled } from './arena.js';
+import * as sync from '../sync.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -32,10 +33,12 @@ export function mount(root, ctx) {
   const statusCard = h('div', { class: 'town-status' });
 
   const tiles = h('ul', { class: 'town-grid' });
+  const accountSlot = h('div', { class: 'town-head__account' });
   const view = h('section', { class: 'screen town' }, [
     h('div', { class: 'town-head' }, [
       s.profile?.character ? h('img', { class: 'town-head__avatar', src: dataUri(s.profile.character, age), alt: '', width: 64, height: 64 }) : penny('happy', { size: 64 }),
-      h('div', {}, [h('p', { class: 'screen-eyebrow', text: config.TAGLINE }), h('h1', { class: 'screen-title', tabindex: '-1', text: 'Your town' })]),
+      h('div', { class: 'town-head__titles' }, [h('p', { class: 'screen-eyebrow', text: config.TAGLINE }), h('h1', { class: 'screen-title', tabindex: '-1', text: 'Your town' })]),
+      accountSlot,
     ]),
     h('div', { class: 'path-stats town-stats' }, [
       h('div', { class: 'path-stat' }, [icon('flame', { size: 24, className: p.streak ? 'is-lit' : '' }), h('span', {}, [h('strong', { text: `${p.streak}-day streak` }), h('span', { text: p.activeToday ? 'Done for today' : 'Do one thing in any building' })])]),
@@ -94,6 +97,13 @@ export function mount(root, ctx) {
       }),
     );
   }
+  // Optional account: shown only when the server has accounts on.
+  sync.accountsAvailable().then(async (on) => {
+    if (!on || !alive) return;
+    const user = sync.currentAccount() || (await sync.refreshMe().catch(() => null));
+    if (alive) accountSlot.replaceChildren(h('a', { class: 'town-account', href: '#/account' }, [icon('shield', { size: 18 }), user ? user.username : 'Save progress']));
+  });
+
   renderTiles();
   arenaEnabled().then((on) => {
     if (!alive || !on) return;

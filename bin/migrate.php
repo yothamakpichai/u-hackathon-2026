@@ -76,6 +76,28 @@ $tables = [
         KEY ix_arena_trades_tick (tick),
         KEY ix_arena_trades_coin_tick (coin_id, tick)
     ) " . ENGINE,
+    // Optional accounts (BRIEF §16) reuse arena_users and arena_sessions; these add saving across devices and the
+    // parent link. Deleting a user removes all of it (ON DELETE CASCADE).
+    'account_state' => "CREATE TABLE IF NOT EXISTS account_state (
+        user_id INT UNSIGNED NOT NULL PRIMARY KEY,
+        state MEDIUMTEXT NOT NULL,
+        updated_at BIGINT UNSIGNED NOT NULL,
+        CONSTRAINT fk_account_state_user FOREIGN KEY (user_id) REFERENCES arena_users (id) ON DELETE CASCADE
+    ) " . ENGINE,
+    'parent_links' => "CREATE TABLE IF NOT EXISTS parent_links (
+        token_hash CHAR(64) NOT NULL PRIMARY KEY,
+        user_id INT UNSIGNED NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        KEY ix_parent_links_user (user_id),
+        CONSTRAINT fk_parent_links_user FOREIGN KEY (user_id) REFERENCES arena_users (id) ON DELETE CASCADE
+    ) " . ENGINE,
+    'piggy_confirmations' => "CREATE TABLE IF NOT EXISTS piggy_confirmations (
+        user_id INT UNSIGNED NOT NULL,
+        entry_id VARCHAR(40) NOT NULL,
+        confirmed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, entry_id),
+        CONSTRAINT fk_piggy_confirmations_user FOREIGN KEY (user_id) REFERENCES arena_users (id) ON DELETE CASCADE
+    ) " . ENGINE,
     'arena_candles' => "CREATE TABLE IF NOT EXISTS arena_candles (
         coin_id VARCHAR(8) NOT NULL,
         bucket BIGINT UNSIGNED NOT NULL,

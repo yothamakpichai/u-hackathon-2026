@@ -74,5 +74,12 @@ export function createStore() {
       save();
       emit();
     },
+
+    // Swap in a whole saved state, for example progress loaded from an account (BRIEF §16).
+    replace(next) {
+      state = { ...DEFAULTS, ...next };
+      save();
+      emit();
+    },
   };
 }

@@ -29,6 +29,9 @@ const routes = {
   '/result': { name: 'result', title: 'Your Money Type', load: () => import('./screens/result.js'), guard: needsTier },
   '/town': { name: 'town', title: 'Your town', load: () => import('./screens/town.js'), guard: needsTier },
   '/research': { name: 'research', title: 'Why this works', load: () => import('./screens/research.js') },
+  // Optional accounts and the parent link (BRIEF §16). Neither needs a level: a parent's phone has none.
+  '/account': { name: 'account', title: 'Your account', load: () => import('./screens/account.js') },
+  '/parent': { name: 'parent', title: 'Parent view', load: () => import('./screens/parent.js') },
   // The Arena screen itself explains when it is closed or locked (BRIEF §15).
   '/arena': { name: 'arena', title: 'Arena', load: () => import('./screens/arena.js'), guard: needsTier },
   '/privacy': { name: 'privacy', title: 'Arena privacy', load: () => import('./screens/privacy.js') },
@@ -83,6 +86,11 @@ function openTutor() {
     .then((m) => m.openTutor({ store, config }))
     .catch(() => {}); // offline: the button simply does nothing until the page can load the module
 }
+
+// Signed in on this device: keep saving progress to the account (does nothing for guests).
+import('./sync.js')
+  .then((m) => m.bootAccount(store))
+  .catch(() => {});
 
 const router = createRouter({
   root: document.getElementById('main'),
