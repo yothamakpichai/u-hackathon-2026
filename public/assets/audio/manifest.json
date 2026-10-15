@@ -151,5 +151,20 @@
   "path-builder-u1-c-q4": "You hold L$1,000. Which setup best keeps an emergency cushion?",
   "path-builder-u1-c-q4-explain": "Steady money in L$ or PEG covers surprises without selling coins on a bad day. Spreading the rest also limits one coin's damage.",
   "path-builder-u1-c-q5": "Two players earn the same yearly growth. Mia invests L$500 now. Leo invests L$500 ten years later. Who ends ahead?",
-  "path-builder-u1-c-q5-explain": "Growth on growth needs time. Mia's L$500 gets ten extra rounds of earning on earlier earnings, so she usually ends ahead."
+  "path-builder-u1-c-q5-explain": "Growth on growth needs time. Mia's L$500 gets ten extra rounds of earning on earlier earnings, so she usually ends ahead.",
+  "mc-k-compound": "You save 100 baht. Each year the bank adds 10 baht for every 100 baht you have. You leave it all there for 2 years. How much do you have?",
+  "mc-k-inflation": "Your money sits in a jar and earns nothing. Shop prices go up by 5 baht for every 100 baht each year. A year later, what can your money buy?",
+  "mc-k-spread": "Which is usually safer for your savings?",
+  "mc-k-time": "Someone will give you 100 baht. They can give it today or next year. Which is worth more to you?",
+  "mc-k-scam": "A message says: “Send 500 baht today and get 5,000 baht next week. Only 10 places left!” What is this most likely?",
+  "mc-b-save": "When you get money, how often do you keep some of it to save?",
+  "mc-b-plan": "Before you buy something, how often do you check that you can really afford it?",
+  "mc-b-compare": "How often do you compare prices before you buy?",
+  "mc-b-track": "How often do you keep track of the money you spend?",
+  "mc-t-now": "Which would you pick: 100 baht today, or 120 baht in one month?",
+  "mc-t-far": "And this one: 100 baht in 6 months, or 120 baht in 7 months?",
+  "mc-r-flip": "Pick one: 50 baht for sure, or flip a coin. Heads you get 120 baht, tails you get nothing.",
+  "mc-r-safe": "Now pick again: 80 baht for sure, or flip a coin. Heads you get 120 baht, tails you get nothing.",
+  "mc-s-worship": "Do you agree? “More money would fix all my problems.”",
+  "mc-s-status": "Do you agree? “Expensive things show that a person is important.”"
 }

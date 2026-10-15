@@ -109,7 +109,7 @@ export function mount(root, ctx) {
   const actions = h('div', { class: 'report-actions' }, [
     h('button', { class: 'btn btn--primary btn--lg btn--block', type: 'button', onClick: replay }, 'Replay today’s market'),
     h('button', { class: 'btn btn--block', type: 'button', onClick: () => navigate('/path') }, 'Learning Path and missions'),
-    h('button', { class: 'btn btn--block', type: 'button', onClick: () => navigate('/') }, 'Back to start'),
+    h('button', { class: 'btn btn--block', type: 'button', onClick: () => navigate('/town') }, 'Back to my town'),
   ]);
 
   view.append(

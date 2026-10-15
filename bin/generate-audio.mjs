@@ -42,8 +42,9 @@ function clips() {
     TIERS.flatMap((t) => gate[t].map((q) => [`gate-${t}-${q.id}-explain`, q.explain])),
     TIERS.map((t) => [`lesson-${t}-quiz-explain`, lessons[t].quiz.explain]),
     pathUnitOne(),
+    moneyCheck(),
   ];
-  return groups.flat().map(([id, text]) => ({ id, text, speech: speakable(text) }));
+  return groups.flat().map(([id, text, speech]) => ({ id, text, speech: speakable(speech || text) }));
 }
 
 // Learning Path (BRIEF §14 Y8): audio for Unit 1 only. Later units are text-only, so they get no Listen button.
@@ -66,6 +67,18 @@ function pathUnitOne() {
     }
   }
   return out;
+}
+
+// Money Check (BRIEF §16): every item has a read-aloud button. The caption is the question; the speech also reads
+// the answers, which are on screen right below it.
+function moneyCheck() {
+  let data = {};
+  try {
+    data = read('money_check.json');
+  } catch {
+    return [];
+  }
+  return (data.items || []).map((i) => [`mc-${i.id}`, i.prompt, `${i.prompt} ${i.options.map((o, j) => `${'ABCD'[j]}: ${o}.`).join(' ')}`]);
 }
 
 // The caption stays as written; only what Penny says is adjusted, so "L$50" is read as "50 Lab Dollars".
@@ -162,7 +175,7 @@ await Promise.all([worker(), worker(), worker()]);
 const next = {};
 for (const c of all) if (manifest[c.id] === c.text && existsSync(mp3(c.id))) next[c.id] = c.text;
 writeFileSync(MANIFEST, `${JSON.stringify(next, null, 2)}\n`);
-for (const f of readdirSync(AUDIO)) if (/^(gate|lesson|event|path)-[a-z0-9_-]+\.mp3$/.test(f) && !ids.has(f.slice(0, -4))) unlinkSync(join(AUDIO, f));
+for (const f of readdirSync(AUDIO)) if (/^(gate|lesson|event|path|mc)-[a-z0-9_-]+\.mp3$/.test(f) && !ids.has(f.slice(0, -4))) unlinkSync(join(AUDIO, f));
 
 const size = Object.keys(next).reduce((n, id) => n + statSync(mp3(id)).size, 0);
 const after = await (await api('/v1/user/subscription')).json();

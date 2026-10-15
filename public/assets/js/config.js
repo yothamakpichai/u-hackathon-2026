@@ -1,6 +1,10 @@
 // App-wide constants. Screens receive this module as ctx.config.
 // Renaming the product is this one line: index.html carries no product name.
-export const PRODUCT_NAME = 'Market Lab';
+export const PRODUCT_NAME = 'Penny';
+export const TAGLINE = 'Money companion for life';
+export const MANIFESTO = 'Raising the generation nobody can fool';
+// Where partners (licensed exchanges and wallets for 20+ graduates, schools, sponsors) can reach the team.
+export const CONTACT_URL = 'https://cenedury.com/';
 
 export const BRAND = 'Cenedury';
 export const OFFICIAL_COIN = 'EDUU';

@@ -79,7 +79,7 @@ Choices made where the brief was silent or ambiguous (BRIEF §13). Newest last.
     - **Privacy:** failed logins take the same time whether or not the username exists. Players can delete their account, and the privacy notice is at `#/privacy`.
 35. **Arena entry** is checked in the browser: Trader level or above, and a best Money Health Score of 70+ from a finished market at Trader or Builder level. The Unit 2 checkpoint route doesn't exist yet, because the Learning Path wasn't built. The server can't verify the score, since the market runs in the browser, but it does enforce 13+ from the birth year.
 36. **`ARENA_ENABLED=1`** turns the Arena on, from a real environment variable or `.env`; `env()` now reads real environment variables first. When it's off, `action=status` answers `enabled:false`, every other action answers 404 `ARENA_OFF` without touching the database, the report card shows no invite, and `#/arena` says the Arena is closed.
-37. **`public/js/…` in §16 means `public/assets/js/…`**, where every other module already lives (the same idea as #1 for data). `buildings.js` and `avatar.js` go there, and screens import them as `../buildings.js` and `../avatar.js`.
+37. **§16's `public/js/…` paths are literal.** Joewee put `avatar.js` and `wallet.js` in `public/js/`, so `buildings.js` lives there too, and screens import them as `../../../js/…`. Everything else stays in `public/assets/js/`.
 38. **Daily loop** (`assets/js/progress.js`, checked by `progress.test.mjs`).
     - **How buildings count:** each building calls `logAction(store, { kind, xp, ref })` for an action the app can see; `ref` makes it count once. `store.progress` = `{ xp, days: { 'YYYY-MM-DD': { xp, actions } }, refs }`.
     - **XP:** lesson 10, mission 20, checkpoint 30, finished market 10, Money Check 20.
@@ -97,3 +97,22 @@ Choices made where the brief was silent or ambiguous (BRIEF §13). Newest last.
     - **Composure:** 15 minus 5 per `panicSellsAfterNegativeEvents`.
     - **Knowledge and returns:** knowledge uses `quizCorrect` / `quizTotal`, and returns use `finalValue`.
     - **Older runs** without metrics keep the earlier rules (#21).
+42. **Penny v3 flow.** The landing (`#/`, the birth-year cake) leads to `#/character`, `#/money-check`, `#/result` and then `#/town`, which is now home: the logo points there once a level is chosen.
+    - **"Take it later"** goes straight to Town, where the check waits on a card.
+    - **Market Lab access:** arriving in Town opens the Market Lab for the player's level, so the old 3-question check is no longer in the way.
+    - **Old check:** the report card counts the old check only if the player actually took or skipped it.
+    - **Adults:** players aged 20 and over play the Market Lab at Builder level.
+43. **Money Check** (`public/data/money_check.json`, written by hand from §16 and `docs/SOURCES.md`).
+    - **Scoring:** `assets/js/moneytype.js`, checked by `moneytype.test.mjs`. Knowledge is 10 points per right answer; habits are 0–3 per item, scaled to 50; the Money Health Score is their sum.
+    - **Time axis:** Later means waiting a month for 120 over 100 today. Present bias means "today" there, but waiting when both rewards are months away (Meier & Sprenger 2010).
+    - **Risk axis:** Bold means taking the coin flip at least once (after Holt & Laury 2002).
+    - **Money Types:** Steady Turtle (Later, Careful), Patient Eagle (Later, Bold), Cosy Cat (Now, Careful) and Spark Monkey (Now, Bold). Each has original SVG art.
+    - **Read-aloud:** clips `mc-<item>`, whose speech also reads the answers aloud.
+    - **Storage:** `store.assessment` = `{ answers, knowledgeCorrect, knowledge, behaviour, score, time, risk, presentBias, scripts, type, at }`. Finishing it earns 20 XP.
+44. **Town and `public/js/buildings.js`.**
+    - **Registry:** one entry per building: `id`, `name`, `route`, `status` ('live' or 'construction'), `blurb`, `why` (citing only `SOURCES.md`), and for construction buildings one real lesson card. Any entry with a `screen` gets its route registered by `app.js` automatically.
+    - **Starting status:** Piggy Bank, Future You and Farm open without errors at 360 and 1440 px, so they are live; Stock Exchange and Gold Shop are under construction.
+    - **Start here:** the building recommended for the player's Money Type is marked "Start here".
+    - **Arena link:** shown in the Market Lab tile only when the server has the Arena on.
+45. **Product name and contact.** `PRODUCT_NAME` is "Penny", with `TAGLINE` and `MANIFESTO` from §16, all in `config.js`. The landing's "For partners" section links to `CONTACT_URL` (https://cenedury.com/ for now, to be confirmed). Nobody sees partner names, logos or ads.
+46. **Research page** (`#/research`). It quotes references word for word from `SOURCES.md`, says what each one is used for, and lists [unverified] entries under "Being checked" without using them as facts. The one exception is the Gold Shop lesson card, which uses the unverified Gold Traders Association entry and says so on the card.

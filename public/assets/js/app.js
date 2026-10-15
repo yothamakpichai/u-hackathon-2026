@@ -4,6 +4,7 @@ import { createStore } from './state.js';
 import { createAudio } from './audio.js';
 import { createRouter } from './router.js';
 import { h, icon, penny } from './ui.js';
+import { BUILDINGS } from '../../js/buildings.js';
 
 const store = createStore();
 const audio = createAudio({ store });
@@ -22,12 +23,29 @@ const routes = {
   '/explorer': { name: 'explorer', title: 'Block explorer', load: () => import('./screens/explorer.js'), guard: needsUnlock },
   '/report': { name: 'report', title: 'Report card', load: () => import('./screens/report.js'), guard: needsUnlock },
   '/path': { name: 'path', title: 'Learning Path', load: () => import('./screens/path.js'), guard: needsTier },
+  // Penny v3 (BRIEF §16): landing cake → character → Money Check → result → Town.
+  '/character': { name: 'character', title: 'Your character', load: () => import('./screens/character.js'), guard: needsTier },
+  '/money-check': { name: 'money-check', title: 'Money Check', load: () => import('./screens/moneycheck.js'), guard: needsTier },
+  '/result': { name: 'result', title: 'Your Money Type', load: () => import('./screens/result.js'), guard: needsTier },
+  '/town': { name: 'town', title: 'Your town', load: () => import('./screens/town.js'), guard: needsTier },
+  '/research': { name: 'research', title: 'Why this works', load: () => import('./screens/research.js') },
   // The Arena screen itself explains when it is closed or locked (BRIEF §15).
   '/arena': { name: 'arena', title: 'Arena', load: () => import('./screens/arena.js'), guard: needsTier },
   '/privacy': { name: 'privacy', title: 'Arena privacy', load: () => import('./screens/privacy.js') },
 };
 
+// Buildings with their own screen get a route from the registry (BRIEF §16), so a new building is one entry there.
+for (const b of BUILDINGS) {
+  if (b.screen && !routes[b.route]) routes[b.route] = { name: b.screen, title: b.name, load: () => import(`./screens/${b.screen}.js`), guard: needsTier };
+}
+
 for (const el of document.querySelectorAll('[data-slot="product-name"]')) el.textContent = config.PRODUCT_NAME;
+
+// Once a level is chosen, the logo leads home to the Town.
+const brand = document.querySelector('a.brand');
+const renderBrand = () => brand?.setAttribute('href', store.get().tier ? '#/town' : '#/');
+store.subscribe(renderBrand);
+renderBrand();
 
 // Narration never carries over to the next screen.
 addEventListener('hashchange', () => audio.stop());

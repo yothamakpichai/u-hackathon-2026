@@ -1,0 +1,153 @@
+{
+  "about": "Money Check (BRIEF §16): 15 items, the same for everyone, written for a 9-year-old reader. Knowledge items follow Lusardi & Mitchell (2011, 2014); behaviour items are adapted from the OECD/INFE Toolkit (2022); now-or-later choices follow Meier & Sprenger (2010); risk choices simplify Holt & Laury (2002); money beliefs use Klontz Money Script Inventory constructs (Klontz et al. 2011). Inspired by peer-reviewed research. Not a clinical or licensed assessment.",
+  "items": [
+    {
+      "id": "k-compound",
+      "kind": "knowledge",
+      "prompt": "You save 100 baht. Each year the bank adds 10 baht for every 100 baht you have. You leave it all there for 2 years. How much do you have?",
+      "options": ["Exactly 120 baht", "More than 120 baht", "Less than 120 baht"],
+      "answerIndex": 1,
+      "explain": "After year one you have 110 baht. In year two the bank adds 10 baht for every 100, so 11 more: 121 baht. The extra you earn starts earning extra too."
+    },
+    {
+      "id": "k-inflation",
+      "kind": "knowledge",
+      "prompt": "Your money sits in a jar and earns nothing. Shop prices go up by 5 baht for every 100 baht each year. A year later, what can your money buy?",
+      "options": ["More than today", "The same as today", "Less than today"],
+      "answerIndex": 2,
+      "explain": "The jar still holds the same baht, but things cost more. So the same money buys less. That is inflation."
+    },
+    {
+      "id": "k-spread",
+      "kind": "knowledge",
+      "prompt": "Which is usually safer for your savings?",
+      "options": ["Putting it all in one company", "Spreading it across many different things", "Both are just as safe"],
+      "answerIndex": 1,
+      "explain": "If one thing goes badly, the others can hold you up. Spreading your money out is called diversification."
+    },
+    {
+      "id": "k-time",
+      "kind": "knowledge",
+      "prompt": "Someone will give you 100 baht. They can give it today or next year. Which is worth more to you?",
+      "options": ["100 baht today", "100 baht next year", "They are worth exactly the same"],
+      "answerIndex": 0,
+      "explain": "Money today can be saved to earn more, and prices may rise by next year. So 100 baht today is worth a little more than 100 baht later."
+    },
+    {
+      "id": "k-scam",
+      "kind": "knowledge",
+      "prompt": "A message says: “Send 500 baht today and get 5,000 baht next week. Only 10 places left!” What is this most likely?",
+      "options": ["A great way to get rich", "A scam that rushes you with a big promise", "A normal savings account"],
+      "answerIndex": 1,
+      "explain": "A huge promise plus a rush to decide is how many scams work. Real savings never promise to turn 500 into 5,000 in a week."
+    },
+    {
+      "id": "b-save",
+      "kind": "behaviour",
+      "prompt": "When you get money, how often do you keep some of it to save?",
+      "options": ["Never", "Sometimes", "Often", "Always"]
+    },
+    {
+      "id": "b-plan",
+      "kind": "behaviour",
+      "prompt": "Before you buy something, how often do you check that you can really afford it?",
+      "options": ["Never", "Sometimes", "Often", "Always"]
+    },
+    {
+      "id": "b-compare",
+      "kind": "behaviour",
+      "prompt": "How often do you compare prices before you buy?",
+      "options": ["Never", "Sometimes", "Often", "Always"]
+    },
+    {
+      "id": "b-track",
+      "kind": "behaviour",
+      "prompt": "How often do you keep track of the money you spend?",
+      "options": ["Never", "Sometimes", "Often", "Always"]
+    },
+    {
+      "id": "t-now",
+      "kind": "time",
+      "prompt": "Which would you pick: 100 baht today, or 120 baht in one month?",
+      "options": ["100 baht today", "120 baht in one month"],
+      "later": 1
+    },
+    {
+      "id": "t-far",
+      "kind": "time",
+      "prompt": "And this one: 100 baht in 6 months, or 120 baht in 7 months?",
+      "options": ["100 baht in 6 months", "120 baht in 7 months"],
+      "later": 1
+    },
+    {
+      "id": "r-flip",
+      "kind": "risk",
+      "prompt": "Pick one: 50 baht for sure, or flip a coin. Heads you get 120 baht, tails you get nothing.",
+      "options": ["50 baht for sure", "Flip the coin"],
+      "bold": 1
+    },
+    {
+      "id": "r-safe",
+      "kind": "risk",
+      "prompt": "Now pick again: 80 baht for sure, or flip a coin. Heads you get 120 baht, tails you get nothing.",
+      "options": ["80 baht for sure", "Flip the coin"],
+      "bold": 1
+    },
+    {
+      "id": "s-worship",
+      "kind": "script",
+      "script": "worship",
+      "prompt": "Do you agree? “More money would fix all my problems.”",
+      "options": ["I disagree", "I’m not sure", "I agree"]
+    },
+    {
+      "id": "s-status",
+      "kind": "script",
+      "script": "status",
+      "prompt": "Do you agree? “Expensive things show that a person is important.”",
+      "options": ["I disagree", "I’m not sure", "I agree"]
+    }
+  ],
+  "types": {
+    "turtle": {
+      "name": "Steady Turtle",
+      "time": "later",
+      "risk": "careful",
+      "line": "You like to wait and play it safe.",
+      "strengths": ["You save steadily and plan ahead.", "You rarely panic when prices jump around."],
+      "blindSpots": ["Money kept too safe can lose value as prices rise.", "You might skip chances to learn how investing works."],
+      "scam": "“Guaranteed” savings schemes that promise high, steady returns with no risk. Real safe returns are small; high returns always come with risk.",
+      "building": "school"
+    },
+    "eagle": {
+      "name": "Patient Eagle",
+      "time": "later",
+      "risk": "bold",
+      "line": "You can wait, and you’re fine with ups and downs.",
+      "strengths": ["You think about the long run.", "Prices going up and down don’t scare you off."],
+      "blindSpots": ["Feeling too sure about one big bet.", "Putting too much money in one place."],
+      "scam": "“Insider tips” about a coin or stock that will soar. Pump-and-dump groups use them to sell to you at the top.",
+      "building": "market"
+    },
+    "cat": {
+      "name": "Cosy Cat",
+      "time": "now",
+      "risk": "careful",
+      "line": "You enjoy today and avoid risky bets.",
+      "strengths": ["You enjoy what you have.", "You stay away from risky gambles."],
+      "blindSpots": ["Little left over for later.", "Small spends add up without you noticing."],
+      "scam": "“Today only!” deals and fake discounts that rush you to pay before you can think.",
+      "building": "piggy"
+    },
+    "monkey": {
+      "name": "Spark Monkey",
+      "time": "now",
+      "risk": "bold",
+      "line": "You move fast and love trying new things.",
+      "strengths": ["You’re curious and quick to learn.", "You’re brave about trying new ideas."],
+      "blindSpots": ["Buying on impulse.", "Chasing hype because everyone else is."],
+      "scam": "Get-rich-quick coins and “double your money” offers that pump up hype, then disappear with the money.",
+      "building": "market"
+    }
+  }
+}

@@ -14,9 +14,11 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 const L = (n) => `L$${Math.round(n).toLocaleString('en-US')}`;
 
 function knowledge({ run, check, lesson }) {
-  const skipped = !check || check.skipped;
-  const checkAsked = check?.total ?? 3;
-  const checkRight = skipped ? 0 : check.score;
+  // Since Penny v3 (BRIEF §16) the old 3-question check is optional: it counts only if the player took or skipped it.
+  const took = Boolean(check);
+  const skipped = took && check.skipped;
+  const checkAsked = took ? (check.total ?? 3) : 0;
+  const checkRight = took && !skipped ? check.score : 0;
   const lessonAsked = lesson?.done ? 1 : 0;
   const lessonRight = lesson?.done && lesson.quizCorrect ? 1 : 0;
   const quiz = run.quiz || [];
@@ -24,7 +26,8 @@ function knowledge({ run, check, lesson }) {
   const quizRight = run.metrics ? run.metrics.quizCorrect : quiz.filter((q) => q.correct).length;
   const asked = checkAsked + lessonAsked + quizAsked;
   const right = checkRight + lessonRight + quizRight;
-  const where = ['the check', lessonAsked && 'the lesson quiz', quizAsked && `Penny’s ${plural(quizAsked, 'market question')}`].filter(Boolean);
+  if (!checkAsked && !lessonAsked && !quizAsked) return { value: 0, reason: 'Answer Penny’s questions when news breaks in the market to score here.' };
+  const where = [took && 'the check', lessonAsked && 'the lesson quiz', quizAsked && `Penny’s ${plural(quizAsked, 'market question')}`].filter(Boolean);
   const list = where.length > 1 ? `${where.slice(0, -1).join(', ')} and ${where.at(-1)}` : where[0];
   return {
     value: asked ? (30 * right) / asked : 0,

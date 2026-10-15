@@ -1,24 +1,23 @@
-// Welcome and birth-year gate (BRIEF §3 step 1, §15 Y9). The player picks their birth year, a cake shows the
-// candles for that age, and the level follows from it: 8–12 Explorer, 13–15 Trader, 16–19 Builder. Under 8 plays
-// Explorer with a grown-up; 20 and over sees cards for parents, teachers and real markets and can try any level.
+// Landing (BRIEF §16): the first screen is the product itself. The hero is the birth-year cake; the age sets the
+// Market Lab level (8–12 Explorer, 13–15 Trader, 16–19 Builder, 20+ Builder) and then the player makes a character.
+// Under 8 plays with a grown-up; 20 and over also sees cards for parents, teachers and real markets.
 // The year is self-declared and stays in localStorage only.
 import { h, icon, animate } from '../ui.js';
 
-const TIER_ICONS = { explorer: 'compass', trader: 'candles', builder: 'blocks' };
 const SVG = 'http://www.w3.org/2000/svg';
 const MAX_CANDLES = 20;
 
 export function tierForAge(age) {
   if (age < 13) return 'explorer';
   if (age < 16) return 'trader';
-  if (age < 20) return 'builder';
-  return null; // 20+: the visitor chooses
+  return 'builder';
 }
 
 export function mount(root, ctx) {
   const { config, store, navigate } = ctx;
   const thisYear = Number(new Intl.DateTimeFormat('en-US', { timeZone: config.TIME_ZONE, year: 'numeric' }).format(new Date()));
-  const saved = store.get().birthYear;
+  const state = store.get();
+  const saved = state.birthYear;
 
   const select = h('select', { id: 'birth-year', class: 'year-select', autocomplete: 'bday-year' }, [
     h('option', { value: '', text: 'Choose your year' }),
@@ -27,17 +26,23 @@ export function mount(root, ctx) {
   const cakeBox = h('div', { class: 'cake-box' });
   const ageLine = h('p', { class: 'gate__age', 'aria-live': 'polite' });
   const outcome = h('div', { class: 'gate__outcome' });
-
   const penny = h('img', { class: 'penny-says__img', src: 'assets/svg/penny/happy.svg', alt: '', width: 96, height: 96 });
 
   const view = h('div', { class: 'welcome' }, [
     h('section', { class: 'welcome__hero', 'aria-labelledby': 'welcome-title' }, [
       h('h1', { class: 'welcome__title', id: 'welcome-title', text: config.PRODUCT_NAME }),
+      h('p', { class: 'welcome__tagline', text: config.TAGLINE }),
       h('div', { class: 'penny-says' }, [
         penny,
-        h('p', { class: 'bubble' }, ['Hi, I’m Penny! Let’s learn how money and markets really work, so nobody can fool you. First, when were you born?']),
+        h('p', { class: 'bubble' }, [`Hi, I’m Penny, your money companion. ${config.MANIFESTO}: let’s start with your birthday cake.`]),
       ]),
     ]),
+    state.profile?.character && state.tier
+      ? h('div', { class: 'card welcome__back' }, [
+          h('p', { text: 'Welcome back! Your town is waiting.' }),
+          h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: () => navigate('/town') }, ['Go to my town', icon('arrow-right', { size: 20 })]),
+        ])
+      : null,
     h('section', { class: 'card gate', 'aria-labelledby': 'gate-title' }, [
       h('h2', { class: 'gate__title', id: 'gate-title', text: 'What year were you born?' }),
       cakeBox,
@@ -50,50 +55,58 @@ export function mount(root, ctx) {
       h('span', { class: 'note__icon' }, [icon('shield')]),
       h('h2', { class: 'note__title', id: 'parents-title', text: 'For parents' }),
       h('div', { class: 'note__body' }, [
-        h('p', {
-          text: `${config.PRODUCT_NAME} is a practice market. Every coin, price and trader is simulated: no real money, no real crypto and no link to any exchange. Children learn to spot hype and scams; only the computer traders ever try them.`,
-        }),
-        h('p', { text: 'No sign-up, no personal data, no cookies and no ads. The birth year is self-declared, only picks the level, and stays on this device with the rest of the progress. A score added to the leaderboard shares only a random nickname, the level, the score and the date.' }),
+        h('p', { text: `${config.PRODUCT_NAME} is a money companion for kids and grown-ups. Coins, markets and Town coins are simulated; the Piggy Bank only records cash you say you saved, and never touches it. There are no ads, no links to exchanges and no buy prompts.` }),
+        h('p', { text: 'You can play as a guest: no sign-up, no personal data and no tracking. The birth year is self-declared, only picks the level, and stays on this device with the rest of the progress.' }),
       ]),
     ]),
+    h('section', { class: 'card card--quiet partners', 'aria-labelledby': 'partners-title' }, [
+      h('h2', { class: 'note__title', id: 'partners-title', text: 'For partners' }),
+      h('p', { text: 'We work with licensed exchanges and wallets for graduates aged 20 and over, with schools, and with sponsors. Nobody under 20 ever sees ads or sponsor banners.' }),
+      h('a', { class: 'partners__link', href: config.CONTACT_URL, rel: 'noopener', text: 'Contact the Cenedury team' }),
+    ]),
+    h('p', { class: 'welcome__research' }, [h('a', { href: '#/research', text: 'The research behind Penny' })]),
   ]);
   root.append(view);
 
-  const start = (tierId, birthYear) => {
-    store.set({ tier: tierId, birthYear });
-    navigate('/check');
-  };
+  function next(tier, birthYear) {
+    store.set({ tier, birthYear });
+    navigate('/character');
+  }
+
+  function nextButton(label, onClick) {
+    return h('button', { class: 'btn btn--primary btn--lg btn--block gate__start', type: 'button', onClick }, [label, icon('arrow-right', { size: 22 })]);
+  }
 
   function render() {
     const year = Number(select.value);
     const age = year ? thisYear - year : null;
     cakeBox.replaceChildren(cake(age));
     if (age === null) {
-      ageLine.textContent = 'Your level follows from your age. Pick a year to see it.';
+      ageLine.textContent = 'Pick your year and Penny lights your candles.';
       outcome.replaceChildren();
       return;
     }
     ageLine.replaceChildren(`You’re about ${age} `, h('span', { class: 'chip', text: 'self-declared' }));
+    const tier = config.getTier(tierForAge(age));
 
     if (age < 8) {
       outcome.replaceChildren(
         h('div', { class: 'gate__message' }, [
-          h('p', { class: 'gate__lead', text: 'Market Lab is made for ages 8 and up.' }),
+          h('p', { class: 'gate__lead', text: `${config.PRODUCT_NAME} is made for ages 8 and up.` }),
           h('p', { text: 'Ask a grown-up to sit with you, and you can play together in Explorer mode.' }),
         ]),
-        startButton('Play Explorer with a grown-up', () => start('explorer', year)),
+        nextButton('Play with a grown-up', () => next('explorer', year)),
       );
     } else if (age < 20) {
-      const tier = config.getTier(tierForAge(age));
       outcome.replaceChildren(
         h('div', { class: 'gate__tier', dataset: { level: tier.id } }, [
-          h('span', { class: 'choice-card__icon' }, [icon(TIER_ICONS[tier.id], { size: 28 })]),
+          h('span', { class: 'choice-card__icon' }, [icon({ explorer: 'compass', trader: 'candles', builder: 'blocks' }[tier.id], { size: 28 })]),
           h('div', {}, [
-            h('p', { class: 'gate__lead' }, [`You’ll play as a ${tier.name} `, h('span', { class: 'chip', text: `Ages ${tier.ages}` })]),
+            h('p', { class: 'gate__lead' }, [`Your Market Lab level: ${tier.name} `, h('span', { class: 'chip', text: `Ages ${tier.ages}` })]),
             h('p', { class: 'gate__blurb', text: tier.blurb }),
           ]),
         ]),
-        startButton(`Start as ${tier.name}`, () => start(tier.id, year)),
+        nextButton('Next: make your character', () => next(tier.id, year)),
       );
     } else {
       outcome.replaceChildren(grownUps(year));
@@ -101,37 +114,17 @@ export function mount(root, ctx) {
     animate(outcome, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }]);
   }
 
-  function startButton(label, onClick) {
-    return h('button', { class: 'btn btn--primary btn--lg btn--block gate__start', type: 'button', onClick }, [label, icon('arrow-right', { size: 22 })]);
-  }
-
-  // 20 and over: who the lab is for, an honest word on real markets, and every level to try.
+  // 20 and over: who Penny is for, an honest word on real markets, then on to the character.
   function grownUps(year) {
     const info = (title, text) => h('li', { class: 'card card--quiet adult-card' }, [h('h3', { class: 'adult-card__title', text: title }), h('p', { text })]);
     return h('div', { class: 'gate__adults' }, [
-      h('p', { class: 'gate__lead', text: 'Welcome, grown-up! Market Lab is built for learners aged 8 to 19.' }),
+      h('p', { class: 'gate__lead', text: `Welcome! ${config.PRODUCT_NAME} is for kids from 8 and for grown-ups too.` }),
       h('ul', { class: 'adult-cards' }, [
-        info('For parents', 'A safe practice market: simulated coins and prices, no sign-up, no ads, and nothing leaves this device unless your child adds a score to the leaderboard.'),
-        info('For teachers', 'Everyone gets the same market each day, so a class can talk through the same news together. Every run ends with a Money Health Score that explains itself.'),
-        info('Real markets', 'Real trading happens only on licensed exchanges that verify who you are. Market Lab never handles real money and is not linked to any exchange.'),
+        info('For parents', 'Play first, then hand it over. Everything is simulated except the Piggy Bank, which only records savings you report. No ads, no tracking.'),
+        info('For teachers', 'Everyone gets the same market each day, so a class can talk through the same news together. Every result explains itself.'),
+        info('Real markets', 'Real trading happens only on licensed exchanges that check who you are. Penny never handles real money. Licensed partners for graduates aged 20 and over will appear here.'),
       ]),
-      h('h3', { class: 'gate__try', text: 'Try the lab yourself' }),
-      h(
-        'ul',
-        { class: 'choice-list' },
-        config.TIERS.map((tier) =>
-          h('li', {}, [
-            h('button', { class: 'choice-card', type: 'button', dataset: { tier: tier.id }, onClick: () => start(tier.id, year) }, [
-              h('span', { class: 'choice-card__icon' }, [icon(TIER_ICONS[tier.id], { size: 28 })]),
-              h('span', { class: 'choice-card__body' }, [
-                h('span', { class: 'choice-card__head' }, [h('span', { class: 'choice-card__title', text: tier.name }), h('span', { class: 'chip', text: `Ages ${tier.ages}` })]),
-                h('span', { class: 'choice-card__text', text: tier.blurb }),
-              ]),
-              icon('chevron-right', { className: 'choice-card__chevron' }),
-            ]),
-          ]),
-        ),
-      ),
+      nextButton('Next: make your character', () => next('builder', year)),
     ]);
   }
 
@@ -174,10 +167,7 @@ function cake(age) {
     for (let i = 0; i < count; i++) {
       const x = count === 1 ? 120 : 120 - span / 2 + step * i + (r ? step / 2 : 0);
       const g = el('g', { class: `cake__candle cake__candle--${(i + r) % 4}` });
-      g.append(
-        el('rect', { x: x - 3, y, width: 6, height: 26 + r * 22, rx: 2 }),
-        el('path', { class: 'cake__flame', d: `M${x} ${y - 14}c4 5 5 8 0 12-5-4-4-7 0-12z` }),
-      );
+      g.append(el('rect', { x: x - 3, y, width: 6, height: 26 + r * 22, rx: 2 }), el('path', { class: 'cake__flame', d: `M${x} ${y - 14}c4 5 5 8 0 12-5-4-4-7 0-12z` }));
       svg.append(g);
     }
   });
