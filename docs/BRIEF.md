@@ -191,7 +191,9 @@ The report card shows each component with a one-line reason. The leaderboard ran
 - **Tamper demo:** edit an old transaction. Its hash and every later block turn red, explaining "why history can't be quietly rewritten".
 - Lesson cards cover wallets and keys (concept only; never generate or display real seed phrases), confirmations, and fees.
 
-## 8. Content (in `data/`, generated at build time, reviewed by a human)
+## 8. Content (in `public/data/`, generated at build time, reviewed by a human)
+
+Every `data/…` path in this brief means `public/data/…`: the browser loads these files and the document root is `public/` (DECISIONS.md #1).
 
 | File | Contents |
 |---|---|
@@ -289,9 +291,9 @@ public/
   assets/svg/penny/*.svg  assets/svg/glyphs/*.svg                  — Yotha
   assets/audio/*.mp3 (generated)                                   — Yotha
   api/health.php tutor.php leaderboard.php                         — Yotha
+  data/gate.json lessons.json events.json facts.json tutor_faq.json — Yotha
+  data/coins.json agents.json scenario.json                        — Joewee
 src/ (PHP: bootstrap, config, http, ratelimit, cache, anthropic, elevenlabs) — Yotha
-data/gate.json lessons.json events.json facts.json tutor_faq.json  — Yotha
-data/coins.json agents.json scenario.json                          — Joewee
 bin/check.mjs generate-content.php generate-audio.php              — Yotha
 docs/BRIEF.md DECISIONS.md STATUS.md EVIDENCE.md
 README.md (written last, for judges)                               — Yotha
