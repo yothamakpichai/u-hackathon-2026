@@ -387,3 +387,21 @@ Arena (Yotha, Y10): a real multiplayer market behind ARENA_ENABLED. MySQL via PD
 - Partners: no ads or sponsor banners for anyone under 20. The landing has a "For partners" section (licensed exchanges and wallets for 20+ graduates, schools, sponsors) with a contact link; the 20+ real-markets card says partners will appear there. No partner names or logos.
 - Research: a #/research page and an ⓘ "Why this works" on each building, citing only docs/SOURCES.md. New sources are added there marked [unverified].
 - Roadmap only (deck): weekly leagues, friends, a teacher dashboard (bridge to eduu), stocks and gold, licensed real-money handoff partners, eKYC.
+
+### 16.1 Patience, trading and credit (Joewee)
+Town wallet: public/js/wallet.js owns the in-game coin balance, an append-only ledger and the credit score shared by Farm, Orchard, Stall and Bank. The Lab keeps its own L$ per session. All coins are fake.
+
+Orchard (inside #/farm, J11): buy seeds with coins and plant them. Growth runs in real time and the menu trades waiting for yield: a sprout in 2 minutes (small yield), a fruit tree in 1 day, a big tree in 7 days (largest yield, keeps fruiting). Show growth stages, harvest and replanting. Record each choice as revealed time preference; the Money Type screen may add "Your choices look more Later than your quiz said" while the quiz result stays visible.
+
+Daily Stall (#/stall, J12): each Bangkok date (seeded, the same for everyone) brings different goods at different prices. Prices move during the day and some goods spoil after N days (holding cost). Players buy, hold and sell. Lessons cover buying low and selling high, spoilage, and why borrowing to speculate is dangerous.
+
+Bank (#/bank, J12):
+- Borrow coins with interest and repay them. The loan screen always shows the total cost before the player agrees, and a borrowing lesson appears at that moment (just-in-time).
+- Town Card (a credit card) with a limit and a weekly statement: pay in full or pay the minimum, with a calculator showing how long the minimum takes to clear the balance and how much interest it costs.
+- An in-game credit score rises with on-time repayment, falls with late payment, and changes future interest rates.
+- A "Quick Cash" NPC lender offers instant coins with no checks at a huge rate, as the informal-loan trap lesson.
+- With several loans, a payoff lesson compares smallest-first with highest-rate-first (Gal & McShane 2012).
+- No punishment spiral: interest accrues per real day, but total game interest is capped at the principal (labelled as a game rule, unlike real loans), and a restructuring plan is always available.
+- Real-world cards on Thai credit use only [unverified] entries until checked.
+
+Buildings: the orchard lives inside the farm; add stall and bank to buildings.js, set to 'live' only after they pass checks at 360px and 1440px.

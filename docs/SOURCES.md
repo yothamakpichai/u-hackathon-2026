@@ -31,3 +31,8 @@
 - [unverified] Long-run nominal return (about 7% a year) and volatility (about 16% a year) of broad global equity indices in US dollars.
 - [unverified] Correlation between Thai and global stock returns (about 0.6).
 - [unverified] Yearly market changes used as shock scenarios: SET index 1997 about −55%, 2020 about −8%, 2022 about +1%; US/global stocks 1997 about +31%, 2020 about +16%, 2022 about −18%; baht against the US dollar 1997 from about 25 to about 47 after the July float, 2020 roughly unchanged, 2022 about 4% weaker; Thai CPI 1997 about 5.6%, 2020 about −0.8%, 2022 about 6.1%.
+## Financial education and credit (§16.1)
+- Kaiser, T., Lusardi, A., Menkhoff, L. & Urban, C. (2022). Financial education affects financial knowledge and downstream behaviors. Journal of Financial Economics 145(2), 255–272.
+- Fernandes, D., Lynch, J. G. & Netemeyer, R. G. (2014). Financial literacy, financial education, and downstream financial behaviors. Management Science 60(8), 1861–1883.
+- Gal, D. & McShane, B. B. (2012). Can small victories help win the war? Evidence from consumer debt management. Journal of Marketing Research 49(4), 487–501.
+- [unverified] Bank of Thailand: credit card interest ceiling and minimum payment rate; personal loan ceilings; National Credit Bureau scoring; Thai law on the maximum interest for private lending.
