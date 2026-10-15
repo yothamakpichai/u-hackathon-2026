@@ -1,222 +1,347 @@
-# U-Hackathon 2026 — Eduu (team Cenedury) — BRIEF
+# U-Hackathon 2026 — Market Lab (team Cenedury) — BRIEF v2
 
-Single source of truth for this repo. Read all of it before doing anything.
+Single source of truth. Read all of it before writing code. This brief replaces v1 entirely.
 
 ## 0. Hard facts
 
-- Event: U-Hackathon 2026, AI track. Build window Thu 15 Oct 11:30 → **Fri 16 Oct 14:00 ICT (submissions close)**.
-- Rule: "Existing Project is NOT allowed. Pre-research is acceptable." Every line of code in this repo is written during the build window. Do not import code from other repos.
-- Submission: public GitHub repo, a demo website that shows the real product (not a landing page), and a pitch deck.
-- Judging: App execution 40%, Practicality 40%, Usability & design 10% (intuitive navigation, clear flow, readable design, helpful errors, accessibility), Innovation & ecosystem 5% (partner: ElevenLabs), U-Bot integration 5%.
-- First-round judges review the submitted links **without us present**, probably on a phone, possibly hours after submission. The worst moment of the demo sets the score. Every path must work, every state must explain itself, and no feature may be half-finished. Delete unfinished features instead of disabling them.
-- Production URL: `https://u-hackathon-2026.cenedury.com`. sv1 is Plesk with PHP 8.3. Plesk Git auto-deploys `main` on every push. The document root is `public/`.
+- Event: U-Hackathon 2026, AI track. **Submissions close Fri 16 Oct 14:00 ICT.** Feature freeze 12:00.
+- Rule: "Existing Project is NOT allowed. Pre-research is acceptable." Every line of code is written in this repo during the event. Do not import code from elsewhere. Vendored third-party libraries are allowed if their licence permits it.
+- Submission: public GitHub repo, a demo site that shows the real product (`https://u-hackathon-2026.cenedury.com`), and a pitch deck.
+- Judging:
+
+  | Weight | Criterion |
+  |---|---|
+  | 40% | App execution |
+  | 40% | Practicality |
+  | 10% | Usability & design |
+  | 5% | Innovation & ecosystem (partners: ElevenLabs, Tokenomist, Avalanche) |
+  | 5% | U-Bot |
+
+- First-round judges open the link on their own device, often a phone, possibly with **sound off**, hours after submission, without us present. The worst moment of the demo sets the score.
+  - Every path must work.
+  - Every state explains itself.
+  - Every voice line also appears as on-screen text.
+  - Unfinished features are deleted, never shown disabled.
+- Deploy: push to `main` → GitHub webhook → Plesk auto-deploys → live in seconds. Document root is `public/`. Server is PHP 8.3 with Apache behind nginx, so `.htaccess` works.
+- **English only, everywhere.** No language toggle. No Thai strings in the UI.
 
 ## 1. Product
 
-**Vision line (pitch, not scope):** Cenedury builds the global standard for education quality: measuring whether students become thinkers and builders, not test-takers.
+**One line:** A safe, simulated crypto market where kids aged 8–16 learn how money and markets really work, including how hype, unlocks and scams move prices, so they grow up as the generation nobody can fool.
 
-**What we ship in 24h (the wedge):** A teacher records a 1–2 minute spoken note about their week of teaching, in Thai. Eduu:
-1. transcribes it (ElevenLabs speech-to-text),
-2. turns it into structured teaching evidence mapped to the official Thai teacher performance indicators (ว.PA, ก.ค.ศ. circular ว 9/2564),
-3. scores how much of the students' work was *creating/applying* versus *recalling* (the "Generativity" signal — the bridge to the vision),
-4. shows which indicators still have no evidence, and suggests one concrete next step,
-5. exports an A4 evidence report that the teacher can save as a PDF.
+**Positioning rules (non-negotiable):**
+- Simulation only. No real money, no real crypto, no wallets, no deposits, no links to exchanges, no "buy real crypto" prompts anywhere.
+- A persistent badge reads `Simulation · No real money`. The footer on every screen reads: "Educational simulation. Not financial advice. No real cryptocurrency is bought, sold or held."
+- Kids learn to **recognise** manipulation, never to perform it.
+  - Scams, rug pulls and wash trading are done only by NPC agents.
+  - No user, at any age tier, can rug, wash-trade or deceive.
+- No accounts, no sign-up, no personal data, no cookies, no analytics, no third-party requests. State lives in `localStorage`. The leaderboard stores only an auto-generated nickname, tier, score and date.
+- Brand: **Cenedury** builds it. **EDUU** is the official in-game coin. Never claim that real students receive EDUU today; that belongs on the roadmap slide.
 
-Every note becomes a data point. The evidence board shows quality accumulating over weeks.
+**Working name:** `Market Lab`. It is defined once as `PRODUCT_NAME` in `public/assets/js/config.js`, so renaming is a one-line change.
 
-**Users:** Thai government-school teachers, who carry a heavy ว.PA documentation burden. Judges must also be able to use the demo without speaking Thai and without a microphone (see §4).
+## 2. Age tiers (the product's core logic)
 
-## 2. Stack and constraints
+The tiers follow cognitive development plus legal thresholds. The same features appear in every tier with progressive depth, Duolingo-style.
 
-- Vanilla PHP 8.3 (no framework), vanilla JS (ES modules, no build step, no npm runtime dependencies), vanilla CSS. Google Fonts: **IBM Plex Sans Thai** for body text, **Baloo 2** for the wordmark only.
-- Brand: education green `#0DA678` as primary, plus one amber "spark" accent (pick a hex that passes WCAG AA where used as text; record it in DECISIONS.md). Light theme first; dark theme only if time allows.
-- **No database.** The server is a stateless PHP API with a file cache. Client state, meaning the visitor's own notes, lives in `localStorage` wrapped in try/catch. Seeded demo data ships as JSON in the repo. Reason: fewer moving parts at judging time.
-- Secrets and writable state live **outside the repo** in a sibling directory named `u-hackathon-2026-private/`, resolved as `dirname(REPO_ROOT) . '/u-hackathon-2026-private'`:
+| Tier | Why this boundary | Coins visible | Create-a-coin knobs | Lens |
+|---|---|---|---|---|
+| **Explorer 8–12** | Money habits form by about age 7 and thinking is concrete. Money is exchange; earn / save / spend / share; waiting pays. | VAULT, EDUU, PEG | Name, icon, colour, total supply | Scarcity: "make more, each is worth less" |
+| **Trader 13–15** | Abstract reasoning develops: probability, risk, supply and demand. Age 13 is the common digital-consent line. | + FUEL, ORBIT, ZOOMZ | + allocation split (you / team / public) + launch hype | Concentration risk; hype cycles |
+| **Builder 16+** | Approaching legal autonomy; can handle speculation and token design. | + BLOOP, wash-volume overlay | + bonding-curve launch, LP lock on/off, vesting for own allocation | Full launch anatomy and rug recognition |
+
+Graduation to real markets happens at legal majority (20 in Thailand). That is roadmap only, shown on a single "For parents" card with no link.
+
+## 3. The judge path (about 3 minutes, mobile-first)
+
+1. **Welcome.** Mascot Penny, one sentence, the badge, and three big tier buttons. A small "For parents" card explains safety. No sign-up.
+2. **Money Health Check.** Three questions for the chosen tier, each narrated (audio plus caption).
+   - Pass (≥ 2/3) unlocks the Lab.
+   - Fail leads to one **lesson**: 4 cards, each with a micro-interaction, then a 1-question quiz, then the Lab unlocks with a celebratory animation.
+   - Also show a "Skip for demo" link, small and honest, labelled `Skip check (demo)`, so judges in a hurry are not trapped.
+3. **Market Lab: Today's Market.** Every player gets the same daily scenario (Wordle-style; the seed is the Bangkok date) lasting 4 real minutes, which represents 30 simulated days.
+   - Live candlestick chart, coin list, buy/sell panel, portfolio, and L$1,000 starting cash.
+   - Prices are driven by AMM pools plus NPC agents (§5).
+4. **Events.** Events fire at fixed offsets. Penny pops in with tier-specific narration plus a one-question check, then the market continues.
+5. **Create a coin.** Available from the Lab once ≥ 1 event has been seen. The knobs depend on tier (§2).
+   - The user chooses a curated icon and colour plus a name and ticker, then launches. Agents react, and the outcome is explained.
+   - The user's coin is always honest. Its risk comes from its design (over-supply, greedy allocation, no LP lock leaves holders exposed to an NPC copycat attack), never from the user cheating.
+6. **Report card** when the market closes, or via "Finish now".
+   - Money Health Score with an explainable breakdown, plus "3 things you learned".
+   - Nickname plus leaderboard for today's market and tier.
+   - Replay button.
+   - Score wisdom, not profit (§6).
+
+Desktop (≥ 1024 px) gets a **Basic / Advanced** toggle in the Lab. Advanced adds:
+- agent order-flow breakdown;
+- the real-vs-wash volume overlay (Builder tier);
+- the block explorer (§7).
+
+Mobile shows Basic only.
+
+## 4. Coin roster (all fictional; never use real tickers or brands)
+
+Quote currency is **L$ (Lab Dollar)**. The PEG stablecoin targets L$1.00.
+
+| Coin | Class | Supply model | Teaching point |
+|---|---|---|---|
+| **VAULT** | Store of value | Hard cap 21,000,000; issuance halves on a fixed schedule ("halving") | Scarcity; issuance schedules |
+| **EDUU** | Official Cenedury coin (education rewards token) | Fixed supply; transparent emissions to a "learner rewards" pool | Emissions and transparency |
+| **PEG** | Stablecoin | Collateralised 1:1; arbitrage agents defend the peg | What "stable" means; depeg risk |
+| **FUEL** | Platform / utility | Inflationary issuance plus a burn per transaction | Net supply = issuance − burn |
+| **ORBIT** | Partner-style project token | Team/investor allocations with cliff + linear vesting | Unlocks create sell pressure |
+| **ZOOMZ** | Meme (survives) | Bonding-curve launch, then AMM; hype-driven | Hype cycles; volatility |
+| **BLOOP** | Meme (NPC rug) | Creator holds the LP and pulls it at the scripted time | Rug-pull anatomy and red flags |
+
+If a Tokenomist key is available, ORBIT's vesting curve may be derived from one real token's public unlock schedule, scaled to sim time. Cite it as "modeled on real-world unlock data from Tokenomist" and never show the real token's name. Otherwise use a typical cliff + linear schedule. ORBIT is optional polish, not a dependency.
+
+## 5. Simulation engine (`public/assets/js/sim/`, pure ES modules, no DOM)
+
+### Time
+
+- Fixed-step ticks of 100 ms of real time.
+- Session = 2,400 ticks (4 minutes). 1 sim day = 80 ticks.
+- `tick()` is deterministic given the seed and the player's actions.
+
+### Randomness
+
+A seeded PRNG (mulberry32 or xoshiro128**). The seed is `hash("market-lab:" + YYYY-MM-DD Asia/Bangkok)`. Never use `Math.random()` inside the sim.
+
+### Pricing
+
+- One constant-product AMM per coin against L$: `x · y = k`, with a 0.3% fee.
+- Price = reserve_L$ / reserve_coin. Swaps move the price, so slippage and price impact are real.
+- Meme coins launch on a **virtual bonding curve**, pump.fun-style: virtual reserves at start, graduating to an AMM pool at a threshold. Parameters live in `data/coins.json`.
+- PEG runs at a pinned price, with a depeg event that pushes it to about 0.96. Arbitrage agents restore 1.00 over about 20 s.
+
+### Agents
+
+Each archetype is a parameter block in `data/coins.json` or `data/agents.json` and is evaluated every tick.
+
+| Archetype | Behaviour |
+|---|---|
+| `retail` | Many agents, small random trades, slight momentum bias |
+| `momentum` | Buys rising and sells falling over a lookback window (amplifies moves) |
+| `value` | Buys when price is below its moving average, sells above |
+| `whale` | Rare, very large orders; scripted dump event |
+| `panic` | Sells after negative events, then decays |
+| `insider` | Holds vesting allocations and sells part of each unlock |
+| `hype` | Bursty buying driven by a per-coin hype variable that decays |
+| `arb` | Defends PEG |
+| `rugger` | NPC creator of BLOOP; removes liquidity at the scripted time |
+| `wash` | NPC wash-trading bot: inflates volume with self-trades, so price barely moves |
+
+The wash bot is shown and explained only in the Builder tier, with the overlay "real vs wash volume". It answers the obvious judge question about bots pumping volume: in our lab, bots *exist so kids learn to spot them*.
+
+### Events
+
+The ids are fixed and form the contract with the narration content.
+
+| Offset (s) | id | Coin | Tiers |
+|---|---|---|---|
+| 35 | `hype_wave` | ZOOMZ | 13+ |
+| 70 | `halving` | VAULT | all |
+| 105 | `unlock` | ORBIT | 13+ |
+| 140 | `whale_dump` | VAULT | all |
+| 175 | `rug_pull` | BLOOP | 16+ |
+| 205 | `depeg_scare` | PEG | all |
+| any (Builder, Advanced) | `wash_volume` | FUEL | 16+ |
+
+The Explorer tier sees `halving`, `whale_dump` and `depeg_scare` so that it still gets three teaching moments.
+
+### API (the contract with the UI)
+
+```js
+createSession({ seed, tier, coinsConfig, agentsConfig, scenario }) -> session
+session.tick()                         // advance one step
+session.swap(coinId, 'buy'|'sell', amountL$OrCoins) -> { ok, filledCoins, filledL$, priceImpactPct, error }
+session.createCoin({ name, ticker, iconId, colorId, supply, allocation?, lpLocked?, vesting? }) -> coinId
+session.getState() -> { t, coins:{[id]:{price, candles[], volume, washVolume, supply, holders}}, portfolio, events[] }
+session.on('event', cb)                // cb({ id, coinId, t })
+session.on('close', cb)
+```
+
+### Unit checks
+
+Plain Node, run by `bin/check.mjs`, in `public/assets/js/sim/*.test.mjs`. They must cover:
+- the AMM invariant holds after swaps;
+- the same seed with the same actions gives an identical state;
+- the 21M cap is never exceeded;
+- PEG returns to within ±0.5% of 1.00 after `depeg_scare`;
+- BLOOP's price falls by ≥ 90% at `rug_pull`.
+
+## 6. Money Health Score (0–100, explainable)
+
+| Component | Points | Rule |
+|---|---|---|
+| Knowledge | 30 | Health check + event quizzes answered correctly |
+| Risk management | 25 | Max single-coin exposure ≤ 50% of portfolio for most of the session; keep ≥ 10% in L$ or PEG |
+| Scam avoidance | 20 | Exposure to BLOOP at `rug_pull` (Builder) or to the copycat coin; full points if none |
+| Composure | 15 | No sell-everything within 10 s after a negative event |
+| Returns | 10 | Final value vs L$1,000, capped at +50% |
+
+The report card shows each component with a one-line reason. The leaderboard ranks by score, not by profit, and says so.
+
+## 7. Blockchain layer (honest simulation, real cryptography)
+
+- Every swap in the session becomes a transaction. Every 5 s, a block is formed:
+  - `hash = SHA-256(prevHash + height + timestamp + txs)` via `crypto.subtle`;
+  - a fee ("gas") is shown per transaction.
+- **Block explorer** (Advanced / desktop, and a simplified card on mobile at 13+): a chain of blocks, each opening to its transactions.
+- **Tamper demo:** edit an old transaction. Its hash and every later block turn red, explaining "why history can't be quietly rewritten".
+- Lesson cards cover wallets and keys (concept only; never generate or display real seed phrases), confirmations, and fees.
+
+## 8. Content (in `data/`, generated at build time, reviewed by a human)
+
+| File | Contents |
+|---|---|
+| `data/gate.json` | Per tier: 3 questions `{id, prompt, options[3], answerIndex, explain}` |
+| `data/lessons.json` | Per tier: 1 lesson of 4 cards `{title, body (≤ 45 words), interaction:{type, ...}}` + 1 quiz |
+| `data/events.json` | Per event id × tier: `{headline, narration (≤ 60 words), question:{prompt, options[3], answerIndex}}` |
+| `data/facts.json` | Canonical facts the generator must not contradict. 21M cap; halving roughly every 4 years in Bitcoin's design; AMM `x·y=k`; stablecoins can depeg; unlocks increase circulating supply; wash trading inflates volume without real demand; rug pull = creators remove liquidity. |
+| `data/coins.json`, `data/agents.json` | Sim parameters (owned by Joewee) |
+
+Voice for kids:
+- Short sentences and concrete examples.
+- No fear-mongering, no hype language, no real coin names.
+- Never "you should buy/sell" about real assets.
+- English only.
+
+## 9. AI and voice
+
+**Claude API** (key `ANTHROPIC_API_KEY`, server only):
+- **Build time** (`bin/generate-content.php`, run locally, outputs committed): model `ANTHROPIC_MODEL_CONTENT` (default `claude-sonnet-5-5`). Use tool use with a JSON `input_schema` per file to force structure, then validate against the schema and `facts.json` before writing.
+- **Runtime "Ask Penny"** (P1, `public/api/tutor.php`): model `ANTHROPIC_MODEL_RUNTIME` (default `claude-haiku-5-5`).
+  - `max_tokens` 300, temperature 0.3.
+  - System prompt sets the persona and safety rules, with prompt caching on the system block.
+  - Input ≤ 300 chars. Strip and refuse emails, phone numbers and URLs.
+  - Refuse real-asset advice, price predictions, personal questions and off-topic requests with a friendly redirect.
+  - Per-IP limit 6/min; `DAILY_AI_CAP` global daily cap. On cap, serve suggested-question answers from `data/tutor_faq.json` only.
+- Before the API is wired, the UI uses `data/tutor_faq.json`.
+
+**ElevenLabs** (key `ELEVENLABS_API_KEY`, voice `ELEVENLABS_VOICE_ID`):
+- **Build time** (`bin/generate-audio.php`): text-to-speech for every narration string in `gate/lessons/events` into `public/assets/audio/<id>.mp3`, committed.
+  - Use the highest-quality English model in the current docs.
+  - Choose a **premade library voice** (warm, clear, friendly). Never clone a real person.
+  - Record the model id and voice in DECISIONS.md.
+- **Runtime** (P2, only if time allows): the tutor's answer is streamed through the low-latency model. If anything fails, show text only.
+- The audio player:
+  - always shows captions;
+  - starts muted-safe (the first play follows a user gesture);
+  - has a global mute toggle remembered in `localStorage`.
+
+**U-Bot:** no public API. A team member uses U-Bot to draft part of `data/tutor_faq.json`. The README and deck state exactly what U-Bot produced. Do not fake an integration.
+
+## 10. Design system ("world class", modern, credible; no slop)
+
+- **Feel:** Duolingo's warmth × a pro trading app's precision. One mascot, generous whitespace, strong hierarchy, real data density only in the Lab.
+- **Fonts:** self-hosted woff2 (OFL), with no Google Fonts requests.
+  - **Nunito** for headings and UI labels.
+  - **Inter** for body and all numbers (`font-variant-numeric: tabular-nums`).
+- **Colour tokens** in `tokens.css`:
+  - neutral ink/surface scale;
+  - primary `#0DA678` (also EDUU's colour);
+  - accent amber, warning and loss red, gain green;
+  - each coin has a token colour.
+  - All text meets WCAG AA. Gains and losses are never shown by colour alone (use an arrow and a sign too).
+- **Motion:** CSS/WAAPI only.
+  - 150–300 ms ease-out.
+  - Celebratory moments: unlock, coin launch, report.
+  - `prefers-reduced-motion` disables non-essential motion.
+- **Mascot Penny:** an original round coin-sprite drawn as inline SVG, with 4 expressions (happy, thinking, worried, celebrating). It must **not** resemble Duolingo's owl, the MetaMask fox, Doge/Shiba, Pepe or any existing character.
+- **Coin icons:** an original set of 24 geometric SVG glyphs plus 12 colours, shared by the fictional roster and user-created coins.
+  - No emoji images, no third-party icon sets, no logos.
+  - User coin names: 3–16 letters/spaces. Tickers: 3–5 A–Z.
+  - Block real major tickers and brands (BTC, ETH, USDT, USDC, BNB, SOL, XRP, DOGE, SHIB, PEPE, AVAX, TON, ADA, TRX, LINK, DOT, MATIC, LTC, BCH, XLM, UTOPIA, EDUU) and a small profanity list. Show a friendly error.
+- **Chart:** TradingView Lightweight Charts (Apache-2.0), vendored at `public/assets/js/vendor/`, with the attribution its licence requires. Candles plus a volume histogram.
+- **Layout:** mobile-first from 360 px; desktop ≥ 1024 px gets two- or three-column Lab layouts. Tap targets ≥ 44 px. Full keyboard path, visible focus and `aria-live` for events.
+- **States:** every async thing has loading, empty and error states, each saying what happened and what to do next.
+- **Never:** lorem ipsum, placeholder images, fake testimonials, fake user counts, fake partner logos, or "coming soon" buttons.
+
+## 11. Stack, repo layout and ownership
+
+- Vanilla HTML/CSS/JS (ES modules, no build step) and vanilla PHP 8.3. No framework. Hash router SPA.
+- Secrets and writable state live outside the repo, in `dirname(REPO_ROOT)/u-hackathon-2026-private/`:
   - Production: `/var/www/vhosts/cenedury.com/u-hackathon-2026-private/`
-  - Local (Yotha): `C:\Users\yotha-hack\code\u-hackathon-2026-private\`
-  - Contents: `.env` (keys), `cache/`, `ratelimit/`. Create missing subdirectories at runtime with mode 0700.
-- `.env` keys: `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `claude-sonnet-5-5`), `ELEVENLABS_API_KEY`, `DAILY_AI_CAP` (default 400), `APP_ENV` (`local`|`production`). Commit `.env.example` with names only.
-- The repo is **public forever**. No secrets, no personal data, no real teacher data in commits. A `.gitignore` covering `.env*` (except `.env.example`), `u-hackathon-2026-private/`, `node_modules/`, OS junk must be in the first code commit.
-- Local dev server: `php -S 127.0.0.1:8000 -t public`.
-
-## 3. Repo layout and ownership
+  - Local: `C:\Users\yotha-hack\code\u-hackathon-2026-private\`
+  - Contents: `.env`, `cache/`, `ratelimit/`, `leaderboard/`, `logs/`.
+- `.env` keys:
+  - `APP_ENV`
+  - `ANTHROPIC_API_KEY`
+  - `ANTHROPIC_MODEL_CONTENT`
+  - `ANTHROPIC_MODEL_RUNTIME`
+  - `ELEVENLABS_API_KEY`
+  - `ELEVENLABS_VOICE_ID`
+  - `TOKENOMIST_API_KEY` (optional)
+  - `DAILY_AI_CAP` (default 300)
+- `.env.example` is committed with names only.
 
 ```
-public/                 docroot
-  index.html            app shell (single page)          — Joewee
-  assets/css/*.css                                        — Joewee
-  assets/js/*.js        ES modules                       — Joewee
-  assets/mock/*.json    API mocks for offline UI work    — Joewee
-  api/transcribe.php    thin entrypoints → src/          — Yotha
-  api/analyze.php                                         — Yotha
-  api/health.php                                          — Yotha
-src/                    PHP (not web-reachable)          — Yotha
-  bootstrap.php         config, error handler, JSON responses, security headers
-  Http.php  Config.php  RateLimit.php  Cache.php
-  ElevenLabs.php  Anthropic.php  Analysis.php (schema validation)
-data/                   versioned data                   — Yotha
-  pa-indicators.json    the 15 indicators, TH + EN, with source note
-  demo/teacher.json     fictional demo teacher, 8 weeks of notes + precomputed analyses
-  demo/sample-note.*    a real recorded Thai sample note (added by the team)
-docs/  BRIEF.md  DECISIONS.md  STATUS.md  EVIDENCE.md (user research, written by humans)
-bin/check.mjs           the one check script
-.claude/settings.json
+public/
+  index.html, .htaccess (security headers, caching)                — Yotha
+  assets/fonts/  css/tokens.css base.css components.css            — Yotha
+  assets/css/lab.css                                               — Joewee
+  assets/js/config.js app.js router.js state.js audio.js ui.js     — Yotha
+  assets/js/screens/welcome.js gate.js lesson.js report.js tutor.js — Yotha
+  assets/js/screens/lab.js create.js explorer.js                   — Joewee
+  assets/js/sim/*.js, *.test.mjs                                   — Joewee
+  assets/js/vendor/                                                — Joewee
+  assets/svg/penny/*.svg  assets/svg/glyphs/*.svg                  — Yotha
+  assets/audio/*.mp3 (generated)                                   — Yotha
+  api/health.php tutor.php leaderboard.php                         — Yotha
+src/ (PHP: bootstrap, config, http, ratelimit, cache, anthropic, elevenlabs) — Yotha
+data/gate.json lessons.json events.json facts.json tutor_faq.json  — Yotha
+data/coins.json agents.json scenario.json                          — Joewee
+bin/check.mjs generate-content.php generate-audio.php              — Yotha
+docs/BRIEF.md DECISIONS.md STATUS.md EVIDENCE.md
+README.md (written last, for judges)                               — Yotha
 ```
 
-Two people with two Claude Code sessions work in parallel on `main`. **Stay inside your own folders.** The only shared contract is §5. If the contract has to change, change it in this file first, in a separate commit.
+**Screen contract:** every screen module exports `mount(root, ctx)` and returns an `unmount` function. `ctx = { tier, store, audio, navigate, config }`. Routes:
+- `#/` welcome
+- `#/check`
+- `#/lesson`
+- `#/lab`
+- `#/create`
+- `#/explorer`
+- `#/report`
 
-## 4. Screens and flow (mobile-first, 360px and up; also 1440px desktop)
+**Security:**
+- **CSP:** `default-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self'; font-src 'self'; style-src 'self'; script-src 'self'; frame-ancestors 'none'; base-uri 'none'`.
+- **Other headers:** `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer` and a `Permissions-Policy` that disables camera, microphone and geolocation.
+- **Content safety:** all dynamic text goes in via `textContent`.
+- **PHP API:** every endpoint validates input, returns JSON errors `{ok:false,error:{code,message}}`, and never exposes stack traces.
 
-The app opens directly on the product. There is no marketing page.
+## 12. Slices (time-boxed; each ends with STOP and a short report)
 
-1. **Board (home).** Shows the demo teacher "ครูตัวอย่าง (Demo)" by default, plus any notes the visitor has added.
-   - Coverage of the 15 indicators across the 3 domains, drawn as a grid or heatmap: covered / weak / missing.
-   - A Generativity trend over the weeks.
-   - The latest notes.
-   - One primary action: **"บันทึกสัปดาห์นี้ / Record this week"**.
-   - A clearly visible label stating that this is sample data for a fictional teacher.
-2. **Record.** Three ways to give a note, in this priority order:
-   - **Use sample recording** — always visible. It plays and processes `data/demo/sample-note.*`. This is the judge path.
-   - **Record** with the microphone (MediaRecorder; max 120 s; visible timer; cancel button).
-   - **Type instead** (textarea). This also serves accessibility and the case where mic permission is denied.
-3. **Review.** Shows the transcript (editable), then the analysis:
-   - summary;
-   - activities, each tagged recall / understand / apply / create;
-   - evidence items, each with indicator id, claim and supporting quote;
-   - Generativity score 0–100;
-   - indicators still missing;
-   - one next step.
-   The teacher can edit before choosing **Save**. Saving adds the note to the board.
-4. **Export.** An A4 print stylesheet producing a ว.PA evidence report: teacher info (editable header fields), an indicator-by-indicator table of evidence with dates, and the Generativity summary. Uses `window.print()` with a "Save as PDF" hint. Thai text must render correctly in print.
-5. **Language toggle TH/EN** for all UI strings, kept in `assets/js/i18n.js`. AI output stays in the teacher's language.
+| # | Owner | Box | Slice |
+|---|---|---|---|
+| Y1 | Yotha | 40 min | Scaffold: `.gitignore`, `.gitattributes`, `.env.example`, `bin/check.mjs`, `.htaccess`, fonts, tokens/base/components CSS, `index.html` shell, router, store, `config.js`, footer and badge, welcome screen with tier choice. **Push early. Joewee depends on the shell.** |
+| J1 | Joewee | 60 min | Sim core: PRNG, AMM, bonding curve, agents, scenario/events, `createSession` API, `coins/agents/scenario.json`, unit checks. No UI. Can start immediately. |
+| Y2 | Yotha | 45 min | Gate + lesson screens with draft content in the JSON shapes from §8, Penny SVG (4 states), audio player with captions (silent until audio exists). |
+| J2 | Joewee | 60 min | Lab screen: chart, coin list, trade panel, portfolio, event toasts that call `ctx.audio` + narration from `data/events.json`, close → report. Mobile first. |
+| Y3 | Yotha | 45 min | `bin/generate-content.php` (Claude, schema-validated) → final `gate/lessons/events/tutor_faq.json`; then `bin/generate-audio.php` (ElevenLabs) → committed mp3. |
+| J3 | Joewee | 45 min | Create-a-coin with tiered knobs, curated icons/colours, validation and blocklist, launch on the bonding curve, outcome explained. |
+| Y4 | Yotha | 40 min | Report card + Money Health Score + `leaderboard.php` (file-locked JSON, nickname generator, rate limit) + `health.php`. |
+| J4 | Joewee | 45 min | Block explorer + tamper demo; desktop Basic/Advanced toggle; wash-volume overlay (Builder). |
+| Y5 | Yotha | 40 min | `tutor.php` "Ask Penny" with guardrails, FAQ fallback and cap. |
+| Y6 | Yotha | 30 min | README for judges: what it is, demo link, safety design, partners and U-Bot usage stated exactly, how to run locally, team. |
 
-Every async step needs loading, empty and error states. Error messages say what happened and what to do next, in TH and EN. Accessibility:
-- WCAG AA contrast;
-- full keyboard path;
-- `aria-live` for status updates;
-- visible focus;
-- `prefers-reduced-motion` respected;
-- tap targets at least 44px.
+- **Core path = Y1, J1, Y2, J2, Y3**, live by ~04:00.
+- J3 and Y4 by 10:00. J4 and Y5 if time allows.
+- If behind: cut J4, then Y5. Never cut the core path.
 
-AI output must be inserted with `textContent` and never with `innerHTML`.
+## 13. Working rules
 
-## 5. API contract (shared)
-
-All responses are JSON with `Content-Type: application/json; charset=utf-8`.
-
-Success responses look like `{"ok":true, ...}`. Errors look like this, with a matching HTTP status:
-
-```json
-{"ok":false,"error":{"code":"RATE_LIMITED","message_th":"...","message_en":"..."}}
-```
-
-`GET /api/health.php`
-```json
-{"ok":true,"stt":true,"ai":true,"cache_only":false,"version":"<git short sha or date>"}
-```
-
-`POST /api/transcribe.php` — multipart field `audio`:
-- size ≤ 10 MB;
-- MIME type verified server-side with finfo, allowlist `audio/webm`, `audio/ogg`, `audio/mp4`, `audio/mpeg`, `audio/wav`, `audio/x-wav`;
-- optional field `sample=1` means: use the bundled sample note.
-
-```json
-{"ok":true,"text":"...","source":"elevenlabs|cache"}
-```
-
-`POST /api/analyze.php` — JSON body `{"note":"...","subject":"","grade":"","week":"2026-W42"}`, note ≤ 6000 characters.
-
-```json
-{"ok":true,"source":"ai|cache","analysis":{
-  "summary":"...",
-  "activities":[{"text":"...","level":"recall|understand|apply|create"}],
-  "evidence":[{"indicator":"1.3","claim":"...","quote":"..."}],
-  "generativity":0-100,
-  "missing":["2.4","3.2"],
-  "next_step":"..."
-}}
-```
-
-Server rules:
-- `indicator` must exist in `pa-indicators.json`; drop any item that does not.
-- `generativity` = round(100 × (apply + create) / total activities), computed **server-side** from the levels. Never trust a model-supplied number.
-- `missing` = all indicator ids minus those with evidence in this note. The client merges across notes for the board.
-- Errors: `BAD_INPUT`, `TOO_LARGE`, `UNSUPPORTED_AUDIO`, `RATE_LIMITED`, `UPSTREAM_FAILED`, `CAP_REACHED`, `SERVER_ERROR`.
-
-Until the API is live, the frontend uses `assets/mock/*.json` when the URL has `?mock=1`, or automatically when `health.php` is unreachable on localhost.
-
-## 6. Integrations and failure modes
-
-- **ElevenLabs speech-to-text** (Scribe): `POST https://api.elevenlabs.io/v1/speech-to-text` with header `xi-api-key` and multipart `file` + `model_id`. Read the current docs to confirm the model id and the Thai language code before coding, and record what you used in DECISIONS.md.
-- **Anthropic Messages API** via PHP cURL. Use a tool definition with a JSON `input_schema` to force structured output.
-  - Timeout 25 s.
-  - One retry on 429/5xx with backoff.
-  - The system prompt treats the teacher note as untrusted data, never as instructions.
-- **Cache:** key = sha256(model + prompt version + normalized input). Cache every successful AI and STT result. The sample note and all 8 demo weeks must be **pre-cached and committed** under `data/demo/` so the judge path works even if every upstream API is down.
-- **Rate limit:** per IP, file-based token bucket. Transcribe: 6/min. Analyze: 10/min. A global daily cap of `DAILY_AI_CAP` paid calls applies; once reached, serve cache only and set `cache_only:true` in health. The UI then shows a calm banner explaining this.
-- **U-Bot:** no public docs yet. Leave a clearly named integration point (`assets/js/ubot.js`, which does nothing until configured). Do not fake it.
-- **Security headers** on every response:
-  - a CSP allowing self plus Google Fonts only;
-  - `X-Content-Type-Options: nosniff`;
-  - `Referrer-Policy: strict-origin-when-cross-origin`;
-  - `Permissions-Policy: microphone=(self)`.
-  Also: no stack traces in production responses; log to `u-hackathon-2026-private/logs/`.
-
-## 7. Data: ว.PA indicators (verify before shipping)
-
-Structure as we understand ว 9/2564. **Verify it against the official ก.ค.ศ. text and record the source URL in `pa-indicators.json`.** If verification is not possible, keep the list but set `"verified": false`.
-
-- Domain 1 การจัดการเรียนรู้:
-  - 1.1 สร้างและหรือพัฒนาหลักสูตร
-  - 1.2 ออกแบบการจัดการเรียนรู้
-  - 1.3 จัดกิจกรรมการเรียนรู้
-  - 1.4 สร้างและหรือพัฒนาสื่อ นวัตกรรม เทคโนโลยี และแหล่งเรียนรู้
-  - 1.5 วัดและประเมินผลการเรียนรู้
-  - 1.6 ศึกษา วิเคราะห์ และสังเคราะห์ เพื่อแก้ปัญหาหรือพัฒนาการเรียนรู้
-  - 1.7 จัดบรรยากาศที่ส่งเสริมและพัฒนาผู้เรียน
-  - 1.8 อบรมและพัฒนาคุณลักษณะที่ดีของผู้เรียน
-- Domain 2 การส่งเสริมและสนับสนุนการจัดการเรียนรู้:
-  - 2.1 จัดทำข้อมูลสารสนเทศของผู้เรียนและรายวิชา
-  - 2.2 ดำเนินการตามระบบดูแลช่วยเหลือผู้เรียน
-  - 2.3 ปฏิบัติงานวิชาการ และงานอื่น ๆ ของสถานศึกษา
-  - 2.4 ประสานความร่วมมือกับผู้ปกครอง ภาคีเครือข่าย และหรือสถานประกอบการ
-- Domain 3 การพัฒนาตนเองและวิชาชีพ:
-  - 3.1 พัฒนาตนเองอย่างเป็นระบบและต่อเนื่อง
-  - 3.2 มีส่วนร่วมในการแลกเปลี่ยนเรียนรู้ทางวิชาชีพ
-  - 3.3 นำความรู้ ความสามารถ ทักษะที่ได้จากการพัฒนาตนเองและวิชาชีพมาใช้
-
-Each indicator also gets an English label. The demo teacher is fictional (a grade 8 science teacher) and must be labelled as sample data everywhere it appears.
-
-## 8. Phases
-
-- **Phase A — end-to-end loop, deployed (target tonight 23:00).** Includes:
-  - health;
-  - analyze (with cache and rate limit);
-  - typed-note path;
-  - Board with demo data;
-  - Review;
-  - Save;
-  - Export;
-  - TH/EN toggle.
-  It must work on `https://u-hackathon-2026.cenedury.com` from a phone. Then STOP and write `docs/STATUS.md`.
-- **Phase B — voice and polish (overnight → Fri 10:00).** Includes:
-  - transcribe with ElevenLabs;
-  - mic recording;
-  - sample-recording judge path;
-  - pre-cached demo;
-  - Generativity trend;
-  - an accessibility pass;
-  - a mobile pass.
-- **Freeze Fri 12:00.** After freeze, only fixes for things that are broken.
-
-## 9. Working rules
-
-- One vertical slice per commit, message format `area: what changed`.
-- `node bin/check.mjs` must pass before every commit. It runs:
-  - `node --check` on all JS;
-  - JSON validation of `data/` and `assets/mock/`;
-  - `php -l` on all PHP (skipped with a warning if PHP is missing);
-  - the PHP unit checks in `bin/` for Analysis validation and RateLimit (also skipped when PHP is missing).
-- Before every commit run `git pull --rebase`. Push after every green commit, because production deploys from `main`.
-- Never force push. Never change remotes. Never write files with PowerShell redirection. All times are stored in UTC and displayed in Asia/Bangkok.
-- When this brief is ambiguous, choose the option with fewer moving parts, record it in `docs/DECISIONS.md`, and continue without asking.
+- Work on `main`. Stay inside your own files (§11). Shared contracts (§5 API, §8 shapes, §11 screen contract) change only by editing this brief in its own commit first.
+- Per slice:
+  1. `git pull`
+  2. build
+  3. `node bin/check.mjs` must pass (node --check on all JS, JSON validity, sim unit tests, `php -l` when PHP is present)
+  4. commit as `area: what changed`
+  5. `git pull`
+  6. `git push`
+  7. open the live URL on a phone
+- Verification is proportionate: one happy path plus one failure path per feature, plus the sim unit checks. No exhaustive test suites, no refactors, no documentation beyond the README and DECISIONS.
+- Never force push, never change remotes, never write files with PowerShell redirection, never commit secrets.
+- When the brief is ambiguous, choose the option with fewer moving parts, record it in `docs/DECISIONS.md` and continue without asking.
