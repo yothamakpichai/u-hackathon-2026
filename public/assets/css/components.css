@@ -2716,6 +2716,14 @@ svg.is-flipped {
   stroke: #FFFFFF;
 }
 
+.bld--stall .bld__wall {
+  fill: var(--pal-orange);
+}
+
+.bld--bank .bld__wall {
+  fill: var(--ink-300);
+}
+
 .bld--stocks .bld__wall {
   fill: var(--pal-indigo);
 }

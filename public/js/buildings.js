@@ -73,6 +73,31 @@ export const BUILDINGS = [
     ],
   },
   {
+    id: 'stall',
+    name: 'Daily Stall',
+    route: '/stall',
+    screen: 'stall',
+    status: 'live',
+    blurb: 'Buy, hold and sell today’s goods',
+    why: [
+      'Prices for the same goods change through the day, so buying low and selling high is harder than it looks.',
+      'Some goods spoil while you hold them: holding has a cost, which is why borrowing to speculate is dangerous.',
+    ],
+  },
+  {
+    id: 'bank',
+    name: 'Bank',
+    route: '/bank',
+    screen: 'bank',
+    status: 'live',
+    blurb: 'Borrow, repay and build credit',
+    why: [
+      'A loan costs more than you borrow: the bank always shows the total before you agree.',
+      'With several debts, clearing small ones first can keep people going (Gal & McShane, 2012).',
+      'In the game, interest stops at the amount borrowed. Real loans have no such cap.',
+    ],
+  },
+  {
     id: 'stocks',
     name: 'Stock Exchange',
     route: '/stocks',

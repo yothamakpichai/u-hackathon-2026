@@ -175,6 +175,13 @@ function buildingArt(id, construction) {
     add(svgEl('rect', { class: 'bld__wall', x: 40, y: 18, width: 40, height: 70, rx: 4 }), svgEl('path', { class: 'bld__roof', d: 'M36 20L60 4l24 16z' }), svgEl('circle', { class: 'bld__glass', cx: 60, cy: 38, r: 12 }), svgEl('path', { class: 'bld__line', d: 'M60 30v8l6 4' }), svgEl('rect', { class: 'bld__door', x: 52, y: 70, width: 16, height: 18, rx: 3 }));
   } else if (id === 'farm') {
     add(svgEl('path', { class: 'bld__wall', d: 'M22 88V46l38-26 38 26v42z' }), svgEl('path', { class: 'bld__roof', d: 'M16 48l44-32 44 32-6 4-38-28-38 28z' }), svgEl('rect', { class: 'bld__door', x: 44, y: 58, width: 32, height: 30, rx: 2 }), svgEl('path', { class: 'bld__line', d: 'M44 58l32 30M76 58L44 88' }), svgEl('circle', { class: 'bld__glass', cx: 60, cy: 40, r: 6 }));
+  } else if (id === 'stall') {
+    add(svgEl('rect', { class: 'bld__wall', x: 26, y: 60, width: 68, height: 28, rx: 3 }), svgEl('path', { class: 'bld__roof', d: 'M18 58l10-18h64l10 18z' }), svgEl('rect', { class: 'bld__door', x: 22, y: 40, width: 4, height: 48 }), svgEl('rect', { class: 'bld__door', x: 94, y: 40, width: 4, height: 48 }));
+    for (let i = 0; i < 3; i++) add(svgEl('circle', { class: 'bld__accent', cx: 42 + i * 18, cy: 56, r: 6 }));
+  } else if (id === 'bank') {
+    add(svgEl('path', { class: 'bld__roof', d: 'M14 36L60 12l46 24z' }), svgEl('rect', { class: 'bld__wall', x: 20, y: 36, width: 80, height: 8 }), svgEl('rect', { class: 'bld__wall', x: 18, y: 80, width: 84, height: 8 }));
+    for (let i = 0; i < 4; i++) add(svgEl('rect', { class: 'bld__glass', x: 28 + i * 18, y: 46, width: 10, height: 32, rx: 2 }));
+    add(svgEl('circle', { class: 'bld__accent', cx: 60, cy: 26, r: 5 }));
   } else if (id === 'stocks') {
     add(svgEl('rect', { class: 'bld__wall', x: 30, y: 28, width: 60, height: 60, rx: 4 }));
     for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) add(svgEl('rect', { class: 'bld__glass', x: 38 + c * 16, y: 36 + r * 14, width: 10, height: 8, rx: 1 }));

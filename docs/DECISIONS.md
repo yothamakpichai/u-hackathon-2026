@@ -111,7 +111,7 @@ Choices made where the brief was silent or ambiguous (BRIEF §13). Newest last.
     - **Storage:** `store.assessment` = `{ answers, knowledgeCorrect, knowledge, behaviour, score, time, risk, presentBias, scripts, type, at }`. Finishing it earns 20 XP.
 44. **Town and `public/js/buildings.js`.**
     - **Registry:** one entry per building: `id`, `name`, `route`, `status` ('live' or 'construction'), `blurb`, `why` (citing only `SOURCES.md`), and for construction buildings one real lesson card. Any entry with a `screen` gets its route registered by `app.js` automatically.
-    - **Starting status:** Piggy Bank, Future You and Farm open without errors at 360 and 1440 px, so they are live; Stock Exchange and Gold Shop are under construction.
+    - **Starting status:** Piggy Bank, Future You and Farm open without errors at 360 and 1440 px, so they are live. Joewee's Daily Stall and Bank (§16.1) passed the same check with no sideways scroll, so they are live too. Stock Exchange and Gold Shop are under construction.
     - **Start here:** the building recommended for the player's Money Type is marked "Start here".
     - **Arena link:** shown in the Market Lab tile only when the server has the Arena on.
 45. **Product name and contact.** `PRODUCT_NAME` is "Penny", with `TAGLINE` and `MANIFESTO` from §16, all in `config.js`. The landing's "For partners" section links to `CONTACT_URL` (https://cenedury.com/ for now, to be confirmed). Nobody sees partner names, logos or ads.
