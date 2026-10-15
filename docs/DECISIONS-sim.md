@@ -1,6 +1,6 @@
 # Sim decisions (slice J1, Joewee)
 
-Decisions for `public/assets/js/sim/` and `data/coins.json`, `agents.json`, `scenario.json`. Where BRIEF v2 was ambiguous I took the option with fewer moving parts.
+Decisions for `public/assets/js/sim/` and `public/data/coins.json`, `agents.json`, `scenario.json`. Where BRIEF v2 was ambiguous I took the option with fewer moving parts.
 
 ## Engine
 
@@ -71,6 +71,6 @@ The sim records raw data; it does not compute the score.
 - **`portfolio.trades`**: each trade with `t`, `holdingBefore` and `holdingAfter`.
 - **`events[]`**: `negative`, plus `playerCoins` and `playerValue` at the moment the event fired, so exposure to BLOOP at `rug_pull` is visible.
 
-## Open
+## Config location
 
-- **`data/` is outside the docroot** (`public/`), so the browser can't fetch the JSON yet. This needs one shared answer for all `data/*.json` files: an Apache alias or PHP passthrough, or moving the files under `public/`.
+- The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.

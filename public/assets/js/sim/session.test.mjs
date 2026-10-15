@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { createSession, SimError } from './session.js';
 import { bangkokDate, dailySeed } from './prng.js';
 
-const load = (f) => JSON.parse(readFileSync(new URL(`../../../../data/${f}`, import.meta.url), 'utf8'));
+const load = (f) => JSON.parse(readFileSync(new URL(`../../../data/${f}`, import.meta.url), 'utf8'));
 const CONFIG = { coinsConfig: load('coins.json'), agentsConfig: load('agents.json'), scenario: load('scenario.json') };
 const config = () => structuredClone(CONFIG);
 const SEEDS = ['2026-10-16', '2026-10-17', '2026-10-18', '2026-11-02', '2027-01-01'].map((d) => dailySeed(new Date(`${d}T05:00:00Z`)));
