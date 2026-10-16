@@ -979,6 +979,11 @@
   font: 600 var(--fs-lg) / 1.2 var(--font-body);
 }
 
+/* A set width lets the name and ticker shrink with their card, so a 320 px phone doesn't scroll sideways. */
+.create-section .field__input {
+  width: 100%;
+}
+
 .field__input:focus {
   border-color: var(--focus);
   outline: none;

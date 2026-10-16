@@ -91,7 +91,7 @@ export function mount(root, ctx) {
       }
       onInput(input.value);
       if (!error.hidden) check();
-      renderPreview();
+      renderPreview(input);
     });
     input.addEventListener('blur', () => input.value && check());
     field.el = h('div', { class: 'field' }, [
@@ -159,7 +159,7 @@ export function mount(root, ctx) {
       input.checked = opt.value === value;
       input.addEventListener('change', () => {
         onChange(opt.value);
-        renderPreview();
+        renderPreview(input);
       });
       grid.append(h('label', { class: 'pick__option' }, [input, opt.face, h('span', { class: opt.showLabel ? 'pick__label' : 'visually-hidden', text: opt.label })]));
     }
@@ -213,7 +213,7 @@ export function mount(root, ctx) {
     sliders.push({ input, max });
     input.addEventListener('input', () => {
       onChange(Number(input.value));
-      renderPreview();
+      renderPreview(input);
     });
     return h('div', { class: 'split__row' }, [h('label', { class: 'split__label', for: id, text: label }), input, out]);
   }
@@ -244,7 +244,7 @@ export function mount(root, ctx) {
     input.checked = design[key];
     input.addEventListener('change', () => {
       design[key] = input.checked;
-      renderPreview();
+      renderPreview(input);
     });
     return h('label', { class: 'toggle', for: id }, [
       input,
@@ -282,8 +282,11 @@ export function mount(root, ctx) {
   let lastLook = null;
   let lastSupply = null;
   let lastInsiders = null;
-  function renderPreview() {
-    formError.hidden = true; // any edit clears a launch error
+  // from: the control that changed. Any edit clears a launch error; if that error held focus (Safari doesn't
+  // focus a tapped radio or switch), focus moves to the control instead of dropping to the page.
+  function renderPreview(from) {
+    if (!formError.hidden && document.activeElement === formError) from?.focus({ preventScroll: true });
+    formError.hidden = true;
     const alloc = allocation();
     const ticker = design.ticker || 'COIN';
     previewBadge.replaceChildren(coinBadge(design, config.COIN_COLORS));

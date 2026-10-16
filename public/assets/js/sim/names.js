@@ -11,7 +11,8 @@ const BLOCKED_BRANDS = [
   'avalanche', 'toncoin', 'tron', 'cardano', 'chainlink', 'polkadot', 'polygon', 'litecoin', 'stellar', 'utopia', 'eduu',
   'cenedury',
 ];
-// Made-up coin words: a name that spells one anywhere is a real coin too (Bitcoins, Mega Bit Coin).
+// Made-up coin words: a name that spells one inside a word, or from the start of a word, is a real coin too
+// (Bitcoins, Mega Bit Coin). One that only ends a word, as in Rabbit Coin or Elite Coin, is fine.
 const BRAND_STEMS = ['bitcoin', 'ethereum', 'litecoin', 'dogecoin', 'solana', 'binance', 'cardano', 'chainlink', 'polkadot', 'toncoin'];
 // Words that only dress a name up as a coin, so "Doge Army" and "BNB Coin" still read as the real one.
 const FILLER = new Set(['coin', 'coins', 'token', 'tokens', 'cash', 'army', 'inu']);
@@ -26,13 +27,12 @@ const PROFANITY = [
 ].map(rot13);
 // Everyday words that start with a blocked word, so a cockatoo or a fire retardant isn't called rude.
 const ALLOW = new Set([
-  'arsenal', 'arsenic', 'cockatiel', 'cockatiels', 'cockatoo', 'cockatoos', 'cockerel', 'cockle', 'cockles', 'cockpit',
-  'cockpits', 'cockroach', 'cocktail', 'cocktails', 'cocky', 'dickens', 'prickle', 'prickles', 'prickly', 'pussycat',
-  'retardant',
+  'arsenal', 'arsenic', 'cockatiel', 'cockatiels', 'cockatoo', 'cockatoos', 'cockerel', 'cockerels', 'cockle', 'cockles',
+  'cockpit', 'cockpits', 'cockroach', 'cockroaches', 'cocktail', 'cocktails', 'cocky', 'dickens', 'prickle', 'prickles',
+  'prickly', 'pussycat', 'pussycats', 'retardant',
 ]);
 
 const words = (s) => s.toLowerCase().split(/[^a-z]+/).filter(Boolean);
-const squash = (s) => s.toLowerCase().replace(/[^a-z]/g, '');
 
 // A blocked word matches a whole word, or (4+ letters) the start of one, so "grape" and "class" stay fine.
 function rude(text) {
@@ -45,7 +45,10 @@ function realCoin(name) {
   const core = all.filter((w) => !FILLER.has(w));
   const joined = core.join('');
   const real = (w) => BLOCKED_BRANDS.includes(w) || (BLOCKED_TICKERS.has(w.toUpperCase()) && !EVERYDAY.has(w));
-  return core.some(real) || real(joined) || (core.length < all.length && EVERYDAY.has(joined)) || BRAND_STEMS.some((b) => squash(name).includes(b));
+  // The name from each word on, run together: "Mega Bit Coin" gives "megabitcoin", "bitcoin" and "coin".
+  const tails = all.map((_, i) => all.slice(i).join(''));
+  const stem = (b) => all.some((w) => w.includes(b)) || tails.some((t) => t.startsWith(b));
+  return core.some(real) || real(joined) || (core.length < all.length && EVERYDAY.has(joined)) || BRAND_STEMS.some(stem);
 }
 
 export function checkName(name) {
