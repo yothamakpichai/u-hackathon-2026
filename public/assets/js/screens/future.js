@@ -151,16 +151,29 @@ export function mount(root, ctx) {
       const error = h('p', { class: 'field__error', id: `${id}-error`, hidden: true });
       input.addEventListener('input', () => {
         if (key === 'age') plan.ageEdited = true;
+        // Still typing (an empty box, or the 6 of 65): keep the last number and say nothing yet.
+        if (input.value === '' || early(key, Number(input.value))) {
+          hush(key);
+          return;
+        }
         checkAll();
-        if (input.value === '') return; // still typing: keep the last number until there is a new one
         syncVisibility();
         recompute();
       });
-      // Leaving a field empty puts back the number the result uses.
-      input.addEventListener('change', () => {
-        if (input.value !== '') return;
-        input.value = String(plan[key]);
+      // Leaving the field, or Enter, puts back the number the result uses if the box is empty, and fits
+      // a number left out of range (blur too: change doesn't fire when the box ends as it last was).
+      const commit = () => {
+        if (input.value === '') input.value = String(plan[key]);
+        const before = String(NUMBER_KEYS.map((k) => plan[k]));
         checkAll();
+        if (String(NUMBER_KEYS.map((k) => plan[k])) === before) return;
+        syncVisibility();
+        recompute();
+      };
+      input.addEventListener('change', commit);
+      input.addEventListener('blur', commit);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') commit();
       });
       const wrap = h('div', { class: 'field' }, [
         h('label', { class: 'field__label', for: id, text: label }),
@@ -190,6 +203,19 @@ export function mount(root, ctx) {
       f.error.hidden = !message;
       if (message) f.input.setAttribute('aria-invalid', 'true');
       else f.input.removeAttribute('aria-invalid');
+    }
+
+    // Below the minimum, but more digits could still bring it into range.
+    function early(key, v) {
+      const { min, max } = limits(key);
+      return v >= 0 && v < min && v * 10 <= max;
+    }
+
+    function hush(key) {
+      const f = fields[key];
+      f.error.textContent = '';
+      f.error.hidden = true;
+      f.input.removeAttribute('aria-invalid');
     }
 
     function rule(key, v, { min, max, whole }) {
@@ -431,7 +457,10 @@ export function mount(root, ctx) {
         renderChart(empty ? null : r, goalAge);
         table.hidden = empty;
         if (!empty) renderTable(r);
-      }).catch((err) => console.error(err));
+      }).catch((err) => {
+        console.error(err);
+        if (alive && id === runId) summary.replaceChildren(h('p', { class: 'future-empty', text: 'Penny couldn’t work this one out. Try changing a number.' }));
+      });
     }
 
     function renderAvatars(age, goalAge) {
@@ -488,7 +517,8 @@ export function mount(root, ctx) {
         return;
       }
       const W = Math.max(240, Math.round(chartBox.clientWidth) || 640);
-      const H = W < 480 ? 220 : 260;
+      // One height everywhere, low enough for the whole result to fit beside the inputs on a laptop.
+      const H = 220;
       const padL = 46;
       const padR = 12;
       const padT = 26;
@@ -571,8 +601,8 @@ export function mount(root, ctx) {
           form,
         ]),
         out,
+        why,
       ]),
-      why,
     );
     renderForm();
     save();
@@ -598,10 +628,18 @@ function makeProjector(data) {
   let queued = null;
   let nextId = 0;
   const local = (plans) => plans.map((plan) => project(data, plan));
+  // An error here still settles the job, so run() hears about it.
+  const runHere = (job) => {
+    try {
+      job.resolve(local(job.plans));
+    } catch (err) {
+      job.reject(err);
+    }
+  };
   const fail = () => {
     worker?.terminate();
     worker = null;
-    for (const job of [busy, queued]) job?.resolve(local(job.plans));
+    for (const job of [busy, queued]) if (job) runHere(job);
     busy = null;
     queued = null;
   };
@@ -643,10 +681,10 @@ function makeProjector(data) {
         });
         return results;
       };
-      if (!worker) return Promise.resolve(keep(local(plans)));
-      return new Promise((resolve) => {
-        const job = { plans, resolve };
-        if (!busy) send(job);
+      return new Promise((resolve, reject) => {
+        const job = { plans, resolve, reject };
+        if (!worker) runHere(job);
+        else if (!busy) send(job);
         else {
           queued?.resolve(null);
           queued = job;
@@ -669,15 +707,16 @@ function clamp(v, lo, hi) {
 }
 
 // Rounded to two significant figures, so a projection never reads like an exact forecast:
-// 608,331 is 610,000 and 1,220,834 is 1.2 million.
+// 608,331 is 610,000, 1,220,834 is 1.2 million and 1,104,000,000 is 1.1 billion.
 function roundBaht(n) {
   const v = Math.max(0, Math.round(n));
   if (v < 100) return number(v, 0);
   const p = 10 ** (Math.floor(Math.log10(v)) - 1);
   const r = Math.round(v / p) * p;
   if (r < 1e6) return number(r, 0);
-  const m = r / 1e6;
-  return `${number(m, m < 10 ? 1 : 0).replace(/\.0$/, '')} million`;
+  const [unit, word] = r < 1e9 ? [1e6, 'million'] : [1e9, 'billion'];
+  const m = r / unit;
+  return `${number(m, m < 10 ? 1 : 0).replace(/\.0$/, '')} ${word}`;
 }
 
 const about = (n) => `THB ${roundBaht(n)}`;
@@ -691,6 +730,7 @@ function niceMax(v) {
 
 function shortThb(v) {
   const t = (n) => number(n, 1).replace(/\.0$/, '');
+  if (v >= 1e9) return `${t(v / 1e9)}B`;
   if (v >= 1e6) return `${t(v / 1e6)}M`;
   if (v >= 1e3) return `${t(v / 1e3)}k`;
   return number(v, 0);

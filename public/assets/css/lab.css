@@ -2049,7 +2049,8 @@
 }
 
 /* minmax(0, 1fr): a wide table scrolls inside its card instead of widening the page.
-   "Why this works" sits after .future, so the sticky result can never slide over it. */
+   On desktop "Why this works" sits under the inputs, beside the result, so the sticky result can
+   never slide over it. */
 .future-body,
 .future {
   display: grid;
@@ -2059,7 +2060,8 @@
 }
 
 /* On phones the result is below a long form: a bar stays under the app header (clear of the keyboard
-   and the Ask Penny button) and jumps to it. Focused fields scroll to below it. */
+   and the Ask Penny button) and jumps to it. Focused fields scroll to below it, and so does the
+   result after the jump. */
 .future-peek {
   position: sticky;
   top: calc(var(--header-h) + var(--sp-2));
@@ -2071,21 +2073,43 @@
   scroll-margin-top: calc(var(--header-h) + 4.5rem);
 }
 
+.future-out {
+  scroll-margin-top: calc(var(--header-h) + var(--sp-2));
+}
+
 @media (min-width: 1024px) {
+  /* The result spans both rows, so it can stay in view down to the end of "Why this works". */
   .future {
     grid-template-columns: 24rem minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
   }
 
+  /* Piggy and Farm: the card spans their columns. */
   .future-why {
     grid-column: 1 / -1;
   }
 
-  /* The result stays in view next to the inputs while you change them. */
-  .future-out {
+  .future > .future-why {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  /* The result stays in view next to the inputs while you change them. Smaller faces and tighter
+     spacing let it fit a laptop screen without a scrollbar of its own. */
+  .future > .future-out {
+    grid-column: 2;
+    grid-row: 1 / span 2;
     position: sticky;
     top: calc(var(--header-h) + var(--sp-4));
     max-height: calc(100vh - var(--header-h) - 2 * var(--sp-4));
     overflow-y: auto;
+    gap: var(--sp-3);
+    padding-block: var(--sp-4);
+  }
+
+  .future-out .future-face img {
+    width: 5.5rem;
+    height: 5.5rem;
   }
 
   .future-peek {
