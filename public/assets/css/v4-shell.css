@@ -172,3 +172,45 @@
   }
 }
 
+/* ---------------------------------------------------------------- Footer */
+
+.app-footer {
+  display: grid;
+  gap: var(--sp-2);
+  justify-items: center;
+}
+
+.app-footer p {
+  margin: 0;
+}
+
+.app-footer__sim {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--ink-800);
+}
+
+.app-footer__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--amber-500);
+  box-shadow: 0 0 0 3px var(--amber-100);
+}
+
+.app-footer__credit a {
+  color: var(--primary-700); /* 6.0:1 on bg */
+  font-weight: 700;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  transition: color var(--dur-1) var(--ease-out);
+}
+
+.app-footer__credit a:hover {
+  color: var(--ink-900);
+}
