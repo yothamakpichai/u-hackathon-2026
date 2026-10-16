@@ -9,6 +9,7 @@ import { walletBar } from './arena/wallet.js';
 import { launchPanel } from './arena/launch.js';
 import { coinPanel, tabTag } from './arena/coin.js';
 import { feedView } from './arena/feed.js';
+import { newsDesk } from './arena/news.js';
 
 const API = 'api/arena.php';
 const POLL_MS = 1500;
@@ -232,6 +233,8 @@ export function mount(root, ctx) {
     const part = (p) => (v2 ? (parts.push(p), p.el) : null);
     const walletEl = part(walletBar({ store, api, onCash: (me) => last?.me && render({ ...last, me: { ...last.me, ...me } }) }));
     const coinEl = part(coinPanel());
+    const merge = (res) => last && render({ ...last, ...(res?.coins ? res : {}), me: res?.me ? res.me : last.me, coin });
+    const newsEl = part(newsDesk({ api, onState: merge }));
     const launchEl = part(
       launchPanel({
         api,
@@ -257,6 +260,7 @@ export function mount(root, ctx) {
       h('div', { class: 'arena-grid' }, [
         h('div', { class: 'arena-main' }, [h('div', { class: 'card' }, [chartHead, chart, washNote]), coinEl, tradeForm]),
         h('div', { class: 'arena-side' }, [
+          newsEl,
           launchEl,
           h('div', { class: 'card' }, [h('div', { class: 'arena-card-head' }, [h('h2', { class: 'arena-title', text: 'Your portfolio' }), live]), pf]),
           h('div', { class: 'card' }, [h('h2', { class: 'arena-title', text: 'Leaderboard' }), h('p', { class: 'board__note', text: 'Ranked by portfolio value in simulated L$.' }), board]),

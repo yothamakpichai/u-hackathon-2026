@@ -156,4 +156,26 @@
 @media (prefers-reduced-motion: reduce) {
   .arena-feed__item.is-new, .arena-coin.is-flash-up, .arena-coin.is-flash-down { animation: none; }
   .arena-wallet__fill, .arena-flags__fill { transition: none; }
+  .arena-news__item.is-new { animation: none; }
 }
+
+/* News desk */
+.arena-news { display: grid; gap: var(--sp-3); background: var(--arena-night); color: var(--arena-on-night); border: 0; }
+.arena-news[hidden] { display: none; }
+.arena-news .arena-title { color: var(--arena-on-night); }
+.arena-news .board__note { color: var(--arena-on-night-2); margin: 0; }
+.arena-news__onair { display: inline-flex; align-items: center; gap: 0.375rem; font-size: var(--fs-xs); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #FFC9B8; }
+.arena-news__onair::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #FF7A59; }
+.arena-news__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.arena-news__item { display: grid; gap: 0.25rem; padding: 0.625rem 0.75rem; border-radius: var(--r-sm); background: var(--arena-night-2); border-left: 3px solid var(--amber-400); }
+.arena-news__item.is-empty { border-left-color: var(--arena-line-night); color: var(--arena-on-night-2); }
+.arena-news__item.is-new { animation: arena-slide-in 320ms var(--ease-out) both; }
+.arena-news__src { justify-self: start; padding: 0.0625rem 0.4375rem; border-radius: var(--r-pill); font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; background: var(--arena-line-night); color: var(--arena-on-night); }
+.arena-news__src.is-ai { background: var(--amber-400); color: var(--ink-900); }
+.arena-news__text { font-weight: 600; line-height: var(--lh-snug); }
+.arena-news__at { font-size: var(--fs-xs); color: var(--arena-on-night-2); font-variant-numeric: tabular-nums; }
+.arena-news__pro { margin: 0; font-weight: 700; color: #9FE6C4; }
+.arena-news__pro[hidden], .arena-news__buy[hidden] { display: none; }
+.arena-news__buy { min-height: var(--tap); }
+.arena-news__msg { margin: 0; font-size: var(--fs-sm); color: var(--arena-on-night-2); }
+.arena-news__msg:empty { display: none; }
