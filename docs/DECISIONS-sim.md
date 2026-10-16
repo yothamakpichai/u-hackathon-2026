@@ -199,19 +199,29 @@ The sim records raw data; it does not compute the score.
   - A day whose only action is the wallet's starter grant doesn't count. Feed never goes down, so a broken streak takes nothing away.
   - Cows are born at 5, 60 and 150 feed, and grow from calf to young (15) to grown (35) on the feed earned since birth.
   - Traits (name, coat, pattern, bell, horns, a rare star in about 1 in 10, milk 2–4 litres) are seeded from the cow id and the farm's seed.
-  - Grown cows give milk once per Bangkok day, sold at 5 coins a litre.
+  - Grown cows give milk once per Bangkok day, sold at L$5 a litre.
 - **Birth certificates.** Each birth mints a soulbound certificate through `mintBadge(store, { kind: 'cow', ref, meta })`. It's a badge id `cow:<id>`, shown in the explorer gallery with its hash, and on today's chain when a market is open.
 - **Routes.** `#/piggy` and `#/farm` are registered through `public/js/buildings.js` (not on main yet).
+
+## Shared money contract (v4)
+
+Agreed with Yotha on 16 October 2026 and kept word for word in both sessions, so it changes only when both agree.
+
+- **One currency name, L$.** The Town wallet, the Arena and the Lab all count in L$. "Coin" only ever means a crypto coin.
+- **Town wallet** (`public/js/wallet.js`, on the device). `getBalance(store)` returns the balance in L$, to the cent. Any change to the balance fires the window event `wallet:change` with `detail: { balance }`, whatever caused it: a post, the starter grant, progress swapped in from an account, or a reset. The watch starts on the first `getBalance()` or `post()` for a store, and fires only when the balance changes. `moneyText(n)` writes an amount as `L$12.50`.
+- **Arena wallet** (the server, Yotha). A Town→Arena transfer goes through `POST api/arena.php` with `action=transfer`, at most 200 L$ per account per Bangkok day. The Town wallet is debited, with `post()` and a negative amount, only after the server accepts.
+- **Lab.** Each market session keeps its own Practice L$. They start fresh with each market and never reach the Town wallet or the Arena.
+- **Piggy Bank.** Real THB, never L$.
 
 ## Town wallet and Orchard (BRIEF §16.1)
 
 - **Wallet.** `public/js/wallet.js` keeps `store.wallet = { ledger: [{ id, at, amount, kind, note, ref }], credit: { score, events } }`.
   - The ledger is only appended to, and a spend that would take the balance below zero is refused.
-  - Every player gets a 50-coin starter grant once, so the Orchard and Stall work before any cow gives milk. Milk sales now post to the wallet, and farm coins from before the wallet were moved in once.
+  - Every player gets an L$50 starter grant once, so the Orchard and Stall work before any cow gives milk. Milk sales post to the wallet, and farm earnings from before the wallet were moved in once.
   - The credit score runs 300–850 and starts at 600, with every change kept. `rateFor(score, base)` makes the best score borrow at 0.6× the base rate and the worst at 1.5×.
 - **Orchard.** The rules are in `sim/orchard.js`, tested.
 
-  | Plant | Cost | Ready in | Harvest |
+  | Plant | Cost (L$) | Ready in | Harvest (L$) |
   |---|---|---|---|
   | Herb sprout | 5 | 2 minutes | 6, once a day in each plot |
   | Fruit tree | 10 | 1 day | 20 |
@@ -231,13 +241,13 @@ The sim records raw data; it does not compute the score.
   - When the player has an unpaid loan, a just-in-time warning about borrowing to speculate shows above the goods.
 - **Bank rules.** `sim/bank.js` holds them, tested.
   - Loans charge simple interest per real (Bangkok) day, counting the first day. The quote shows the total cost before the player agrees. The game rule caps total interest at the principal, and the screen says real loans have no such cap.
-  - The Bank's rate is 1% a day, adjusted by `rateFor(score)`. Quick Cash lends 30 coins for 3 days at 15% a day.
+  - The Bank's rate is 1% a day, adjusted by `rateFor(score)`. Quick Cash lends L$30 for 3 days at 15% a day.
   - Credit changes: on-time full repayment +20, late −40 (once per loan, settled when the Bank opens), restructuring −10 once. A restructure freezes interest and splits what's owed into 4 weekly payments, and is always offered.
     - J13 QA: the +20 counts only for a loan repaid on a later Bangkok day than it was taken, never late or on a plan, and at most once every 7 days, so borrow-and-repay can't farm the score. A plan made before the due date includes the interest up to the due date. A loan repaid in full is closed and builds no more interest.
   - Borrowing limit (J13 QA): the Bank lends only while everything owed on loans plus the new loan stays within `limitFor(score)` (50–200), and not while any loan is late. Quick Cash checks nothing but lends one loan at a time. The card says why it refuses.
   - Town Card: the limit is 50–200 by score, with weekly statements. The minimum is 10% (at least 5), due 3 days after the statement. A missed minimum is −40 the day after the due date, once per statement, and the card says so. Unpaid statement balances add 5% a week, capped at what was spent on the card.
   - The minimum-payment calculator is uncapped, at the game's 5% a week, and says game rates are much higher than real ones.
-  - With two or more loans, the payoff card compares highest rate first with smallest first at 10 coins a day (Gal & McShane 2012), using the game's own interest rule. When both orders cost the same it shows one line. The citation shows at Builder; Explorer copy uses plainer words and costs in coins a day.
+  - With two or more loans, the payoff card compares highest rate first with smallest first at L$10 a day (Gal & McShane 2012), using the game's own interest rule. When both orders cost the same it shows one line. The citation shows at Builder; Explorer copy uses plainer words and costs in L$ a day.
   - `store.bank = { loans, card }`.
 - **Real-world figures.** The "Real life in Thailand" card shows no numbers yet, only that limits exist, and points to the [unverified] SOURCES entries until they're checked.
 
@@ -258,7 +268,7 @@ The sim records raw data; it does not compute the score.
 ## Cow Fair (BRIEF §16 stretch)
 
 - **Cow cards, not cows.** Collectors at the fair trade cow cards, which are pictures of cows. Your own cows are never for sale: they are earned, and their birth certificates are soulbound.
-- **Pretend tickets.** Each visit gives 100 fair tickets, separate from the Town wallet, so a bubble can't drain the coins earned in other buildings.
+- **Pretend tickets.** Each visit gives 100 fair tickets, separate from the Town wallet, so a bubble can't drain the L$ earned in other buildings.
 - **Rules.** `sim/fair.js` holds them, tested.
   - Each round has 8 one-of-a-kind cards, seeded by the Bangkok date and the round number, so replays differ. Three cards share one hyped trait: star mark, gold bell, belt pattern or honey coat.
   - The round lasts 40 steps of 1.5 seconds. The hyped cards climb to 6–9 times their start, hold, then crash to about a third of it. For four steps of the crash nobody buys them at all, which teaches that a quoted price means little when there are no buyers.
@@ -285,7 +295,7 @@ The findings, their status and what was tested are in `docs/QA-joewee.md`. Rules
 - **Disabled controls.** One look in every Joewee screen: surface-2 background, line border, ink-500 text, no shadow, not-allowed cursor. Controls that must keep focus use `aria-disabled` and say why when pressed (the trade submit, fair Buy and Sell, orchard seeds).
 - **Words by level.** Explorer never sees "bonding curve": the chip says "New coin: N% grown" and the card "N% of the way to its own trading pool". Trader and Builder say "Bonding curve: N% of the way to a real pool". Lab money is always "L$9,000", never "9,000 L$".
 - **Chart lines.** SMA 7 is solid blue and SMA 25 dashed pink, with a legend, and the copy names both. The chart has a text alternative that updates once per candle.
-- **Coins.** Town wallet balances use `coinText()`/`coinsText()` from `wallet.js`: cut to the cent, never rounded up.
+- **Money.** Town wallet amounts use `moneyText()` (`L$12.50`), or `coinText()` for a bare number, from `wallet.js`: cut to the cent, never rounded up.
 - **Lab.** Fills in one tick give one notice and one announcement. A stop-loss that fills below 0.97 × its trigger is shown in amber. Open orders that lapse at the close are named in the closing panel. News that arrives while Penny's dialog is open waits in `market.queued`, even across a visit away. The wash bot is shown and explained only at Builder, in the explorer and in Who's trading.
 - **Coach.** `coach.json` steps can be `interactive` (taps reach the page), `live` (the market runs), `optional` (skipped when the target isn't shown) and `also` (a second element lit with the first), and `title`/`body` can differ for Explorer. Chapter 2 is "Your chart tools". A replay is practice: no new XP or badge, and a badge already minted at another level says "You already have this badge".
 - **Create.** Every roster ticker counts as taken, hidden coins included. A name reads as a real coin when a word, or the name without filler words, is a real ticker or brand, or it contains a made-up coin word. An allowlist keeps everyday words like Arsenal and Cockatoo. A half-made coin is kept as `market.draft` until it launches.
