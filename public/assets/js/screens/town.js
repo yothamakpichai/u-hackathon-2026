@@ -3,7 +3,7 @@
 // scaffolding and open one real lesson card, so nothing is a dead end. Each tile has an ⓘ "Why this works" note.
 // The daily goal and the streak count actions from every building (progress.js).
 import { h, icon, getJSON, penny, animate } from '../ui.js';
-import { BUILDINGS } from '../../../js/buildings.js';
+import { TOWN, townBuildingOf } from '../../../js/buildings.js';
 import { dataUri } from '../../../js/avatar.js';
 import { progressSummary, syncActions } from '../progress.js';
 import { arenaEnabled } from './arena.js';
@@ -75,7 +75,7 @@ export function mount(root, ctx) {
     getJSON(`${config.DATA_BASE}money_check.json`)
       .then((data) => {
         if (!alive) return;
-        startHere = data.types[a.type]?.building || null;
+        startHere = townBuildingOf(data.types[a.type]?.building) || null;
         renderTiles();
         resultCard(data.types[a.type]?.name || null);
       })
@@ -84,7 +84,7 @@ export function mount(root, ctx) {
 
   function renderTiles() {
     tiles.replaceChildren(
-      ...BUILDINGS.map((b) => {
+      ...TOWN.map((b) => {
         const live = b.status === 'live';
         const links = (b.links || []).filter((l) => !l.arena || (arenaOn && age >= 13));
         return h('li', { class: `town-tile${live ? '' : ' is-construction'}${b.id === startHere ? ' is-start' : ''}`, dataset: { building: b.id } }, [
