@@ -100,15 +100,42 @@
   color: var(--primary-700);
 }
 
-/* SMA legend (C1): the keys copy the chart's lines, solid blue for SMA 7 and dashed pink for SMA 25. */
+/* Chart legends: the SMA keys copy the chart's lines (solid blue SMA 7, dashed pink SMA 25); in Advanced, real and
+   wash volume. Each item keeps its key next to its words when the legend wraps. */
+.lab-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-4);
+  color: var(--ink-700);
+  font-size: var(--fs-xs);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.legend-key {
+  display: inline-block;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend-key--real { background: rgb(24 168 103 / 0.35); }
+.legend-key--wash { background: var(--amber-500); }
+
 .legend-line {
   display: inline-block;
+  flex: none;
   width: 20px;
   border-top: 2px solid var(--pal-blue);
 }
 
 .legend-line--dashed {
-  margin-left: var(--sp-2);
   border-top-style: dashed;
   border-top-color: var(--pal-magenta);
 }
@@ -230,11 +257,12 @@
     "portfolio"
     "mine"
     "news"
-    "flow"
     "chain";
   gap: var(--sp-4);
 }
 
+/* Who's trading (.lab-flow) shows only in Advanced, in the middle column from 1024 px. It has no row here:
+   an empty row would leave a double gap above the Blockchain card. */
 .lab-top { grid-area: top; display: grid; gap: var(--sp-3); }
 .lab-coins { grid-area: coins; }
 .lab-chart { grid-area: chart; }
@@ -242,7 +270,6 @@
 .lab-portfolio { grid-area: portfolio; }
 .lab-mine { grid-area: mine; }
 .lab-news { grid-area: news; }
-.lab-flow { grid-area: flow; }
 .lab-chain { grid-area: chain; }
 
 /* Column wrappers (lab.js): below 1024 px their cards are items of the grid above. */
@@ -494,11 +521,13 @@
   color: var(--loss-700);
 }
 
+/* A crashed coin's long price (L$0.0000000180) puts its change on the next line on phones. */
 .lab-chart__price {
   grid-area: price;
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--sp-3);
+  gap: var(--sp-1) var(--sp-3);
 }
 
 .lab-chart__value {
@@ -1450,25 +1479,6 @@
   color: var(--ink-500);
   font-variant-numeric: tabular-nums;
 }
-
-.lab-chart__legend {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-1) var(--sp-2);
-  color: var(--ink-700);
-  font-size: var(--fs-xs);
-}
-
-.legend-key {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-}
-
-.legend-key--real { background: rgb(24 168 103 / 0.35); }
-.legend-key--wash { margin-left: var(--sp-2); background: var(--amber-500); }
 
 /* ---- Coach mode (BRIEF §15) ------------------------------------------------------------------- */
 

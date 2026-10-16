@@ -165,11 +165,13 @@ function loadCharts() {
   return chartsPromise;
 }
 
-// Axis labels: the same precision as ui.price(), without the L$ prefix.
+// Axis labels: the same precision as ui.price(), without the L$ prefix. No price is below zero, so the labels in
+// the volume margin under a crashed coin stay blank, and rounding noise at zero reads 0.00.
 function axisPrice(p) {
-  const abs = Math.abs(p);
+  if (p < -1e-10) return '';
+  const abs = Math.abs(p) < 1e-10 ? 0 : Math.abs(p);
   const digits = abs >= 1 ? 2 : abs >= 0.01 ? 4 : abs > 0 ? Math.min(10, 3 - Math.floor(Math.log10(abs))) : 2;
-  return number(p, digits);
+  return number(abs, digits);
 }
 
 const pct = (n) => (Math.abs(n) < 0.1 ? 'less than 0.1%' : `${number(n, 1)}%`);
@@ -197,6 +199,7 @@ function newMarket(data, tier, store) {
     userPaused: false,
     quiz: [],
     news: [],
+    queued: [], // news still waiting for Penny's dialog; kept here, so it opens on the next visit if the player leaves
     closed: false,
     ui: null, // hooks from the mounted screen
   };
@@ -252,9 +255,9 @@ export function mount(root, ctx) {
       h('h1', { class: 'screen-title', text: 'Today’s market' }),
     ]);
 
-  // Focus (C5): the router focuses the h1 right after mount, but the Lab redraws once it has loaded. When focus was
-  // in this screen, or on the router's fallback (#main), it moves on to the new view. A first page load keeps its
-  // focus, and the Coach offer takes focus after this.
+  // Focus (BRIEF §10, a full keyboard path): the router focuses the h1 right after mount, but the Lab redraws once it
+  // has loaded. When focus was in this screen, or on the router's fallback (#main), it moves on to the new view. A
+  // first page load keeps its focus, and the Coach offer takes focus after this.
   const ownsFocus = () => document.activeElement === root || view.contains(document.activeElement);
   function focusOn(el) {
     if (!el) return;
@@ -509,18 +512,16 @@ export function mount(root, ctx) {
       toolEls.set(t.id, { wrap, chip });
       toolsRow.append(wrap);
     }
-    // The two averages differ by line style as well as colour (C1), and the legend says which is which.
+    // The two averages differ by line style as well as colour, and the legend says which is which.
+    // Each key stays next to its words when a legend wraps on a phone.
+    const legendItem = (key, text) => h('span', { class: 'legend-item' }, [h('span', { class: key, 'aria-hidden': 'true' }), text]);
     const smaLegend = h('p', { class: 'lab-chart__legend', hidden: true }, [
-      h('span', { class: 'legend-line', 'aria-hidden': 'true' }),
-      'SMA 7 (solid blue line)',
-      h('span', { class: 'legend-line legend-line--dashed', 'aria-hidden': 'true' }),
-      'SMA 25 (dashed pink line)',
+      legendItem('legend-line', 'SMA 7 (solid blue line)'),
+      legendItem('legend-line legend-line--dashed', 'SMA 25 (dashed pink line)'),
     ]);
     const washLegend = h('p', { class: 'lab-chart__legend', hidden: true }, [
-      h('span', { class: 'legend-key legend-key--real', 'aria-hidden': 'true' }),
-      'Real volume',
-      h('span', { class: 'legend-key legend-key--wash', 'aria-hidden': 'true' }),
-      'Wash volume (a bot trading with itself)',
+      legendItem('legend-key legend-key--real', 'Real volume'),
+      legendItem('legend-key legend-key--wash', 'Wash volume (a bot trading with itself)'),
     ]);
     const chartCard = h('div', { class: 'card lab-chart' }, [
       h('div', { class: 'lab-chart__head' }, [chartBadge, h('div', { class: 'lab-chart__label' }, [chartTitle, chartChips]), chartPrice]),
@@ -600,8 +601,10 @@ export function mount(root, ctx) {
     // once it is full, the newest candle stays in view. The window starts about 24 px early, so the
     // centred "Day 1" label on the first candle is never cut off at the left edge.
     function keepInView(count) {
-      const span = Math.max(40, Math.min(sessionCandles, Math.floor(chartBox.clientWidth / 6)));
-      const pad = Math.max(2, Math.ceil(24 / Math.max(1, chartBox.clientWidth / span)));
+      const width = chartBox.clientWidth;
+      if (!width) return; // not laid out yet (or hidden): the next candle sets the window
+      const span = Math.max(40, Math.min(sessionCandles, Math.floor(width / 6)));
+      const pad = Math.max(2, Math.ceil(24 / Math.max(1, width / span)));
       if (count <= span - pad) chart.timeScale().setVisibleLogicalRange({ from: -pad, to: span - pad });
       else chart.timeScale().scrollToRealTime();
     }
@@ -651,7 +654,8 @@ export function mount(root, ctx) {
         rsiLine.createPriceLine({ price: 70, color: down, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' });
         rsiLine.createPriceLine({ price: 30, color: up, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: '' });
         // Its own margins (the price pane's would push the 0 to 100 scale below zero), a quarter of the height.
-        rsiLine.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: 0.08 } });
+        // Its tick labels stay blank: the 70 and 30 tags and the current value would half cover them.
+        rsiLine.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: 0.08 }, textColor: 'transparent' });
         chartBox.classList.add('has-rsi');
         chart.panes()[0]?.setStretchFactor(3);
         chart.panes()[1]?.setStretchFactor(1);
@@ -732,7 +736,7 @@ export function mount(root, ctx) {
         priceMark.price = c.price;
       }
       const chips = [];
-      // Explorers never meet the words "bonding curve" (C2); every level counts progress to a pool, not to launch.
+      // Explorers never meet the words "bonding curve" (BRIEF §2); every level counts progress to a pool, not to launch.
       const grown = Math.round(c.curveProgress * 100);
       if (c.rugged) chips.push(h('span', { class: 'chip chip--loss', text: 'Rug pulled' }));
       else if (c.phase === 'curve') chips.push(h('span', { class: 'chip', text: tierInfo.rank === 0 ? `New coin: ${grown}% grown` : `Bonding curve: ${grown}% of the way to a real pool` }));
@@ -1198,7 +1202,7 @@ export function mount(root, ctx) {
     }
 
     // ---- portfolio and news ------------------------------------------------------------------
-    // Numbers that change every tick are updated in place, so a screen reader keeps its place (lab-flow-10).
+    // Numbers that change every tick are updated in place, so a screen reader keeps its place.
     const setText = (el, text) => {
       if (el.textContent === text) return;
       if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) el.firstChild.data = text;
@@ -1353,7 +1357,7 @@ export function mount(root, ctx) {
         const teamVestDays = number(data.scenario.userCoin.teamVestTicks / st.ticksPerDay, 1);
         contractBox.replaceChildren(contractView(coin, { fee: data.coinsConfig.fee, teamVestDays }));
       }
-      // Explorers get plain words for the bonding curve (C2); Traders and Builders keep the real terms.
+      // Explorers get plain words for the bonding curve (BRIEF §2); Traders and Builders keep the real terms.
       const grown = Math.round(coin.curveProgress * 100);
       const stage = tierInfo.rank === 0
         ? coin.phase === 'curve'
@@ -1528,7 +1532,7 @@ export function mount(root, ctx) {
         modeToggle.remove();
         view.replaceChildren(h('div', { class: 'screen' }, [head, closedPanel(session.getState())]));
         focusOn(view.querySelector('.result__actions .btn'));
-      } else if (queuedEvents.length) openEvent(queuedEvents.shift());
+      } else if (market.queued.length) openEvent(market.queued.shift());
       else renderClock(session.getState());
     });
 
@@ -1540,11 +1544,9 @@ export function mount(root, ctx) {
 
     // Two events can fire in the same tick (the copycat is timed from the launch), so a second one waits for
     // the first dialog to close, and each gets its own narration and question.
-    const queuedEvents = [];
-
     function openEvent(e) {
       if (dialog.open) {
-        queuedEvents.push(e);
+        market.queued.push(e);
         renderNews();
         return;
       }
@@ -1730,6 +1732,7 @@ export function mount(root, ctx) {
 
     render();
     renderNews();
+    if (market.queued.length) openEvent(market.queued.shift()); // news the player left before it opened
     timer = setInterval(step, scenario.tickMs);
     cleanup.push(() => clearInterval(timer));
   }
