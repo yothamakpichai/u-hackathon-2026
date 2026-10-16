@@ -2908,3 +2908,25 @@ svg.is-flipped {
   width: 200px;
   height: 200px;
 }
+
+.result-revealed {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink-800);
+  font-size: var(--fs-sm);
+  text-align: left;
+}
+
+.result-revealed svg {
+  flex: none;
+  color: var(--primary-600);
+}
+
+.path-node--coach {
+  box-shadow: none;
+}

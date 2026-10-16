@@ -31,6 +31,8 @@ export function mount(root, ctx) {
   const tierInfo = config.getTier(tier);
   let alive = true;
   let units = [];
+  let chapters = []; // Coach chapters (coach.json), shown with this level's progress from store.coach[tier].done
+  let coachXp = 0;
 
   const view = h('section', { class: 'screen path' });
   root.append(view);
@@ -126,7 +128,37 @@ export function mount(root, ctx) {
       finished.length ? missionBanner(finished) : null,
       stats,
       ...unitCards,
+      coachCard(),
     );
+  }
+
+  // Coach chapters count on the path too (BRIEF §15): each finished chapter is listed with its XP.
+  function coachCard() {
+    if (!chapters.length) return null;
+    const done = store.get().coach?.[tier]?.done || {};
+    const count = chapters.filter((c) => done[c.id]).length;
+    return h('section', { class: 'card path-unit path-coach', 'aria-labelledby': 'path-coach-title' }, [
+      h('p', { class: 'screen-eyebrow', text: 'Coach in the Market Lab' }),
+      h('h2', { class: 'path-unit__title', id: 'path-coach-title', text: `Coach chapters: ${count} of ${chapters.length}` }),
+      h('p', { class: 'path-unit__intro', text: 'Penny walks you through the real Lab, one step at a time. Each chapter counts here and earns XP.' }),
+      h(
+        'ol',
+        { class: 'path-steps' },
+        chapters.map((c) =>
+          h('li', { class: 'path-step' }, [
+            h('span', { class: `path-node path-node--coach${done[c.id] ? ' is-done' : ''}` }, [
+              h('span', { class: 'path-node__icon', 'aria-hidden': 'true' }, [icon(done[c.id] ? 'check' : 'book', { size: 24 })]),
+              h('span', { class: 'path-node__text' }, [
+                h('span', { class: 'path-node__kind', text: `Coach chapter · ${done[c.id]?.xp ?? coachXp} XP` }),
+                h('span', { class: 'path-node__title', text: c.title }),
+                h('span', { class: 'path-node__state', text: done[c.id] ? 'Done' : 'In the Market Lab' }),
+              ]),
+            ]),
+          ]),
+        ),
+      ),
+      count < chapters.length ? h('button', { class: 'btn btn--block', type: 'button', onClick: () => navigate('/lab') }, 'Open the Coach in the Market Lab') : null,
+    ]);
   }
 
   function missionBanner(finished) {
@@ -266,8 +298,10 @@ export function mount(root, ctx) {
   async function load() {
     view.replaceChildren(stateView({ kind: 'loading', title: 'Loading your Learning Path…' }));
     try {
-      const data = await getJSON(`${config.DATA_BASE}path.json`);
+      const [data, coach] = await Promise.all([getJSON(`${config.DATA_BASE}path.json`), getJSON(`${config.DATA_BASE}coach.json`).catch(() => null)]);
       units = data?.[tier]?.units || [];
+      chapters = (coach?.chapters || []).filter((c) => !c.tiers || c.tiers.includes(tier)).map((c) => ({ id: c.id, title: c.title }));
+      coachXp = coach?.xp ?? 0;
       if (units.length !== 3) throw new Error('The path for this level is missing. Try another level or come back soon.');
       if (!alive) return;
       syncActions(store);

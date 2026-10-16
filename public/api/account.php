@@ -222,6 +222,10 @@ function snapshot(PDO $db, array $child): array
     foreach (is_array($s['path'] ?? null) ? $s['path'] : [] as $p) {
         $done += is_array($p['done'] ?? null) ? count($p['done']) : 0;
     }
+    $chapters = 0;
+    foreach (is_array($s['coach'] ?? null) ? $s['coach'] : [] as $c) {
+        $chapters += is_array($c['done'] ?? null) ? count($c['done']) : 0;
+    }
     return [
         'child' => ['username' => $child['username'], 'age' => bangkok_year() - (int) $child['birth_year']],
         'savedAt' => $saved['updatedAt'],
@@ -229,6 +233,7 @@ function snapshot(PDO $db, array $child): array
         'xp' => (int) ($progress['xp'] ?? 0),
         'streak' => streak(is_array($progress['days'] ?? null) ? $progress['days'] : []),
         'pathSteps' => $done,
+        'coachChapters' => $chapters,
         'market' => $run && is_array($run['metrics'] ?? null) ? ['date' => (string) ($run['date'] ?? ''), 'biggestCoinPct' => (float) ($run['metrics']['maxSingleExposurePct'] ?? 0), 'lowestCashPct' => (float) ($run['metrics']['minCashPct'] ?? 0), 'panicSells' => (int) ($run['metrics']['panicSellsAfterNegativeEvents'] ?? 0)] : null,
         'piggy' => ['goals' => $goals, 'entries' => $entries],
     ];

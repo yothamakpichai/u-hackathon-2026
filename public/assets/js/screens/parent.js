@@ -53,6 +53,7 @@ export function mount(root, ctx) {
           stat('Streak', `${snap.streak} day${snap.streak === 1 ? '' : 's'}`),
           stat('XP', String(snap.xp)),
           stat('Learning Path steps', String(snap.pathSteps)),
+          stat('Coach chapters', String(snap.coachChapters ?? 0)),
         ]),
         snap.market
           ? h('p', { class: 'part__why', text: `Last practice market (${snap.market.date}): the biggest single coin reached ${Math.round(snap.market.biggestCoinPct)}% of the money, cash never fell below ${Math.round(snap.market.lowestCashPct)}%, and ${snap.market.panicSells} panic sale${snap.market.panicSells === 1 ? '' : 's'} after bad news. All simulated money.` })

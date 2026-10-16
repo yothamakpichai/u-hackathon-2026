@@ -3,6 +3,11 @@
 // Every claim cites docs/SOURCES.md. The Lab's practice score (BRIEF §6) is separate and stays on the report card.
 import { h, icon, getJSON, stateView, penny, celebrate, animate } from '../ui.js';
 import { building } from '../../../js/buildings.js';
+import { revealedPreference } from '../sim/orchard.js';
+
+// Orchard plantings (BRIEF §16.1) reveal time preference by what people actually do. With enough of them, the
+// result says when they lean the other way from the quiz, while the quiz result stays as it is.
+const MIN_CHOICES = 3;
 
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -96,6 +101,11 @@ export function mount(root, ctx) {
     if (a.scripts.status) notes.push('You agreed that expensive things show a person is important. That is the “money status” script (Klontz et al., 2011), and it can push people to spend to impress others.');
     if (!notes.length) notes.push('You didn’t agree with either money belief. Beliefs about money, called money scripts, are linked with how people spend and save (Klontz & Britt, 2012).');
     if (a.presentBias) notes.push('You picked today in the first choice but were happy to wait in the second. A wait feels longer when it starts today; economists call this present bias (Meier & Sprenger, 2010).');
+    const pref = revealedPreference(store.get().orchard?.choices || []);
+    const quizSaid = a.time === 'later' ? 'Later' : 'Now';
+    const revealed = pref && pref.count >= MIN_CHOICES && pref.lean !== 'Mixed' && pref.lean !== quizSaid
+      ? h('p', { class: 'result-revealed' }, [icon('target', { size: 20 }), `Your choices look more ${pref.lean} than your quiz said: in the Orchard you planted ${pref.count} times and waited for the big tree ${Math.round(pref.laterShare * 100)}% of the time. Both are you; what you do counts too.`])
+      : null;
 
     const hero = h('div', { class: 'card result-hero' }, [
       animalArt(a.type, 104),
@@ -103,6 +113,7 @@ export function mount(root, ctx) {
       h('h1', { class: 'result-hero__name', tabindex: '-1', text: type.name }),
       h('p', { class: 'result-hero__line', text: type.line }),
       h('div', { class: 'result-hero__axes' }, [h('span', { class: 'chip', text: a.time === 'later' ? 'Later' : 'Now' }), h('span', { class: 'chip', text: a.risk === 'bold' ? 'Bold' : 'Careful' })]),
+      revealed,
     ]);
 
     view.replaceChildren(
