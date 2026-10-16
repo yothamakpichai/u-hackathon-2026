@@ -104,15 +104,43 @@ function set_session_cookie(string $value, int $seconds): void
     setcookie(SESSION_COOKIE, $value, ['expires' => time() + $seconds, 'path' => '/', 'secure' => true, 'httponly' => true, 'samesite' => 'Lax']);
 }
 
-function start_session(PDO $db, array $user): never
+// $extra adds fields to the answer (a demo account adds demo:true); $days shortens the session (demo: 1 day).
+function start_session(PDO $db, array $user, array $extra = [], int $days = SESSION_DAYS): never
 {
     $token = bin2hex(random_bytes(32));
     $csrf = bin2hex(random_bytes(32));
     $db->prepare('DELETE FROM arena_sessions WHERE expires_at < UTC_TIMESTAMP()')->execute();
-    $db->prepare('INSERT INTO arena_sessions (token_hash, user_id, csrf, expires_at) VALUES (?, ?, ?, UTC_TIMESTAMP() + INTERVAL ' . SESSION_DAYS . ' DAY)')
+    $db->prepare('INSERT INTO arena_sessions (token_hash, user_id, csrf, expires_at) VALUES (?, ?, ?, UTC_TIMESTAMP() + INTERVAL ' . $days . ' DAY)')
         ->execute([hash('sha256', $token), $user['id'], $csrf]);
-    set_session_cookie($token, SESSION_DAYS * 86400);
-    send_json(['ok' => true, 'user' => public_user($user), 'csrf' => $csrf]);
+    set_session_cookie($token, $days * 86400);
+    send_json(['ok' => true, 'user' => public_user($user), 'csrf' => $csrf] + $extra);
+}
+
+// A judge-demo account (BRIEF §17): "Demo-XXXX", an adult birth year, already approved and Arena-qualified, 1000 L$
+// of Arena cash, gone after 24 hours (arena_purge_demos()). Signed in exactly like a normal login.
+function demo_signup(PDO $db): never
+{
+    arena_purge_demos($db);
+    $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    for ($try = 0; $try < 8; $try++) {
+        $name = 'Demo-';
+        for ($i = 0; $i < 4; $i++) {
+            $name .= $chars[random_int(0, strlen($chars) - 1)];
+        }
+        try {
+            $db->prepare('INSERT INTO arena_users (username, username_key, password_hash, birth_year, cash, approved_at, arena_ok, is_demo, demo_expires_at)
+                VALUES (?, ?, ?, ?, ?, UTC_TIMESTAMP(), 1, 1, UTC_TIMESTAMP() + INTERVAL 24 HOUR)')
+                ->execute([$name, strtolower($name), password_hash(bin2hex(random_bytes(16)), password_algo()), bangkok_year() - 25, ARENA_DEMO_CASH]);
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000') {
+                continue; // that name is taken: draw another
+            }
+            throw $e;
+        }
+        $user = ['id' => (int) $db->lastInsertId(), 'username' => $name, 'birth_year' => bangkok_year() - 25];
+        start_session($db, $user, ['demo' => true, 'expiresAt' => time() + 86400], 1);
+    }
+    send_error(503, 'BUSY', 'Couldn’t make a demo account just now. Try again.');
 }
 
 function end_session(PDO $db): void
