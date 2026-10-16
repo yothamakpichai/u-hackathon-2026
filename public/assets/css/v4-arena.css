@@ -179,3 +179,20 @@
 .arena-news__buy { min-height: var(--tap); }
 .arena-news__msg { margin: 0; font-size: var(--fs-sm); color: var(--arena-on-night-2); }
 .arena-news__msg:empty { display: none; }
+
+/* Season and medals */
+.arena-season { display: grid; gap: var(--sp-3); }
+.arena-season[hidden], .arena-season__mine[hidden] { display: none; }
+.arena-season__left { margin: 0; padding: 0.125rem 0.625rem; border-radius: var(--r-pill); background: var(--amber-50); color: var(--amber-800); font-size: var(--fs-sm); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.arena-season__h { margin: 0; font-size: var(--fs-sm); font-weight: 800; color: var(--ink-700); }
+.arena-season__top, .arena-medals { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.375rem; }
+.arena-season__row { display: flex; align-items: center; gap: 0.625rem; min-height: var(--tap); padding: 0.25rem 0.625rem; border-radius: var(--r-sm); background: var(--surface-2, #F1F5F3); }
+.arena-season__name { flex: 1 1 auto; min-width: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arena-season__value { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink-900); }
+.arena-medal { display: flex; align-items: center; gap: 0.625rem; }
+.arena-medal__body { display: grid; min-width: 0; font-size: var(--fs-sm); }
+.arena-medal__meta { color: var(--ink-500); font-size: var(--fs-xs); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.arena-medal__disc { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; font-weight: 900; font-family: var(--font-head); color: var(--ink-900); box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.18); }
+.is-gold .arena-medal__disc { background: linear-gradient(145deg, #FFE08A, #E8B020); }
+.is-silver .arena-medal__disc { background: linear-gradient(145deg, #F1F4F6, #B9C3C9); }
+.is-bronze .arena-medal__disc { background: linear-gradient(145deg, #F6C9A2, #C98552); }
