@@ -11,6 +11,7 @@ import { rsi, sma } from '../sim/indicators.js';
 import { runMetrics } from '../sim/metrics.js';
 import { attachCoach, isCoaching, onChapterDone, openCoachMenu } from './coach.js';
 import { mintBadge, mintedNote, setChainSink } from './badges.js';
+import { prefetch as prefetchDesigner } from './create.js';
 
 // A finished Coach chapter mints its soulbound badge (BRIEF §15) and shows it on the completion card.
 onChapterDone(({ tier, chapter, store }) => mintedNote(mintBadge(store, { kind: 'coach', ref: chapter.id, tier })));
@@ -1097,7 +1098,7 @@ export function mount(root, ctx) {
         return;
       }
       if (mode === 'ready') {
-        setTimeout(() => import('./coin-designer.js').catch(() => {}), 1500);
+        setTimeout(prefetchDesigner, 1500);
         mineBody.replaceChildren(
           h('p', { class: 'lab-mine__text', text: 'Design a coin and launch it into today’s market. How it does depends on your design.' }),
           h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: () => navigate('/create') }, [

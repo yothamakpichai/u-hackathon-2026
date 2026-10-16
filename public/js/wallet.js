@@ -50,3 +50,9 @@ export function rateFor(score, baseRate) {
 }
 
 const fmt = (n) => (Math.round(n * 100) / 100).toLocaleString('en-US');
+
+// A coin balance for display, cut to the cent and never rounded up, so a balance shown as 5 can always pay 5.
+export function coinText(n) {
+  const v = Math.floor(n * 100 + 1e-6) / 100;
+  return v.toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 });
+}

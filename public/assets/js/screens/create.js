@@ -1,16 +1,28 @@
 // Create a coin (BRIEF §3 step 5; slices J3 and J13). A light shell: it shows the screen with a proper loading
-// state at once, then loads the coin designer (coin-designer.js). The Lab prefetches the designer once Create
-// opens up, so the trip from the market is usually instant.
+// state at once, then loads the coin designer (coin-designer.js). The Lab imports this shell and calls prefetch()
+// once Create opens up, so the trip from the market is usually instant.
 import { h, stateView } from '../ui.js';
 
+// A failed dynamic import stays in the page's module map, so each retry asks for a fresh URL. The designer's own
+// imports keep their normal URLs, so the open market stays shared.
 let designer = null;
+let fails = 0;
 const loadDesigner = () => {
-  designer ??= import('./coin-designer.js').catch((err) => {
+  designer ??= import(fails ? `./coin-designer.js?retry=${fails}` : './coin-designer.js').catch((err) => {
     designer = null;
+    fails += 1;
     throw err;
   });
   return designer;
 };
+
+// The Lab warms the designer once Create opens up. Once per page: a failed warm-up only bumps the retry URL.
+let prefetched = false;
+export function prefetch() {
+  if (prefetched) return;
+  prefetched = true;
+  loadDesigner().catch(() => {});
+}
 
 export function mount(root, ctx) {
   const { tier, config, navigate } = ctx;
