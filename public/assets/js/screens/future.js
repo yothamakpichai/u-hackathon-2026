@@ -5,6 +5,9 @@ import { dataUri } from '../../../js/avatar.js';
 import { project } from '../sim/future.js';
 import { dayOf, logAction } from '../progress.js';
 import { animate, getJSON, h, icon, number, reducedMotion, stateView } from '../ui.js';
+import { ensurePennyStyles } from '../penny-voice.js';
+
+ensurePennyStyles();
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const DEFAULT_CHARACTER = { skin: 'tone3', hairStyle: 'short', hairColor: 'darkbrown', outfit: 'tee', glasses: 'none' };

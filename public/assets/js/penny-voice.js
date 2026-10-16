@@ -3,7 +3,7 @@
 // (with its tts token) or allowlisted static text. On any error, a refusal, a timeout or a long text, the browser's
 // own speechSynthesis reads it instead, in an English voice. One voice plays at a time.
 const API = 'api/tts.php';
-const MAX_CHARS = 600;
+const MAX_CHARS = 900;
 const START_TIMEOUT_MS = 8000;
 
 let el = null;
@@ -58,6 +58,12 @@ export function speak(text, { voice = 'penny', token = '' } = {}) {
     const started = el.play();
     if (started) started.catch(fallback);
   });
+}
+
+// Penny's v4 styles (assets/css/v4-penny.css), added once if index.html doesn't link them already.
+export function ensurePennyStyles() {
+  if (typeof document === 'undefined' || document.querySelector('link[href$="v4-penny.css"]')) return;
+  document.head.append(Object.assign(document.createElement('link'), { rel: 'stylesheet', href: 'assets/css/v4-penny.css' }));
 }
 
 // The browser's own speech, with an English voice when there is one. Calls done when it ends or fails.

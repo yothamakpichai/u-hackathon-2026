@@ -3,7 +3,7 @@
 // Premade voices only, never a clone or a real person. Failures are logged with the status only: never the key or the text.
 declare(strict_types=1);
 
-const TTS_MAX_CHARS = 600;
+const TTS_MAX_CHARS = 900;
 const TTS_TOKEN_TTL = 3600;
 // The lowest-latency model in the live /v1/models list (measured: about 0.5 s to the first byte for a short line).
 const TTS_DEFAULT_MODEL = 'eleven_flash_v2_5';

@@ -7,7 +7,9 @@
 // same numbers instead, with no error shown. Personal details are refused here, before anything is sent.
 import { h, icon, penny, getJSON, animate, announce } from '../ui.js';
 import { scoreRun } from '../score.js';
-import { speak, stopVoice } from '../penny-voice.js';
+import { speak, stopVoice, ensurePennyStyles } from '../penny-voice.js';
+
+ensurePennyStyles();
 
 const MAX_CHARS = 300;
 const API = 'api/tutor.php';
@@ -137,7 +139,7 @@ export async function openTutor({ store, config }, { mode, context } = {}) {
   const tier = store.get().tier || 'explorer';
   const opener = document.activeElement;
   const future = mode === 'future';
-  const ctxData = context && typeof context === 'object' && !Array.isArray(context) ? context : null;
+  let ctxData = context && typeof context === 'object' && !Array.isArray(context) ? context : null;
   const futureVoice = ['female', 'male', 'neutral'].includes(ctxData?.futureVoice) ? ctxData.futureVoice : ['female', 'male', 'neutral'].includes(store.get().profile?.futureVoice) ? store.get().profile.futureVoice : 'neutral';
   const localVoice = future ? futureVoice : 'penny';
   const turns = [];
@@ -192,6 +194,11 @@ export async function openTutor({ store, config }, { mode, context } = {}) {
   if (future) {
     chips.replaceChildren(...FUTURE_CHIPS.map((q) => h('button', { class: 'tutor__chip', type: 'button', onClick: () => askText(q) }, q)));
     await reply(async () => {
+      // Opened without numbers (from another screen): use the saved Future You plan, if there is one.
+      if (!(ctxData?.p50 >= 0)) {
+        const saved = await modeData('explain_future', store, config);
+        ctxData = saved ? { ...saved, futureVoice } : null;
+      }
       const r = ctxData ? await askPenny({ mode: 'future', tier, context: ctxData }) : null;
       return r || { answer: futureFallback(ctxData) };
     }, { keep: false });
@@ -295,7 +302,9 @@ export async function openTutor({ store, config }, { mode, context } = {}) {
   async function explain(m, given) {
     say('you', QUICK[m]);
     await reply(async () => {
-      const data = given && Object.keys(given).length ? given : await modeData(m, store, config);
+      // A screen may pass the numbers itself; anything that doesn't look like them is ignored.
+      const fits = given && (m === 'explain_future' ? given.p50 >= 0 : Number.isFinite(given.score));
+      const data = fits ? given : await modeData(m, store, config);
       if (!data) return { answer: 'I need a little more first: finish a market, take the Money Check or make a Future You plan, then ask me again.' };
       return (await askPenny({ mode: m, tier, data })) || { answer: localAnswer(m, data) };
     });

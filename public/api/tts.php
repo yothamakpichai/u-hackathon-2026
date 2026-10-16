@@ -13,7 +13,7 @@ require REPO_ROOT . '/src/cache.php';
 require REPO_ROOT . '/src/elevenlabs.php';
 
 $method = require_method('GET', 'POST');
-rate_limit('tts', 30, 60);
+rate_limit('tts', 60, 60);
 $input = $method === 'POST' ? read_json(4096) : $_GET;
 
 $text = is_string($input['text'] ?? null) ? tts_normalize($input['text']) : '';
