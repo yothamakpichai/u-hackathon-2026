@@ -443,7 +443,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
       if (e.tiers.includes(tier)) {
         const held = pf.holdings[e.coin] ?? 0;
         fired.push({ id: e.id, coinId: e.coin, t, negative: !!e.negative, playerCoins: held, playerValue: held * poolPrice(c.pool) });
-        toEmit.push({ id: e.id, coinId: e.coin, t });
+        toEmit.push({ id: e.id, coinId: e.coin, t, negative: !!e.negative }); // negative: Penny's worried face
       }
       applyEvent(e, c);
     }

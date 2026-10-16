@@ -100,6 +100,19 @@
   color: var(--primary-700);
 }
 
+/* SMA legend (C1): the keys copy the chart's lines, solid blue for SMA 7 and dashed pink for SMA 25. */
+.legend-line {
+  display: inline-block;
+  width: 20px;
+  border-top: 2px solid var(--pal-blue);
+}
+
+.legend-line--dashed {
+  margin-left: var(--sp-2);
+  border-top-style: dashed;
+  border-top-color: var(--pal-magenta);
+}
+
 .lab-chart__canvas.has-rsi {
   height: 20rem;
 }
@@ -232,6 +245,11 @@
 .lab-flow { grid-area: flow; }
 .lab-chain { grid-area: chain; }
 
+/* Column wrappers (lab.js): below 1024 px their cards are items of the grid above. */
+.lab-col {
+  display: contents;
+}
+
 .lab .card {
   padding: var(--sp-4);
 }
@@ -246,11 +264,7 @@
     grid-template-columns: 15rem minmax(0, 1fr) 21rem;
     grid-template-areas:
       "top top top"
-      "coins chart trade"
-      "coins chart portfolio"
-      "coins news mine"
-      "coins flow chain";
-    grid-template-rows: auto auto auto auto 1fr;
+      "coins main side";
     align-items: start;
   }
 
@@ -259,8 +273,20 @@
     align-items: center;
   }
 
-  .lab-chart {
-    grid-row: 2 / 4;
+  /* Each column stacks on its own, so a tall card never leaves a gap in the next column. */
+  .lab-col {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: var(--sp-4);
+    min-width: 0;
+  }
+
+  .lab-col--main { grid-area: main; }
+  .lab-col--side { grid-area: side; }
+
+  .lab-col > * {
+    grid-area: auto;
   }
 }
 
@@ -453,6 +479,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-1);
+}
+
+/* A long chip (the bonding curve's progress) wraps on phones instead of running out of the card. */
+.lab-chart__chips .chip {
+  max-width: 100%;
+  padding-block: 4px;
+  line-height: 1.25;
+  white-space: normal;
 }
 
 .chip--loss {

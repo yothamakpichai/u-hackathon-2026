@@ -130,6 +130,9 @@ test('each tier sees its own coins and events', () => {
     assert.deepEqual(heard.map((e) => e.id), want.events);
     assert.deepEqual(state.events.map((e) => e.id), want.events);
     assert.ok(heard.every((e) => typeof e.coinId === 'string' && Number.isInteger(e.t)));
+    // Each event says whether it is bad news, as scenario.json marks it (Penny's mood in the Lab).
+    const negative = Object.fromEntries(CONFIG.scenario.events.map((e) => [e.id, !!e.negative]));
+    assert.deepEqual(heard.map((e) => e.negative), heard.map((e) => negative[e.id]));
     assert.equal(state.t, 2400);
     assert.equal(state.closed, true);
     assert.ok(closedWith && closedWith.closed);
@@ -305,12 +308,13 @@ test('an unlocked pool invites a copycat that rugs its buyers (Builder only)', (
   assert.ok(copy, 'a look-alike appeared');
   assert.equal(copy.ticker, 'MOONX');
   assert.equal(copy.name, 'Moon Pie Official');
-  assert.ok(heard.some((e) => e.id === 'copycat' && e.coinId === 'MOONX'));
+  assert.ok(heard.some((e) => e.id === 'copycat' && e.coinId === 'MOONX' && e.negative === true), 'a copycat is bad news');
   assert.ok(s.swap('MOONX', 'buy', 50).ok, 'the player can be fooled');
   for (let i = 0; i < cc.rugAfterTicks - 10; i++) s.tick();
   const before = s.getState().coins.MOONX.price;
   for (let i = 0; i < 30; i++) s.tick();
   const after = s.getState();
+  assert.ok(heard.some((e) => e.id === 'copycat_rug' && e.negative === true), 'so is its rug pull');
   assert.ok(after.coins.MOONX.rugged);
   assert.ok(after.coins.MOONX.price <= before * 0.1, `${before} → ${after.coins.MOONX.price}`);
   const rug = after.events.find((e) => e.id === 'copycat_rug');

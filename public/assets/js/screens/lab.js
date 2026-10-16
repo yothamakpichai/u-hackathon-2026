@@ -96,9 +96,10 @@ function infoButton(label, text, panel) {
 
 const INFO = {
   volume: 'Volume bars show how much was traded in each 6-hour bar. Tall bars mean busy trading. They can’t tell you whether buyers or sellers were in charge, or whether the trading was real.',
-  sma: 'The blue line is the average price of the last 7 bars and the pink line of the last 25, so the noise is smoothed out. When the short line crosses the long one, the trend may be changing. Averages always lag behind the price, so they can’t predict the next move.',
+  sma: 'The solid blue line (SMA 7) is the average price of the last 7 bars and the dashed pink line (SMA 25) of the last 25, so the noise is smoothed out. When the short line crosses the long one, the trend may be changing. Averages always lag behind the price, so they can’t predict the next move.',
   rsi: 'RSI (0 to 100) shows how strongly the price has moved up or down lately. Above 70 people call it “overbought”, below 30 “oversold”. It can’t tell you what a coin is really worth, and prices can stay above 70 or below 30 for a long time.',
   impact: 'Price impact is how much your own trade moves the price, because the pool has to rebalance. Big trades in small pools move it more. It can’t tell you where the price goes next: other traders move it too.',
+  impactExplorer: 'Your own trade moves the price a little: buying leaves fewer coins for sale, so the next one costs more, and selling does the opposite. Big trades move it more. It can’t tell you where the price goes next: other traders move it too.',
   limit: 'A limit order waits for your price: buy only if the price falls to it, or sell only if it rises to it. It saves you watching the screen, but it may never fill if the price never gets there.',
   stop: 'A stop-loss sells automatically if the price falls to your level, to stop a loss from growing. In a sudden drop it can sell lower than your level, and a dip that bounces back may sell you out at the bottom.',
   depth: 'Depth shows how much money it takes to push the price down (selling, left) or up (buying, right). A deep pool barely moves when someone trades; a shallow one swings a lot. It can’t tell you which way the price will go.',
@@ -147,14 +148,18 @@ function loadData(base) {
   return dataPromise;
 }
 
-// The chart library, loaded once on the first Lab visit.
+// The chart library, loaded once on the first Lab visit. A failed dynamic import stays in the page's module map,
+// so each retry asks for a fresh URL (the library imports nothing, so a second copy is harmless).
+const CHARTS_URL = '../vendor/lightweight-charts/lightweight-charts.standalone.production.mjs';
+let chartFails = 0;
 function loadCharts() {
-  chartsPromise ??= import('../vendor/lightweight-charts/lightweight-charts.standalone.production.mjs')
+  chartsPromise ??= import(chartFails ? `${CHARTS_URL}?retry=${chartFails}` : CHARTS_URL)
     .then((m) => {
       ({ CandlestickSeries, ColorType, HistogramSeries, LineSeries, createChart } = m);
     })
     .catch((err) => {
       chartsPromise = null;
+      chartFails += 1;
       throw err;
     });
   return chartsPromise;
@@ -240,22 +245,44 @@ export function mount(root, ctx) {
   const view = h('section', { class: 'lab-screen' });
   root.append(view);
 
+  // The screen's heading shows from the start, over the loading and error states too, so the page always has one h1.
+  const screenHead = () =>
+    h('div', { class: 'screen-head lab-head' }, [
+      h('p', { class: 'screen-eyebrow', text: `${tierInfo.name} · Ages ${tierInfo.ages}` }),
+      h('h1', { class: 'screen-title', text: 'Today’s market' }),
+    ]);
+
+  // Focus (C5): the router focuses the h1 right after mount, but the Lab redraws once it has loaded. When focus was
+  // in this screen, or on the router's fallback (#main), it moves on to the new view. A first page load keeps its
+  // focus, and the Coach offer takes focus after this.
+  const ownsFocus = () => document.activeElement === root || view.contains(document.activeElement);
+  function focusOn(el) {
+    if (!el) return;
+    if (/^H[1-6]$/.test(el.tagName)) el.setAttribute('tabindex', '-1');
+    el.focus({ preventScroll: true });
+  }
+
   function showLoadError(title, body) {
+    const keep = ownsFocus();
+    const retry = h('button', { class: 'btn btn--primary', type: 'button', onClick: load }, 'Try again');
     view.replaceChildren(
-      stateView({
-        kind: 'error',
-        title,
-        body,
-        actions: [
-          h('button', { class: 'btn btn--primary', type: 'button', onClick: load }, 'Try again'),
-          h('button', { class: 'btn', type: 'button', onClick: () => navigate('/') }, 'Back to start'),
-        ],
-      }),
+      h('div', { class: 'screen' }, [
+        screenHead(),
+        stateView({
+          kind: 'error',
+          title,
+          body,
+          actions: [retry, h('button', { class: 'btn', type: 'button', onClick: () => navigate('/town') }, 'Back to my town')],
+        }),
+      ]),
     );
+    if (keep) focusOn(retry);
   }
 
   function load() {
-    view.replaceChildren(stateView({ kind: 'loading', title: 'Opening today’s market…' }));
+    const keep = ownsFocus();
+    view.replaceChildren(h('div', { class: 'screen' }, [screenHead(), stateView({ kind: 'loading', title: 'Opening today’s market…' })]));
+    if (keep) focusOn(view.querySelector('h1'));
     Promise.all([loadData(config.DATA_BASE), loadCharts()])
       .then(([data]) => {
         if (!alive) return;
@@ -268,7 +295,11 @@ export function mount(root, ctx) {
           showLoadError('The market couldn’t be drawn', 'Something in this browser stopped the chart from loading. Try again, or open the site in an up-to-date browser.');
         }
       })
-      .catch((err) => alive && showLoadError('Today’s market didn’t open', err.message));
+      .catch((err) => {
+        if (!alive) return;
+        console.error(err); // the browser's own message names files and URLs: a plain line instead
+        showLoadError('Today’s market didn’t open', 'Part of the market didn’t load. Check your connection, then try again.');
+      });
   }
 
   function replay() {
@@ -298,6 +329,7 @@ export function mount(root, ctx) {
   }
 
   function start(data) {
+    const keepFocus = ownsFocus();
     const today = bangkokDate();
     let live = liveMarket();
     if (!live || live.tier !== tier || (live.closed && live.date !== today)) setLiveMarket((live = newMarket(data, tier, store)));
@@ -305,10 +337,7 @@ export function mount(root, ctx) {
     const { session } = market;
     const { scenario } = data;
 
-    const head = h('div', { class: 'screen-head lab-head' }, [
-      h('p', { class: 'screen-eyebrow', text: `${tierInfo.name} · Ages ${tierInfo.ages}` }),
-      h('h1', { class: 'screen-title', text: 'Today’s market' }),
-    ]);
+    const head = screenHead();
     const modeButtons = [false, true].map((adv) =>
       h('button', { class: 'segmented__btn', type: 'button', onClick: () => setMode(adv) }, adv ? 'Advanced' : 'Basic'),
     );
@@ -316,6 +345,7 @@ export function mount(root, ctx) {
 
     if (market.closed) {
       view.replaceChildren(h('div', { class: 'screen' }, [head, closedPanel(session.getState())]));
+      if (keepFocus) focusOn(head.querySelector('h1'));
       return;
     }
 
@@ -334,10 +364,11 @@ export function mount(root, ctx) {
     const bar = h('div', { class: 'lab-clock__bar', role: 'progressbar', 'aria-label': 'Market day', 'aria-valuemin': 1 }, [fill]);
     const pauseBtn = h('button', { class: 'btn btn--sm', type: 'button', onClick: togglePause });
     const finishBtn = h('button', { class: 'btn btn--sm btn--ghost', type: 'button', onClick: () => askFinish(true) }, 'Finish now');
-    const confirm = h('div', { class: 'lab-confirm', hidden: true }, [
-      h('p', { class: 'lab-confirm__text', text: 'Close the market now and see your report card?' }),
+    // The question is the group's name and the Finish button's description, so it is read with the focused button.
+    const confirm = h('div', { class: 'lab-confirm', role: 'group', 'aria-labelledby': 'lab-confirm-text', hidden: true }, [
+      h('p', { class: 'lab-confirm__text', id: 'lab-confirm-text', text: 'Close the market now and see your report card?' }),
       h('div', { class: 'lab-confirm__actions' }, [
-        h('button', { class: 'btn btn--sm btn--primary', type: 'button', onClick: () => session.finish() }, 'Finish'),
+        h('button', { class: 'btn btn--sm btn--primary', type: 'button', 'aria-describedby': 'lab-confirm-text', onClick: () => session.finish() }, 'Finish'),
         h('button', { class: 'btn btn--sm', type: 'button', onClick: () => askFinish(false) }, 'Keep trading'),
       ]),
     ]);
@@ -420,6 +451,21 @@ export function mount(root, ctx) {
         }
         row.changeEl.replaceChildren(delta(dayChange(c, st)));
       }
+      if (stripShown !== market.selected) {
+        stripShown = market.selected;
+        showSelectedRow();
+      }
+    }
+
+    // Phones: the strip scrolls sideways, so a newly selected coin (a coin just launched, say) is brought into view.
+    let stripShown = null;
+    function showSelectedRow() {
+      const el = rows.get(market.selected)?.el;
+      if (!el || coinList.scrollWidth <= coinList.clientWidth) return;
+      const box = coinList.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      if (r.left < box.left) coinList.scrollLeft -= box.left - r.left + 8;
+      else if (r.right > box.right) coinList.scrollLeft += r.right - box.right + 8;
     }
 
     function select(id) {
@@ -432,7 +478,8 @@ export function mount(root, ctx) {
     }
 
     // ---- chart -------------------------------------------------------------------------------
-    const chartBox = h('div', { class: 'lab-chart__canvas' });
+    // The canvases have no text, so the box is one image with a short summary, updated once per candle.
+    const chartBox = h('div', { class: 'lab-chart__canvas', role: 'img' });
     const chartTitle = h('h2', { class: 'lab-chart__title' });
     const chartPrice = h('p', { class: 'lab-chart__price' });
     const chartChips = h('div', { class: 'lab-chart__chips' });
@@ -462,6 +509,13 @@ export function mount(root, ctx) {
       toolEls.set(t.id, { wrap, chip });
       toolsRow.append(wrap);
     }
+    // The two averages differ by line style as well as colour (C1), and the legend says which is which.
+    const smaLegend = h('p', { class: 'lab-chart__legend', hidden: true }, [
+      h('span', { class: 'legend-line', 'aria-hidden': 'true' }),
+      'SMA 7 (solid blue line)',
+      h('span', { class: 'legend-line legend-line--dashed', 'aria-hidden': 'true' }),
+      'SMA 25 (dashed pink line)',
+    ]);
     const washLegend = h('p', { class: 'lab-chart__legend', hidden: true }, [
       h('span', { class: 'legend-key legend-key--real', 'aria-hidden': 'true' }),
       'Real volume',
@@ -472,6 +526,7 @@ export function mount(root, ctx) {
       h('div', { class: 'lab-chart__head' }, [chartBadge, h('div', { class: 'lab-chart__label' }, [chartTitle, chartChips]), chartPrice]),
       chartBox,
       toolsRow,
+      smaLegend,
       chartInfo.el,
       washLegend,
       h('p', { class: 'lab-chart__credit' }, [
@@ -510,9 +565,9 @@ export function mount(root, ctx) {
         shiftVisibleRangeOnNewBar: false, // keepInView() decides
         tickMarkFormatter: (time) => (time % 86400 === 0 ? `Day ${dayOf(time)}` : ''),
       },
+      // No chart-wide priceFormatter: it would override every series, and RSI is a whole-number score.
       localization: {
         timeFormatter: (time) => `Day ${dayOf(time)}, ${String(Math.floor((time % 86400) / 3600)).padStart(2, '0')}:00`,
-        priceFormatter: axisPrice,
       },
       handleScroll: { vertTouchDrag: false },
     });
@@ -537,14 +592,17 @@ export function mount(root, ctx) {
     const toVolume = (k) => ({ time: toTime(k.t), value: k.volume, color: fade(k.close >= k.open ? up : down) });
     let chartCoin = null;
     let chartCount = 0;
+    let chartLabelFor = null;
     const priceMark = { coin: null, price: 0 };
     const sessionCandles = scenario.ticks / scenario.candleTicks;
 
     // Candles fill a fixed window from the left (about 6 px each, the whole month on wide screens);
-    // once it is full, the newest candle stays in view.
+    // once it is full, the newest candle stays in view. The window starts about 24 px early, so the
+    // centred "Day 1" label on the first candle is never cut off at the left edge.
     function keepInView(count) {
       const span = Math.max(40, Math.min(sessionCandles, Math.floor(chartBox.clientWidth / 6)));
-      if (count <= span) chart.timeScale().setVisibleLogicalRange({ from: -1.5, to: span - 1.5 });
+      const pad = Math.max(2, Math.ceil(24 / Math.max(1, chartBox.clientWidth / span)));
+      if (count <= span - pad) chart.timeScale().setVisibleLogicalRange({ from: -pad, to: span - pad });
       else chart.timeScale().scrollToRealTime();
     }
 
@@ -572,9 +630,10 @@ export function mount(root, ctx) {
       }
       const [vol, avg, osc] = TOOLS.map(toolOn);
       volumeSeries.applyOptions({ visible: vol });
+      smaLegend.hidden = !avg;
       if (avg && !smaFast) {
         smaFast = chart.addSeries(LineSeries, lineOpts(blue, 2));
-        smaSlow = chart.addSeries(LineSeries, lineOpts(pink, 2));
+        smaSlow = chart.addSeries(LineSeries, { ...lineOpts(pink, 2), lineStyle: 2 }); // dashed
         added = true;
       } else if (!avg && smaFast) {
         chart.removeSeries(smaFast);
@@ -622,24 +681,29 @@ export function mount(root, ctx) {
     function renderChart(st) {
       const c = st.coins[market.selected];
       const ks = c.candles;
-      if (syncTools()) toolsFresh = true;
+      // Adding a series can move the visible window, so the window is set again once the new data is in.
+      let reframe = false;
+      if (syncTools()) toolsFresh = reframe = true;
       const washOn = advancedOn() && tier === 'builder' && c.totalWashVolume > 0 && toolOn(TOOLS[0]);
       if (washOn && !washSeries) {
         washSeries = chart.addSeries(HistogramSeries, { priceScaleId: '', priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false });
         washSeries.setData(ks.map(toWash));
+        reframe = true;
       } else if (!washOn && washSeries) {
         chart.removeSeries(washSeries);
         washSeries = null;
       }
       washLegend.hidden = !washOn;
       if (chartCoin !== c.id) {
-        candleSeries.setData(ks.map(toBar));
+        // A blank point one candle before the first: the library weighs a tick mark against the point before it,
+        // so "Day 1" counts as a new day and is not dropped for the unlabelled hours while the chart is short.
+        candleSeries.setData([{ time: toTime(ks[0].t - scenario.candleTicks) }, ...ks.map(toBar)]);
         volumeSeries.setData(ks.map(toVolume));
         washSeries?.setData(ks.map(toWash));
-        keepInView(ks.length);
-        requestAnimationFrame(() => alive && keepInView(chartCount)); // again once the chart has its size
         renderTools(ks, true, 0);
         toolsFresh = false;
+        keepInView(ks.length);
+        requestAnimationFrame(() => alive && keepInView(chartCount)); // again once the chart has its size
         chartCoin = c.id;
         chartBadge.replaceChildren(badge(c));
         chartTitle.textContent = `${c.name} (${c.ticker})`;
@@ -649,13 +713,18 @@ export function mount(root, ctx) {
           volumeSeries.update(toVolume(ks[i]));
           washSeries?.update(toWash(ks[i]));
         }
-        if (ks.length !== chartCount) keepInView(ks.length);
         renderTools(ks, toolsFresh, Math.max(0, chartCount - 1));
         toolsFresh = false;
+        if (ks.length !== chartCount || reframe) keepInView(ks.length);
+      }
+      const change = dayChange(c, st);
+      if (chartCount !== ks.length || chartLabelFor !== c.id) {
+        chartLabelFor = c.id;
+        chartBox.setAttribute('aria-label', `${c.name} price chart. Day ${st.day}: ${price(c.price)}, ${signedPct(change)} over the last day.`);
       }
       chartCount = ks.length;
       const valueEl = h('span', { class: 'lab-chart__value', text: price(c.price) });
-      chartPrice.replaceChildren(valueEl, delta(dayChange(c, st)));
+      chartPrice.replaceChildren(valueEl, delta(change));
       // Pulse the big price on a sharp move (1% or more since the last pulse on this coin).
       if (priceMark.coin !== c.id) Object.assign(priceMark, { coin: c.id, price: c.price });
       else if (Math.abs(c.price / priceMark.price - 1) >= 0.01) {
@@ -663,8 +732,10 @@ export function mount(root, ctx) {
         priceMark.price = c.price;
       }
       const chips = [];
+      // Explorers never meet the words "bonding curve" (C2); every level counts progress to a pool, not to launch.
+      const grown = Math.round(c.curveProgress * 100);
       if (c.rugged) chips.push(h('span', { class: 'chip chip--loss', text: 'Rug pulled' }));
-      else if (c.phase === 'curve') chips.push(h('span', { class: 'chip', text: `Bonding curve ${Math.round(c.curveProgress * 100)}% to launch` }));
+      else if (c.phase === 'curve') chips.push(h('span', { class: 'chip', text: tierInfo.rank === 0 ? `New coin: ${grown}% grown` : `Bonding curve: ${grown}% of the way to a real pool` }));
       if (c.class === 'stablecoin') chips.push(h('span', { class: 'chip', text: 'Aims for L$1.00' }));
       if (!c.lpLocked && !c.rugged) chips.push(h('span', { class: 'chip chip--warn', text: 'Pool not locked' }));
       if (c.maxSupply) chips.push(h('span', { class: 'chip', text: `Supply ${coinAmount(c.supply)} of ${coinAmount(c.maxSupply)}` }));
@@ -793,7 +864,7 @@ export function mount(root, ctx) {
       ])
       : null;
     const tradeCard = h('div', { class: 'card lab-trade' }, [
-      h('div', { class: 'card-head' }, [tradeTitle, infoButton('price impact', INFO.impact, impactInfo)]),
+      h('div', { class: 'card-head' }, [tradeTitle, infoButton('price impact', tierInfo.rank === 0 ? INFO.impactExplorer : INFO.impact, impactInfo)]),
       impactInfo.el,
       form,
       ordersList,
@@ -1127,8 +1198,23 @@ export function mount(root, ctx) {
     }
 
     // ---- portfolio and news ------------------------------------------------------------------
-    const pfValue = h('p', { class: 'lab-portfolio__value' });
+    // Numbers that change every tick are updated in place, so a screen reader keeps its place (lab-flow-10).
+    const setText = (el, text) => {
+      if (el.textContent === text) return;
+      if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE) el.firstChild.data = text;
+      else el.textContent = text;
+    };
+    // A fresh delta() goes in only when its text or colour changes.
+    const setDelta = (el, pct) => {
+      const next = delta(pct);
+      if (next.textContent === el.textContent && next.className === el.className) return el;
+      el.replaceWith(next);
+      return next;
+    };
     const pfTotal = h('span', { class: 'lab-portfolio__total' }); // kept between ticks so its pulse can finish
+    let pfDelta = h('span');
+    const pfNote = h('span', { class: 'lab-portfolio__note' });
+    const pfValue = h('p', { class: 'lab-portfolio__value' }, [pfTotal, pfDelta, pfNote]);
     let totalMark = null;
     const pfRows = h('ul', { class: 'lab-portfolio__rows' });
     const allocInfo = explainer('alloc-info');
@@ -1141,67 +1227,95 @@ export function mount(root, ctx) {
       pfRows,
     ]);
 
+    // The rows are rebuilt only when the set of coins held changes; each tick updates their numbers.
+    let pfKey = null;
+    let pfLive = [];
+
+    function buildPortfolioRows(st, held) {
+      const cash = { value: h('span', { class: 'pf-row__value' }), share: h('span', { class: 'pf-row__share' }), seg: h('span', { class: 'alloc__seg alloc__seg--cash' }) };
+      pfLive = [cash];
+      const items = [
+        h('li', { class: 'pf-row' }, [
+          h('span', { class: 'coin-badge coin-badge--cash', 'aria-hidden': 'true', text: 'L$' }),
+          h('span', { class: 'pf-row__name', text: 'Cash' }),
+          cash.value,
+          cash.share,
+        ]),
+      ];
+      for (const id of held) {
+        const c = st.coins[id];
+        const row = {
+          id,
+          coins: h('span', { class: 'pf-row__coins' }),
+          plText: document.createTextNode(''),
+          plDelta: h('span'),
+          value: h('span', { class: 'pf-row__value' }),
+          share: h('span', { class: 'pf-row__share' }),
+          seg: h('span', { class: `alloc__seg coin--${config.COIN_COLORS[c.colorId] || 'mint'}` }),
+        };
+        row.pl = h('span', { class: 'pf-row__pl', hidden: true }, [row.plText, row.plDelta]);
+        pfLive.push(row);
+        items.push(
+          h('li', { class: 'pf-row' }, [
+            badge(c),
+            h('span', { class: 'pf-row__name' }, [h('span', { class: 'pf-row__ticker', text: c.ticker }), row.coins, row.pl]),
+            row.value,
+            row.share,
+          ]),
+        );
+      }
+      if (!held.length) items.push(h('li', { class: 'pf-empty', text: 'No coins yet. Pick a coin, choose an amount and tap Buy.' }));
+      pfRows.replaceChildren(...items);
+      allocBar.replaceChildren(...pfLive.map((r) => r.seg));
+    }
+
     function renderPortfolio(st) {
       const p = st.portfolio;
-      pfTotal.textContent = money(p.value);
+      setText(pfTotal, money(p.value));
       if (totalMark == null) totalMark = p.value;
       else if (Math.abs(p.value / totalMark - 1) >= 0.01) {
         pulse(pfTotal, p.value > totalMark);
         totalMark = p.value;
       }
-      pfValue.replaceChildren(
-        pfTotal,
-        delta((p.value / p.startValue - 1) * 100),
-        h('span', { class: 'lab-portfolio__note', text: `Started with ${money(p.startValue)} · profit or loss ${signedMoney(p.value - p.startValue)}` }),
-      );
+      pfDelta = setDelta(pfDelta, (p.value / p.startValue - 1) * 100);
+      setText(pfNote, `Started with ${money(p.startValue)} · profit or loss ${signedMoney(p.value - p.startValue)}`);
+      const held = Object.keys(p.holdings).filter((id) => st.coins[id]);
+      if (held.join('|') !== pfKey) {
+        pfKey = held.join('|');
+        buildPortfolioRows(st, held);
+      }
       const basis = costBasis(p.trades);
-      const segments = [h('span', { class: 'alloc__seg alloc__seg--cash' })];
-      segments[0].style.flexGrow = String(p.cash);
-      const items = [
-        h('li', { class: 'pf-row' }, [
-          h('span', { class: 'coin-badge coin-badge--cash', 'aria-hidden': 'true', text: 'L$' }),
-          h('span', { class: 'pf-row__name', text: 'Cash' }),
-          h('span', { class: 'pf-row__value', text: money(p.cash) }),
-          h('span', { class: 'pf-row__share', text: `${number((p.cash / p.value) * 100, 0)}%` }),
-        ]),
-      ];
-      for (const [id, coins] of Object.entries(p.holdings)) {
-        const c = st.coins[id];
-        if (!c) continue;
-        const value = coins * c.price;
-        const cost = basis[id]?.cost ?? 0;
-        const seg = h('span', { class: `alloc__seg coin--${config.COIN_COLORS[c.colorId] || 'mint'}` });
-        seg.style.flexGrow = String(value);
-        segments.push(seg);
-        items.push(
-          h('li', { class: 'pf-row' }, [
-            badge(c),
-            h('span', { class: 'pf-row__name' }, [
-              h('span', { class: 'pf-row__ticker', text: c.ticker }),
-              h('span', { class: 'pf-row__coins', text: `${coinAmount(coins)} coins` }),
-              cost > 0
-                ? h('span', { class: 'pf-row__pl' }, [`${signedMoney(value - cost)} `, delta((value / cost - 1) * 100)])
-                : null,
-            ]),
-            h('span', { class: 'pf-row__value', text: money(value) }),
-            h('span', { class: 'pf-row__share', text: `${number((value / p.value) * 100, 0)}%` }),
-          ]),
-        );
+      const [cash, ...coinRows] = pfLive;
+      setText(cash.value, money(p.cash));
+      setText(cash.share, `${number((p.cash / p.value) * 100, 0)}%`);
+      cash.seg.style.flexGrow = String(p.cash);
+      for (const row of coinRows) {
+        const coins = p.holdings[row.id];
+        const value = coins * st.coins[row.id].price;
+        const cost = basis[row.id]?.cost ?? 0;
+        setText(row.coins, `${coinAmount(coins)} coins`);
+        setText(row.value, money(value));
+        setText(row.share, `${number((value / p.value) * 100, 0)}%`);
+        row.seg.style.flexGrow = String(value);
+        row.pl.hidden = !(cost > 0);
+        if (cost > 0) {
+          const pl = `${signedMoney(value - cost)} `;
+          if (row.plText.data !== pl) row.plText.data = pl;
+          row.plDelta = setDelta(row.plDelta, (value / cost - 1) * 100);
+        }
       }
-      if (items.length === 1) {
-        items.push(h('li', { class: 'pf-empty', text: 'No coins yet. Pick a coin, choose an amount and tap Buy.' }));
-      }
-      pfRows.replaceChildren(...items);
-      allocBar.replaceChildren(...segments);
     }
 
     // ---- your coin: the entry to Create, then the launch outcome explained --------------------
     const mineBody = h('div', { class: 'lab-mine__body' });
-    // The contract sits outside mineBody, which redraws every tick, so an open <details> stays open.
+    // The contract sits outside mineBody, which changes every tick, so an open <details> stays open.
     const contractBox = h('div', { class: 'lab-contract' });
     const mineCard = h('div', { class: 'card lab-mine' }, [h('h2', { class: 'lab-card__title', text: 'Your coin' }), mineBody, contractBox]);
     let mineMode = null;
     let contractFor = null;
+    // The live card is built once per coin; each tick only changes its numbers and stage text, so a screen
+    // reader keeps its place. The notes list is rebuilt only when its text changes (the copycat line, say).
+    let mineLive = null;
 
     function renderMine(st) {
       const coin = Object.values(st.coins).find((c) => c.user);
@@ -1216,6 +1330,7 @@ export function mount(root, ctx) {
         });
       }
       mineMode = mode;
+      if (mode !== 'live') mineLive = null;
       if (mode === 'wait') {
         mineBody.replaceChildren(h('p', { class: 'lab-mine__text', text: 'After Penny’s first news, you can launch your own coin here and watch how buyers react.' }));
         return;
@@ -1238,9 +1353,15 @@ export function mount(root, ctx) {
         const teamVestDays = number(data.scenario.userCoin.teamVestTicks / st.ticksPerDay, 1);
         contractBox.replaceChildren(contractView(coin, { fee: data.coinsConfig.fee, teamVestDays }));
       }
-      const stage = coin.phase === 'curve'
-        ? `On its bonding curve: ${Math.round(coin.curveProgress * 100)}% of the way to a real pool`
-        : `Moved from its bonding curve to a real pool on Day ${day(coin.graduatedAt)}`;
+      // Explorers get plain words for the bonding curve (C2); Traders and Builders keep the real terms.
+      const grown = Math.round(coin.curveProgress * 100);
+      const stage = tierInfo.rank === 0
+        ? coin.phase === 'curve'
+          ? `A brand-new coin: its price rises as people buy. ${grown}% of the way to its own trading pool.`
+          : `Has its own trading pool since Day ${day(coin.graduatedAt)}`
+        : coin.phase === 'curve'
+          ? `On its bonding curve: ${grown}% of the way to a real pool`
+          : `Moved from its bonding curve to a real pool on Day ${day(coin.graduatedAt)}`;
       const notes = designNotes({ ...L, bigInsiders: L.factors.some((f) => f.id === 'big_insider_share') }, tier);
       const copy = Object.values(st.coins).find((c) => c.class === 'copycat');
       if (copy) {
@@ -1251,21 +1372,37 @@ export function mount(root, ctx) {
             : `A copycat, ${copy.ticker}, is pretending to be your coin.`,
         });
       }
-      mineBody.replaceChildren(
-        h('div', { class: 'lab-mine__head' }, [
-          badge(coin),
-          h('div', { class: 'lab-mine__label' }, [
-            h('p', { class: 'lab-mine__name', text: `${coin.name} (${coin.ticker})` }),
-            h('p', { class: 'lab-mine__stage', text: stage }),
+      if (mineLive?.id !== coin.id) {
+        mineLive = {
+          id: coin.id,
+          stage: h('p', { class: 'lab-mine__stage' }),
+          value: h('span', { class: 'lab-mine__value' }),
+          change: h('span'),
+          since: h('span', { class: 'lab-mine__since' }),
+          notes: h('ul'),
+          notesKey: null,
+        };
+        mineBody.replaceChildren(
+          h('div', { class: 'lab-mine__head' }, [
+            badge(coin),
+            h('div', { class: 'lab-mine__label' }, [h('p', { class: 'lab-mine__name', text: `${coin.name} (${coin.ticker})` }), mineLive.stage]),
           ]),
-        ]),
-        h('p', { class: 'lab-mine__price' }, [
-          h('span', { class: 'lab-mine__value', text: price(coin.price) }),
-          delta((coin.price / L.price0 - 1) * 100),
-          h('span', { class: 'lab-mine__since', text: `since launch on Day ${day(L.t)} · ${coin.holders} holders` }),
-        ]),
-        notesList(notes),
-      );
+          h('p', { class: 'lab-mine__price' }, [mineLive.value, mineLive.change, mineLive.since]),
+          mineLive.notes,
+        );
+      }
+      const m = mineLive;
+      setText(m.stage, stage);
+      setText(m.value, price(coin.price));
+      m.change = setDelta(m.change, (coin.price / L.price0 - 1) * 100);
+      setText(m.since, `since launch on Day ${day(L.t)} · ${coin.holders} holders`);
+      const notesKey = notes.map((n) => `${n.tone}:${n.text}`).join('|');
+      if (notesKey !== m.notesKey) {
+        const list = notesList(notes);
+        m.notes.replaceWith(list);
+        m.notes = list;
+        m.notesKey = notesKey;
+      }
     }
 
     // ---- Advanced (desktop): who is trading the selected coin over the last sim day -----------
@@ -1341,10 +1478,11 @@ export function mount(root, ctx) {
       modeButtons[1].setAttribute('aria-pressed', String(market.advanced));
     }
 
-    // The wash-volume lesson plays once, the first time a Builder sees the overlay (BRIEF §5 events).
+    // The wash-volume lesson plays once, the first time a Builder sees the overlay (BRIEF §5 events). It waits
+    // while the Volume tool is off, since the overlay is drawn only with it.
     function maybeWashLesson(st) {
       const c = st.coins[market.selected];
-      if (market.washSeen || market.closed || dialog.open || !advancedOn() || tier !== 'builder' || !(c.totalWashVolume > 0)) return;
+      if (market.washSeen || market.closed || dialog.open || !advancedOn() || !toolOn(TOOLS[0]) || tier !== 'builder' || !(c.totalWashVolume > 0)) return;
       market.washSeen = true;
       const e = { id: 'wash_volume', coinId: c.id, t: st.t };
       market.news.push(e);
@@ -1383,8 +1521,14 @@ export function mount(root, ctx) {
     dialog.addEventListener('close', () => {
       audio.stop();
       pauses.delete('event');
-      // Closing the end-of-market panel (Esc) leaves the same panel in the page, never a frozen market.
-      if (market.closed) view.replaceChildren(h('div', { class: 'screen' }, [head, closedPanel(session.getState())]));
+      if (!alive) return;
+      // Closing the end-of-market panel (Esc) leaves the same panel in the page, never a frozen market. The
+      // Basic / Advanced toggle has nothing left to switch there, and focus moves to the report card button.
+      if (market.closed) {
+        modeToggle.remove();
+        view.replaceChildren(h('div', { class: 'screen' }, [head, closedPanel(session.getState())]));
+        focusOn(view.querySelector('.result__actions .btn'));
+      } else if (queuedEvents.length) openEvent(queuedEvents.shift());
       else renderClock(session.getState());
     });
 
@@ -1394,10 +1538,20 @@ export function mount(root, ctx) {
       return fromFile?.headline && fromFile?.narration ? fromFile : FALLBACK_EVENTS[id] || { headline: 'Something happened in the market', narration: '' };
     }
 
+    // Two events can fire in the same tick (the copycat is timed from the launch), so a second one waits for
+    // the first dialog to close, and each gets its own narration and question.
+    const queuedEvents = [];
+
     function openEvent(e) {
+      if (dialog.open) {
+        queuedEvents.push(e);
+        renderNews();
+        return;
+      }
       pauses.add('event');
       const copy = eventCopy(e.id);
-      const negative = Boolean(scenario.events.find((x) => x.id === e.id)?.negative);
+      // The engine says whether the news is bad (the copycat events are made at run time, not in scenario.json).
+      const negative = e.negative ?? Boolean(scenario.events.find((x) => x.id === e.id)?.negative);
       const day = Math.floor(e.t / scenario.ticksPerDay) + 1;
       announce(`News: ${copy.headline}`);
       renderNews();
@@ -1481,22 +1635,23 @@ export function mount(root, ctx) {
     });
 
     // ---- layout and the clock ----------------------------------------------------------------
+    // Two column wrappers. From 1024 px each one stacks its cards on its own, so a tall card never leaves a gap
+    // beside it, and news follows the chart. On phones they let their cards join the one-column grid (display:
+    // contents), and news sits after Your coin there, so the reading order matches what is on screen.
+    const mainCol = h('div', { class: 'lab-col lab-col--main' }, [chartCard]);
+    const sideCol = h('div', { class: 'lab-col lab-col--side' }, [tradeCard, portfolioCard, mineCard, chainCard]);
+    const placeColumns = () => (wide.matches ? mainCol.append(newsCard, flowCard) : chainCard.before(newsCard, flowCard));
+    placeColumns();
     view.replaceChildren(
-      h('div', { class: 'lab' }, [
-        h('div', { class: 'lab-top' }, [head, clock]),
-        coinsCard,
-        chartCard,
-        tradeCard,
-        portfolioCard,
-        mineCard,
-        newsCard,
-        flowCard,
-        chainCard,
-      ]),
+      h('div', { class: 'lab' }, [h('div', { class: 'lab-top' }, [head, clock]), coinsCard, mainCol, sideCol]),
       dialog,
     );
     head.append(modeToggle);
-    const onWide = () => render();
+    if (keepFocus) focusOn(head.querySelector('h1')); // before the Coach offer, which takes focus from here
+    const onWide = () => {
+      placeColumns();
+      render();
+    };
     wide.addEventListener('change', onWide);
     cleanup.push(() => wide.removeEventListener('change', onWide));
 
