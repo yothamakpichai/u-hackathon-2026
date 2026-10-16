@@ -5,6 +5,9 @@ import { dataUri } from '../../../js/avatar.js';
 import { project } from '../sim/future.js';
 import { dayOf, logAction } from '../progress.js';
 import { animate, getJSON, h, icon, number, reducedMotion, stateView } from '../ui.js';
+import { ensurePennyStyles } from '../penny-voice.js';
+
+ensurePennyStyles();
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const DEFAULT_CHARACTER = { skin: 'tone3', hairStyle: 'short', hairColor: 'darkbrown', outfit: 'tee', glasses: 'none' };
@@ -395,9 +398,28 @@ export function mount(root, ctx) {
     const summary = h('div', { class: 'future-summary', 'aria-live': 'polite', tabindex: '-1' });
     const chartBox = h('div', { class: 'future-chart' });
     const table = h('details', { class: 'future-table' });
+    // Talk to Future You (BRIEF §17): Penny speaks as you at the goal age, from this projection's numbers only.
+    let talkWith = null;
+    const talkBtn = h('button', { class: 'btn btn--primary', type: 'button', disabled: true, onClick: () => {
+      if (!talkWith) return;
+      const { input, r } = talkWith;
+      const voice = store.get().profile?.futureVoice;
+      const context = {
+        age: input.age, goalAge: input.goalAge, monthlySaving: input.monthlySaving, startBalance: input.startBalance,
+        inflation: input.inflation, fx: input.fx, shock: input.shock || undefined, shockInYears: input.shock ? input.shockInYears : undefined,
+        p10: Math.round(r.goal.p10), p50: Math.round(r.goal.p50), p90: Math.round(r.goal.p90),
+        contributed: Math.round(r.contributed), paths: r.paths,
+        futureVoice: ['female', 'male', 'neutral'].includes(voice) ? voice : 'neutral',
+      };
+      dispatchEvent(new CustomEvent('penny:open', { detail: { mode: 'future', context } }));
+    } }, 'Talk to Future You');
+    const talk = h('div', { class: 'future-talk' }, [
+      talkBtn,
+      h('p', { class: 'field__hint', text: 'An AI role-play of you at your goal age, using only these numbers. Never share your name, school or address.' }),
+    ]);
     const out = h('div', { class: 'card future-out' }, [
       h('p', { class: 'future-label' }, [icon('alert', { size: 18 }), data.label]),
-      avatars, summary, chartBox, table,
+      avatars, summary, talk, chartBox, table,
     ]);
     // On phones the result sits below a long form: this bar stays in view at the top and jumps to it.
     const peek = h('button', { class: 'btn btn--primary future-peek', type: 'button', onClick: () => {
@@ -407,6 +429,7 @@ export function mount(root, ctx) {
     const why = h('details', { class: 'card card--quiet future-why' }, [
       h('summary', { text: 'ⓘ Why this works' }),
       h('p', { text: 'In experiments, people who saw an aged picture of themselves chose to put more money aside for later (Hershfield and others, 2011). Showing amounts in today’s baht makes them easy to compare with prices now.' }),
+      h('p', { text: 'In a study, a conversation with an AI-generated future self increased future self-continuity and reduced anxiety and negative emotions (Pataranutaporn and others, 2024). That is why you can talk to your Future You here.' }),
       h('p', { class: 'field__hint' }, ['Returns, volatility and exchange-rate numbers are Penny team assumptions, not sourced facts, and a few historical numbers are still being checked. ', h('a', { href: '#/research', text: 'See the research and sources' }), '.']),
     ]);
 
@@ -453,6 +476,8 @@ export function mount(root, ctx) {
         const [r, calm] = results;
         renderAvatars(age, goalAge);
         const empty = !(r.goal.p90 >= 1);
+        talkWith = empty ? null : { input, r };
+        talkBtn.disabled = empty;
         renderSummary(r, { spending, life, calm, empty });
         renderChart(empty ? null : r, goalAge);
         table.hidden = empty;
