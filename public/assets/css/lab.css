@@ -587,6 +587,24 @@
   color: var(--gain-700);
 }
 
+/* An order that didn't go as planned: a stop-loss far below its level, or no fill. */
+.trade__done--warn {
+  background: var(--warning-50);
+  color: var(--warning-700);
+}
+
+/* Buttons that can't be used yet look it (contract C8). The submit is aria-disabled rather than
+   disabled, so it keeps focus and a tap says what is missing. */
+.lab-trade .btn:disabled,
+.lab-trade .btn[aria-disabled="true"] {
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--ink-500);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* ---- portfolio ------------------------------------------------------------------------------ */
 
 .lab-portfolio__value {
@@ -2530,6 +2548,15 @@
   gap: var(--sp-2);
 }
 
+/* Market has no ⓘ, so the control spans the row and lines up with Buy / Sell below it. */
+.trade__order-type:has(> .trade__order-info:empty) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.trade__order-info:empty {
+  display: none;
+}
+
 .trade__order-type .segmented__btn {
   padding-inline: var(--sp-1);
   white-space: nowrap;
@@ -2679,7 +2706,24 @@
   padding: var(--sp-2) var(--sp-3);
   font-family: var(--font-head);
   font-weight: 800;
+  list-style: none;
   cursor: pointer;
+}
+
+.depth__summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The chevron shows the box opens; it turns down when open. */
+.depth__chev {
+  flex: none;
+  margin-left: auto;
+  color: var(--ink-500);
+  transition: transform var(--dur-1) var(--ease-out);
+}
+
+.depth[open] > .depth__summary .depth__chev {
+  transform: rotate(90deg);
 }
 
 .depth__body {

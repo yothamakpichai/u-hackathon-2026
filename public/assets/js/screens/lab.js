@@ -286,10 +286,13 @@ export function mount(root, ctx) {
   function closedPanel(final) {
     const p = final.portfolio;
     const change = (p.value / p.startValue - 1) * 100;
+    // Open orders lapse at the close (J9), and the player is told.
+    const lapsed = (p.orders || []).filter((o) => o.status === 'expired').length;
+    const ordersNote = !lapsed ? '' : lapsed === 1 ? ' Your open order ended when the market closed.' : ` Your ${lapsed} open orders ended when the market closed.`;
     return resultPanel({
       mood: 'celebrating',
       title: 'The market has closed',
-      text: `You finished with ${money(p.value)}, ${signedPct(change)} from your ${money(p.startValue)} start. Your report card scores how wisely you traded, not just the money.`,
+      text: `You finished with ${money(p.value)}, ${signedPct(change)} from your ${money(p.startValue)} start.${ordersNote} Your report card scores how wisely you traded, not just the money.`,
       actions: [reportButton(), replayButton()],
     });
   }
@@ -423,6 +426,7 @@ export function mount(root, ctx) {
       market.selected = id;
       tradeInput.value = '';
       delete tradeInput.dataset.exact;
+      triggerInput.value = ''; // a price typed for one coin means nothing for another
       clearMessages();
       render();
     }
@@ -683,23 +687,34 @@ export function mount(root, ctx) {
     const orderTypeRow = ordersOn
       ? h('div', { class: 'trade__order-type' }, [h('div', { class: 'segmented', role: 'group', 'aria-label': 'Order type' }, orderTypeBtns), orderInfoBtn])
       : null;
-    const triggerInput = h('input', { id: 'trade-trigger', class: 'trade__input', type: 'text', inputmode: 'decimal', autocomplete: 'off', placeholder: '0' });
+    const triggerInput = h('input', { id: 'trade-trigger', class: 'trade__input', type: 'text', inputmode: 'decimal', autocomplete: 'off', placeholder: '0', 'aria-describedby': 'trade-preview' });
     const triggerLabel = h('label', { class: 'trade__label', for: 'trade-trigger' });
     const triggerField = h('div', { class: 'trade__trigger', hidden: true }, [triggerLabel, h('div', { class: 'trade__field' }, [triggerInput, h('span', { class: 'trade__unit', 'aria-hidden': 'true', text: 'L$' })])]);
     triggerInput.addEventListener('input', () => {
       clearMessages();
       renderTrade(session.getState());
+      sayProblemSoon();
     });
     const ordersList = h('div', { class: 'trade__orders' });
 
     function setOrderInfo(id) {
       orderInfo.el.hidden = true;
       orderInfo.owners.length = 0;
-      orderInfoBtn.replaceChildren(id === 'market' ? '' : infoButton(id === 'limit' ? 'limit orders' : 'stop-loss orders', INFO[id === 'limit' ? 'limit' : 'stop'], orderInfo));
+      orderInfoBtn.replaceChildren(...(id === 'market' ? [] : [infoButton(id === 'limit' ? 'limit orders' : 'stop-loss orders', INFO[id === 'limit' ? 'limit' : 'stop'], orderInfo)]));
     }
     function setOrderType(id) {
+      const side = market.side;
+      // A stop-loss always sells; leaving it brings back the side you had before.
+      if (id === 'stop') {
+        market.sideBeforeStop ??= market.side;
+        market.side = 'sell';
+      } else if (market.sideBeforeStop) {
+        market.side = market.sideBeforeStop;
+        market.sideBeforeStop = null;
+      }
       market.orderType = id;
-      if (id === 'stop') market.side = 'sell';
+      // The amount means L$ to spend on Buy and coins on Sell, so a new side starts empty.
+      if (market.side !== side) clearAmount();
       triggerInput.value = '';
       clearMessages();
       setOrderInfo(id);
@@ -723,8 +738,15 @@ export function mount(root, ctx) {
     );
     const preview = h('p', { class: 'trade__preview', id: 'trade-preview' });
     const errorEl = h('p', { class: 'trade__error', role: 'alert', hidden: true });
-    const doneEl = h('p', { class: 'trade__done', role: 'status', hidden: true });
-    const submit = h('button', { class: 'btn btn--primary btn--block', type: 'submit' });
+    const doneEl = h('p', { class: 'trade__done', hidden: true }); // read out through announce()
+    // The button is aria-disabled, not disabled, while it can't be used: it keeps keyboard focus
+    // after a trade, and a tap says what is missing instead of doing nothing.
+    const submit = h('button', { class: 'btn btn--primary btn--block', type: 'submit', 'aria-describedby': 'trade-preview' });
+    let whyNot = '';
+    function setReady(ok, why) {
+      whyNot = ok ? '' : why || preview.textContent;
+      submit.setAttribute('aria-disabled', String(!ok));
+    }
     const tradeTitle = h('h2', { class: 'lab-card__title' });
     const sideGroup = h('div', { class: 'segmented', role: 'group', 'aria-label': 'Buy or sell' }, sideButtons);
     const form = h('form', { class: 'trade', novalidate: true, onSubmit: trade }, [
@@ -753,7 +775,7 @@ export function mount(root, ctx) {
     const depthText = h('p', { class: 'depth__text' });
     const depthBox = ordersOn
       ? h('details', { class: 'depth', onToggle: () => renderDepth(session.getState()) }, [
-        h('summary', { class: 'depth__summary', text: 'How deep is the pool?' }),
+        h('summary', { class: 'depth__summary' }, ['How deep is the pool?', icon('chevron-right', { size: 20, className: 'depth__chev' })]),
         h('div', { class: 'depth__body' }, [
           h('div', { class: 'depth__head' }, [
             h('p', { class: 'depth__lead', text: 'Money it takes to push the price' }),
@@ -779,6 +801,7 @@ export function mount(root, ctx) {
       delete tradeInput.dataset.exact;
       clearMessages();
       renderTrade(session.getState());
+      sayProblemSoon();
     });
 
     function clearMessages() {
@@ -786,10 +809,44 @@ export function mount(root, ctx) {
       doneEl.hidden = true;
     }
 
-    function setSide(side) {
-      market.side = side;
+    function clearAmount() {
       tradeInput.value = '';
       delete tradeInput.dataset.exact;
+    }
+
+    // The result of an action: shown under the button and read out once. warn is for orders that
+    // didn't go as planned (a stop-loss far below its level, or no fill at all).
+    function notify(text, { warn = false, say = text } = {}) {
+      errorEl.hidden = true;
+      doneEl.textContent = text;
+      doneEl.classList.toggle('trade__done--warn', warn);
+      doneEl.hidden = false;
+      if (say) announce(say);
+    }
+
+    function showError(text) {
+      errorEl.textContent = text;
+      errorEl.hidden = false;
+      doneEl.hidden = true;
+    }
+
+    // A problem in the preview is read out once typing pauses. The preview itself is not a live
+    // region, because it is rewritten on every tick.
+    let problemTimer = 0;
+    let lastProblem = '';
+    function sayProblemSoon() {
+      clearTimeout(problemTimer);
+      problemTimer = setTimeout(() => {
+        const text = preview.classList.contains('is-problem') ? preview.textContent : '';
+        if (text && text !== lastProblem) announce(text);
+        lastProblem = text;
+      }, 500);
+    }
+    cleanup.push(() => clearTimeout(problemTimer));
+
+    function setSide(side) {
+      market.side = side;
+      clearAmount();
       clearMessages();
       renderTrade(session.getState());
     }
@@ -838,13 +895,23 @@ export function mount(root, ctx) {
       if (mode !== 'market') return renderOrderPreview(st, c, mode, held);
 
       const amt = amount();
+      const cash = st.portfolio.cash;
       let ok = false;
+      let why = '';
       if (amt == null) {
-        preview.textContent = buying
-          ? `You have ${money(st.portfolio.cash)} to spend.`
-          : held > 0
-            ? `You own ${coinAmount(held)} ${c.ticker}, worth about ${money(held * c.price)}.`
-            : `You don’t own any ${c.ticker} yet. Switch to Buy first.`;
+        if (buying && c.rugged) {
+          preview.textContent = session.quote(c.id, 'buy', 1).error?.message;
+        } else if (buying && cash >= 0.01) {
+          preview.textContent = `You have ${money(cash)}. Type how many L$ to spend, or tap 25%, 50% or Max.`;
+          why = 'Type how many L$ to spend first.';
+        } else if (buying) {
+          preview.textContent = 'You’ve spent all your L$. Sell a coin to get cash back.';
+        } else if (held > 0) {
+          preview.textContent = `You own ${coinAmount(held)} ${c.ticker}, worth about ${money(held * c.price)}.`;
+          why = `Type how many ${c.ticker} to sell first.`;
+        } else {
+          preview.textContent = `You don’t own any ${c.ticker}.${c.rugged ? '' : ' Switch to Buy to get some.'}`;
+        }
       } else {
         const q = session.quote(c.id, market.side, amt);
         if (!q.ok) {
@@ -857,48 +924,32 @@ export function mount(root, ctx) {
             : `Selling ${coinAmount(q.filledCoins)} ${c.ticker} ${moves}. You get about ${money(q.filledL$)}.`;
         }
       }
-      preview.classList.toggle('is-problem', amt != null && !ok);
-      submit.disabled = !ok;
-      for (const b of quick) b.disabled = buying ? !(st.portfolio.cash > 0.01) : !(held > 0);
+      preview.classList.toggle('is-problem', (amt != null || (buying && c.rugged)) && !ok);
+      setReady(ok, why);
+      for (const b of quick) b.disabled = buying ? !(cash > 0.01) || c.rugged : !(held > 0);
     }
 
     function trade(event) {
       event.preventDefault();
+      if (whyNot) return showError(whyNot);
       const amt = amount();
       if (amt == null) return;
       const c = session.getState().coins[market.selected];
       if (ordersOn && market.orderType !== 'market') {
         const type = market.orderType === 'stop' ? 'stop-loss' : market.side === 'buy' ? 'limit-buy' : 'limit-sell';
         const r = session.placeOrder({ coinId: c.id, type, price: triggerPrice(), amount: amt });
-        if (!r.ok) {
-          errorEl.textContent = r.error.message;
-          errorEl.hidden = false;
-          doneEl.hidden = true;
-          return;
-        }
-        tradeInput.value = '';
+        if (!r.ok) return showError(r.error.message);
+        clearAmount();
         triggerInput.value = '';
-        delete tradeInput.dataset.exact;
-        errorEl.hidden = true;
-        doneEl.textContent = 'Order placed. It runs by itself while the market is open.';
-        doneEl.hidden = false;
+        notify('Order placed. It runs by itself while the market is open.');
         render();
         return;
       }
       const r = session.swap(c.id, market.side, amt);
-      if (!r.ok) {
-        errorEl.textContent = r.error.message;
-        errorEl.hidden = false;
-        doneEl.hidden = true;
-        return;
-      }
+      if (!r.ok) return showError(r.error.message);
       const verb = market.side === 'buy' ? 'Bought' : 'Sold';
-      const message = `${verb} ${coinAmount(r.filledCoins)} ${c.ticker} for ${money(r.filledL$)}.`;
-      tradeInput.value = '';
-      delete tradeInput.dataset.exact;
-      errorEl.hidden = true;
-      doneEl.textContent = message;
-      doneEl.hidden = false;
+      clearAmount();
+      notify(`${verb} ${coinAmount(r.filledCoins)} ${c.ticker} for ${money(r.filledL$)}.`);
       animate(doneEl, [{ opacity: 0 }, { opacity: 1 }], { duration: 180 });
       render();
     }
@@ -916,8 +967,14 @@ export function mount(root, ctx) {
       submit.replaceChildren(mode === 'stop' ? `Place stop-loss on ${c.ticker}` : `Place limit ${buying ? 'buy' : 'sell'}`);
       let ok = false;
       let text;
-      if (amt == null || trig == null) {
+      let why = '';
+      if (buying && c.rugged) {
+        text = session.quote(c.id, 'buy', 1).error?.message; // the same words as Market Buy
+      } else if (!buying && !(held > 0)) {
+        text = `You don’t own any ${c.ticker}, so there’s nothing to ${mode === 'stop' ? 'protect' : 'sell'}.${c.rugged ? '' : ' Buy some first.'}`;
+      } else if (amt == null || trig == null) {
         text = `${c.ticker} is ${price(c.price)} now. Choose an amount and a price.`;
+        why = 'Type an amount and a price first.';
       } else if (!(amt > 0) || !(trig > 0) || !Number.isFinite(amt) || !Number.isFinite(trig)) {
         text = 'Enter an amount and a price bigger than zero.';
       } else if ((mode === 'stop' || buying) && trig >= c.price) {
@@ -927,19 +984,48 @@ export function mount(root, ctx) {
       } else if (!buying && amt > held * (1 + 1e-9)) {
         text = `You own ${coinAmount(held)} ${c.ticker}. Try a smaller amount.`;
       } else if (buying && amt > st.portfolio.cash + 1e-9) {
-        text = `You have ${money(st.portfolio.cash)} to spend. Try a smaller amount.`;
+        text = st.portfolio.cash >= 0.005 ? `You have ${money(st.portfolio.cash)} to spend. Try a smaller amount.` : 'You’ve spent all your L$. Sell a coin to get cash back.';
       } else {
         ok = true;
         text = mode === 'stop'
-          ? `If ${c.ticker} falls to ${price(trig)} (now ${price(c.price)}), sell ${coinAmount(amt)} to stop the loss growing. In a fast drop it can sell lower.`
+          ? `If ${c.ticker} falls to ${price(trig)} (now ${price(c.price)}), sell ${coinAmount(amt)} ${c.ticker} to stop the loss growing. In a fast drop it can sell lower.`
           : buying
             ? `If ${c.ticker} falls to ${price(trig)} (now ${price(c.price)}), spend ${money(amt)}. If it never gets there, nothing happens.`
-            : `If ${c.ticker} rises to ${price(trig)} (now ${price(c.price)}), sell ${coinAmount(amt)}. If it never gets there, nothing happens.`;
+            : `If ${c.ticker} rises to ${price(trig)} (now ${price(c.price)}), sell ${coinAmount(amt)} ${c.ticker}. If it never gets there, nothing happens.`;
       }
       preview.textContent = text;
-      preview.classList.toggle('is-problem', amt != null && trig != null && !ok);
-      submit.disabled = !ok;
-      for (const b of quick) b.disabled = buying ? !(st.portfolio.cash > 0.01) : !(held > 0);
+      preview.classList.toggle('is-problem', (buying && c.rugged) || (amt != null && trig != null && !ok));
+      setReady(ok, why);
+      for (const b of quick) b.disabled = buying ? !(st.portfolio.cash > 0.01) || c.rugged : !(held > 0);
+    }
+
+    // Order fills. A stop-loss that sold well below its level (a fast drop) says so, and isn't
+    // shown as a success.
+    const soldLow = (o) => o.status === 'filled' && o.type === 'stop-loss' && o.fill.price < o.price * 0.97;
+    // Why an order couldn't fill, from the engine's error code: a sentence and a short chip.
+    function fillProblem(o, ticker) {
+      if (o.error === 'RUGGED') return { why: `${ticker}’s creator pulled the money out of its pool, so nobody can buy it`, chip: 'rug pulled' };
+      if (o.error === 'NO_LIQUIDITY') return { why: 'its pool didn’t hold enough real money to pay', chip: 'pool too small' };
+      const what = o.type === 'limit-buy' ? 'cash' : 'coins';
+      return { why: `not enough ${what} by then`, chip: `not enough ${what}` };
+    }
+    function fillText(o, st) {
+      const t = st.coins[o.coinId]?.ticker || o.coinId;
+      if (o.status !== 'filled') return `Your order on ${t} couldn’t fill: ${fillProblem(o, t).why}.`;
+      if (soldLow(o)) return `Your stop-loss on ${t} sold at ${price(o.fill.price)}, below your ${price(o.price)} level, because the price fell fast.`;
+      return `Your ${o.type === 'stop-loss' ? 'stop-loss' : 'limit order'} on ${t} filled at ${price(o.fill.price)}.`;
+    }
+    // Every fill of one tick goes into one message, so none is lost.
+    let fills = [];
+    function reportFills() {
+      const batch = fills;
+      fills = [];
+      if (!alive || !batch.length) return;
+      const st = session.getState();
+      const text = batch.map((o) => fillText(o, st)).join(' ');
+      // News from the same tick shares the one announcement, so neither line wipes the other.
+      const news = market.news.filter((e) => e.t === batch[0].filledT).map((e) => `News: ${eventCopy(e.id).headline}.`);
+      notify(text, { warn: batch.some((o) => o.status !== 'filled' || soldLow(o)), say: market.closed ? '' : [...news, text].join(' ') });
     }
 
     let ordersKey = '';
@@ -948,43 +1034,54 @@ export function mount(root, ctx) {
       const key = list.map((o) => `${o.id}:${o.status}`).join('|');
       if (key === ordersKey) return;
       ordersKey = key;
+      // A rebuild keeps keyboard focus in the list: the same order's Cancel, the next one, or the amount field.
+      const was = [...ordersList.querySelectorAll('.trade__order-cancel')];
+      const at = was.indexOf(document.activeElement);
       const open = list.filter((o) => o.status === 'open');
       const recent = list.filter((o) => o.status !== 'open' && o.status !== 'cancelled').slice(-3).reverse();
-      if (!open.length && !recent.length) {
-        ordersList.replaceChildren();
-        return;
-      }
       const label = (o) => {
         const t = st.coins[o.coinId]?.ticker || o.coinId;
         if (o.type === 'limit-buy') return `Buy ${t} with ${money(o.amount)} at ${price(o.price)} or less`;
         if (o.type === 'limit-sell') return `Sell ${coinAmount(o.amount)} ${t} at ${price(o.price)} or more`;
         return `Stop-loss: sell ${coinAmount(o.amount)} ${t} at ${price(o.price)} or less`;
       };
-      ordersList.replaceChildren(
+      const chip = (o) => {
+        if (o.status === 'expired') return h('span', { class: 'chip', text: 'Ended at the close' });
+        if (o.status !== 'filled') return h('span', { class: 'chip chip--warn', text: `Couldn’t fill: ${fillProblem(o).chip}` });
+        if (soldLow(o)) return h('span', { class: 'chip chip--warn', text: `Sold lower, at ${price(o.fill.price)}` });
+        return h('span', { class: 'chip chip--ok', text: `Filled at ${price(o.fill.price)}` });
+      };
+      const cancel = (o) => {
+        session.cancelOrder(o.id);
+        notify('Order cancelled.');
+        render();
+      };
+      ordersList.replaceChildren(...(!open.length && !recent.length ? [] : [
         h('h3', { class: 'trade__orders-title', text: 'Your orders' }),
         h('ul', { class: 'trade__orders-list' }, [
           ...open.map((o) => h('li', { class: 'trade__order' }, [
             h('span', { text: label(o) }),
-            h('button', { class: 'btn btn--sm', type: 'button', onClick: () => { session.cancelOrder(o.id); announce('Order cancelled.'); render(); } }, ['Cancel', h('span', { class: 'visually-hidden', text: `: ${label(o)}` })]),
+            h('button', { class: 'btn btn--sm trade__order-cancel', type: 'button', dataset: { order: o.id }, onClick: () => cancel(o) }, ['Cancel', h('span', { class: 'visually-hidden', text: `: ${label(o)}` })]),
           ])),
-          ...recent.map((o) => h('li', { class: 'trade__order is-done' }, [
-            h('span', { text: label(o) }),
-            o.status === 'filled'
-              ? h('span', { class: 'chip chip--ok', text: `Filled at ${price(o.fill.price)}` })
-              : h('span', { class: o.status === 'expired' ? 'chip' : 'chip chip--warn', text: o.status === 'expired' ? 'Ended at the close' : 'Couldn’t fill' }),
-          ])),
+          ...recent.map((o) => h('li', { class: 'trade__order is-done' }, [h('span', { text: label(o) }), chip(o)])),
         ]),
-      );
+      ]));
+      if (at >= 0) {
+        const btns = [...ordersList.querySelectorAll('.trade__order-cancel')];
+        (btns.find((b) => b.dataset.order === was[at].dataset.order) || btns[Math.min(at, btns.length - 1)] || tradeInput).focus({ preventScroll: true });
+      }
     }
 
     function renderDepth(st) {
       if (!depthBox?.open) return;
       const c = st.coins[market.selected];
       const d = session.depth(c.id, DEPTH_STEPS);
-      if (!d.length) {
+      if (!d.length || c.rugged) {
         depthDown.setAttribute('d', '');
         depthUp.setAttribute('d', '');
-        depthText.textContent = `${c.ticker}’s pool is empty, so it can’t be traded.`;
+        depthText.textContent = c.rugged
+          ? `${c.ticker}’s creator pulled the money out of its pool. Nobody can buy it now, and selling pays almost nothing.`
+          : `${c.ticker}’s pool is empty, so it can’t be traded.`;
         depthSvg.setAttribute('aria-label', depthText.textContent);
         return;
       }
@@ -996,7 +1093,7 @@ export function mount(root, ctx) {
       depthUp.setAttribute('d', area(d.filter((p) => p.pct >= 0)));
       const at = (pct) => d.find((p) => p.pct === pct).L;
       let text = `To push ${c.ticker} up 10% takes about ${money(at(10), 0)} of buying. Down 10%: about ${money(at(-10), 0)} of selling.`;
-      if (at(-30) < 1) text = `To push ${c.ticker} up 10% takes about ${money(at(10), 0)} of buying. It can’t fall lower yet: nobody has paid real money in.`;
+      if (c.phase === 'curve' && at(-30) < 1) text = `To push ${c.ticker} up 10% takes about ${money(at(10), 0)} of buying. It can’t fall lower yet: nobody has paid real money in.`;
       const q = st.portfolio.cash > 1 && !c.user ? session.quote(c.id, 'buy', st.portfolio.cash) : null;
       if (q?.ok) text += ` Spending all your ${money(st.portfolio.cash, 0)} would move it about ${number(q.priceImpactPct, 1)}%.`;
       depthText.textContent = text;
@@ -1416,22 +1513,26 @@ export function mount(root, ctx) {
       pause: () => pauses.add('coach'),
       resume: () => pauses.delete('coach'),
       select: (id) => session.getState().coins[id] && select(id),
+      // The first coached trade needs Market and Buy, whatever the panel was left on (contract C3).
+      prepareTrade: () => {
+        if (ordersOn) setOrderType('market');
+        setSide('buy');
+        select('VAULT');
+      },
       tradesCount: () => session.getState().portfolio.trades.length,
-      canTrade: () => !form.hidden && !submit.disabled,
+      canTrade: () => !form.hidden && !whyNot,
       hasNews: () => market.news.length > 0,
       hasCoin: () => Object.values(session.getState().coins).some((c) => c.user),
       drillConfig: () => ({ ...structuredClone({ coinsConfig: market.data.coinsConfig, agentsConfig: market.data.agentsConfig, scenario: market.data.scenario }), seed: market.seed, tier }),
     };
     cleanup.push(attachCoach(coachEnv));
+    // The engine sends one 'order' event per fill; they are reported together once the tick is done.
     cleanup.push(session.on('order', (o) => {
-      const t = session.getState().coins[o.coinId]?.ticker || o.coinId;
-      const msg = o.status === 'filled'
-        ? `Your ${o.type === 'stop-loss' ? 'stop-loss' : 'limit order'} on ${t} filled at ${price(o.fill.price)}.`
-        : `Your order on ${t} couldn’t fill: not enough ${o.type === 'limit-buy' ? 'cash' : 'coins'} by then.`;
-      announce(msg);
-      doneEl.textContent = msg;
-      doneEl.hidden = false;
+      if (!fills.length) queueMicrotask(reportFills);
+      fills.push(o);
     }));
+    // At the close the list behind the closing panel shows which open orders ended.
+    cleanup.push(session.on('close', (final) => renderOrders(final)));
     // Badge mints go into today's chain while this market is open (BRIEF §15).
     setChainSink((id) => {
       if (market.closed || liveMarket() !== market) return false;

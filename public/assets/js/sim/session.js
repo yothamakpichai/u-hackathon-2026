@@ -18,7 +18,16 @@ export class SimError extends Error {
 
 const fail = (code, message) => ({ ok: false, filledCoins: 0, filledL$: 0, priceImpactPct: 0, error: { code, message } });
 
-const fmt = (n) => (n >= 100 ? n.toFixed(0) : n >= 1 ? n.toFixed(2) : n.toPrecision(3));
+// Numbers in messages are written like the Lab's money() and coinAmount(): L$1,000.00, and coins
+// as 61,223, 498.69 or 0.004120, so a message and the panel next to it show the same holding.
+const formats = new Map();
+function num(n, digits) {
+  if (!formats.has(digits)) formats.set(digits, new Intl.NumberFormat('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits }));
+  return formats.get(digits).format(n);
+}
+const moneyText = (n) => `L$${num(n, 2)}`;
+const coinText = (n) => num(n, n >= 1000 ? 0 : n >= 1 ? 2 : n > 0 ? Math.min(8, 3 - Math.floor(Math.log10(n))) : 0);
+const ruggedText = (c) => `${c.ticker}’s creator pulled the money out of its pool, so it can’t be bought any more. You can still sell what you hold.`;
 
 export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario }) {
   tier = String(tier ?? '').toLowerCase();
@@ -496,22 +505,24 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
       return fail('BAD_AMOUNT', 'Enter an amount bigger than zero.');
     }
     if (side === 'buy') {
-      if (c.rugged) {
-        return fail('RUGGED', `${c.ticker}'s creator pulled the money out of its pool, so it can't be bought any more. You can still sell what you hold.`);
-      }
+      if (c.rugged) return fail('RUGGED', ruggedText(c));
       if (amount < MIN_ORDER_L) return fail('BAD_AMOUNT', 'The smallest trade is L$0.01.');
       if (amount > pf.cash + 1e-9) {
-        return fail('INSUFFICIENT_CASH', `You have L$${pf.cash.toFixed(2)} to spend. Try a smaller amount.`);
+        return fail('INSUFFICIENT_CASH', pf.cash >= 0.005
+          ? `You have ${moneyText(pf.cash)} to spend. Try a smaller amount.`
+          : 'You’ve spent all your L$. Sell a coin to get cash back.');
       }
     } else {
       const held = pf.holdings[coinId] ?? 0;
       if (amount > held * (1 + 1e-9)) {
-        return fail('INSUFFICIENT_COINS', `You have ${fmt(held)} ${c.ticker} to sell. Try a smaller amount.`);
+        return fail('INSUFFICIENT_COINS', held > 0
+          ? `You have ${coinText(held)} ${c.ticker} to sell. Try a smaller amount.`
+          : `You don’t own any ${c.ticker} to sell.`);
       }
       // A bonding curve can only pay out the real L$ it holds; refuse rather than fill for nothing.
       const inEff = Math.min(amount, held) * (1 - c.burnRate) * (1 - c.pool.fee);
       if ((c.pool.x * inEff) / (c.pool.y + inEff) > realL(c.pool)) {
-        return fail('NO_LIQUIDITY', `The ${c.ticker} pool only holds L$${realL(c.pool).toFixed(2)} of real money right now, so it can't pay for that many coins. Try selling fewer.`);
+        return fail('NO_LIQUIDITY', `The ${c.ticker} pool only holds ${moneyText(realL(c.pool))} of real money right now, so it can’t pay for that many coins. Try selling fewer.`);
       }
     }
     return { ok: true, c };
@@ -772,6 +783,8 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     if (!ORDER_TYPES.includes(type)) return { ok: false, error: { code: 'BAD_TYPE', message: 'Choose a limit or stop-loss order.' } };
     if (typeof price !== 'number' || !Number.isFinite(price) || price <= 0) return { ok: false, error: { code: 'BAD_PRICE', message: 'Enter a price bigger than zero.' } };
     if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) return { ok: false, error: { code: 'BAD_AMOUNT', message: 'Enter an amount bigger than zero.' } };
+    // Nobody can buy into a pulled pool, so a limit buy on it could never fill.
+    if (type === 'limit-buy' && c.rugged) return { ok: false, error: { code: 'RUGGED', message: ruggedText(c) } };
     const p = poolPrice(c.pool);
     if (type === 'limit-buy' && price >= p) return { ok: false, error: { code: 'WOULD_FILL_NOW', message: `${c.ticker} is already at or below that price. Use a normal Buy instead.` } };
     if (type === 'limit-sell' && price <= p) return { ok: false, error: { code: 'WOULD_FILL_NOW', message: `${c.ticker} is already at or above that price. Use a normal Sell instead.` } };

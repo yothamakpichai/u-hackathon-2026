@@ -79,6 +79,33 @@ test('open orders lapse when the market closes', () => {
   assert.equal(f.placeOrder({ coinId: 'VAULT', type: 'stop-loss', price: p * 0.5, amount: 1 }).error.code, 'MARKET_CLOSED');
 });
 
+test('after the rug, a limit buy on BLOOP is refused like a normal buy', () => {
+  const s = fresh('builder');
+  const RUG = Math.round((CONFIG.scenario.events.find((e) => e.id === 'rug_pull').at * 1000) / CONFIG.scenario.tickMs);
+  while (s.getState().t <= RUG) s.tick();
+  const p = s.getState().coins.BLOOP.price;
+  const r = s.placeOrder({ coinId: 'BLOOP', type: 'limit-buy', price: p / 2, amount: 10 });
+  assert.equal(r.error?.code, 'RUGGED');
+  assert.equal(r.error.message, s.quote('BLOOP', 'buy', 10).error.message, 'the same words as Market Buy');
+  assert.equal(s.getState().portfolio.orders.length, 0);
+});
+
+test('trade messages write numbers like the Lab: L$1,000.00 and 61,223 coins', () => {
+  const s = fresh();
+  assert.equal(s.quote('VAULT', 'buy', 5000).error.message, 'You have L$1,000.00 to spend. Try a smaller amount.');
+  assert.equal(s.quote('VAULT', 'sell', 1).error.message, 'You don’t own any VAULT to sell.');
+  s.swap('ZOOMZ', 'buy', 500);
+  s.swap('PEG', 'buy', 400);
+  const held = s.getState().portfolio.holdings;
+  const many = s.quote('ZOOMZ', 'sell', held.ZOOMZ * 2).error.message;
+  assert.equal(many, `You have ${Math.round(held.ZOOMZ).toLocaleString('en-US')} ZOOMZ to sell. Try a smaller amount.`);
+  assert.match(many, /^You have \d{1,3}(,\d{3})+ ZOOMZ/);
+  // Under 1,000 coins keep two decimals, so 398.69 PEG is never shown as 399.
+  assert.match(s.quote('PEG', 'sell', held.PEG + 1).error.message, /^You have \d{3}\.\d\d PEG to sell\./);
+  s.swap('VAULT', 'buy', s.getState().portfolio.cash);
+  assert.equal(s.quote('VAULT', 'buy', 5).error.message, 'You’ve spent all your L$. Sell a coin to get cash back.');
+});
+
 test('depth: buying up and selling down both cost more the further you push', () => {
   const s = fresh();
   const d = s.depth('VAULT', [-20, -10, 0, 10, 20]);
