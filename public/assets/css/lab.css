@@ -267,6 +267,7 @@
 .lab-coins { grid-area: coins; }
 .lab-chart { grid-area: chart; }
 .lab-trade { grid-area: trade; }
+.lab-trade__sim { margin: 0 0 var(--sp-2); font-size: var(--fs-xs); color: var(--ink-500); }
 .lab-portfolio { grid-area: portfolio; }
 .lab-mine { grid-area: mine; }
 .lab-news { grid-area: news; }
@@ -553,10 +554,16 @@
 }
 
 @media (min-width: 600px) {
+  /* The price sits right of the name while there is room, and drops below it when there isn't (the narrow chart
+     column at 1024–1279 px, a crashed coin's long price), so it never covers the name or the chips (ML-3). */
   .lab-chart__head {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-areas: "badge label price";
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
   }
+
+  .lab-chart__badge { flex: none; }
+  .lab-chart__label { flex: 1 1 14rem; }
 
   .lab-chart__canvas {
     height: 20rem;
@@ -601,6 +608,7 @@
 .trade__input {
   width: 100%;
   min-width: 0;
+  min-height: 44px; /* the tap target itself, not just its box (brief: 44 px) */
   padding: var(--sp-2) 0;
   border: 0;
   outline: none;
@@ -2125,6 +2133,16 @@
   gap: var(--sp-4);
 }
 
+/* The shock years carry their names ('1997 Asian financial crisis'), so they sit two to a row. */
+.segmented.future-shocks {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.future-shocks .segmented__btn {
+  overflow-wrap: anywhere;
+}
+
 .future-faces {
   display: flex;
   align-items: center;
@@ -2372,7 +2390,8 @@
 .piggy-answer,
 .piggy-entry,
 .piggy-undo,
-.piggy-notice {
+.piggy-notice,
+.piggy-emergency {
   overflow-wrap: anywhere;
 }
 
@@ -2625,6 +2644,17 @@
 
 .farm-milk .btn {
   justify-self: start;
+}
+
+/* The empty farm's two buttons stay together on a wide card, not at its two ends. */
+.farm-actions {
+  justify-content: flex-start;
+}
+
+/* "Why this works" sits inside the farm lesson card, under its text. */
+.farm-lesson .future-why {
+  margin-top: var(--sp-2);
+  padding-block: 0;
 }
 
 /* ---- Orchard (BRIEF §16.1) --------------------------------------------------------------------- */
@@ -3404,8 +3434,7 @@
   font-weight: 800;
 }
 
-.fair-card__change.is-up { color: var(--gain-600); }
-.fair-card__change.is-down { color: var(--loss-600); }
+/* The change inside is ui.js delta(): arrow, sign and colour (components.css .delta). */
 
 .fair-card__actions {
   display: flex;
@@ -3413,7 +3442,7 @@
   gap: var(--sp-2);
 }
 
-/* Can't be used right now (no buyers, or not enough tickets), but keeps focus and says why when pressed. */
+/* Can't be used right now (no buyers, or not enough practice money), but keeps focus and says why when pressed. */
 .fair-card__actions .btn[aria-disabled="true"] {
   opacity: 0.55;
   cursor: not-allowed;
