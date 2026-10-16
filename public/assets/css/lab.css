@@ -3260,6 +3260,12 @@
     border-bottom: 1px solid var(--line-soft);
     background: var(--surface);
   }
+
+  /* Keyboard focus scrolls a card's controls clear of that block, not under it. */
+  .fair-card .btn,
+  .fair-card__name {
+    scroll-margin-top: 14rem;
+  }
 }
 
 .fair__tickets {
