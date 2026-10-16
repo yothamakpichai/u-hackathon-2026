@@ -33,6 +33,7 @@ export function mount(root, ctx) {
       return;
     }
     if (!alive) return;
+    if (snap.pending) return approval(snap.child);
     const c = snap.child;
     const stat = (label, value) => h('li', { class: 'parent__stat' }, [h('span', { text: label }), h('strong', { text: value })]);
     const goals = snap.piggy.goals;
@@ -80,6 +81,40 @@ export function mount(root, ctx) {
       ]),
       resetCard(c.username),
       h('p', { class: 'part__why', text: 'This page shows progress only. It never shows your child’s password or anything they typed to Penny. The link stops working when your child makes a new one or stops sharing.' }),
+    );
+    view.querySelector('h1')?.focus({ preventScroll: true });
+  }
+
+  // An under-13 account waits here until a parent says yes (BRIEF §16, Y14).
+  function approval(c) {
+    const note = h('p', { class: 'part__why', role: 'status' });
+    const decide = async (action) => {
+      try {
+        const r = await post(action, {});
+        if (r.approved) return load();
+        view.replaceChildren(stateView({ kind: 'empty', title: 'Declined', body: 'The waiting account was removed. Your child can keep playing as a guest, with nothing saved to our server.', actions: [h('button', { class: 'btn', type: 'button', onClick: () => navigate('/') }, 'Go to Penny')] }));
+      } catch (err) {
+        note.textContent = err.message;
+      }
+    };
+    view.replaceChildren(
+      h('div', { class: 'screen-head' }, [
+        h('p', { class: 'screen-eyebrow', text: 'Parent approval' }),
+        h('h1', { class: 'screen-title', tabindex: '-1', text: `${c.username} would like a Penny account` }),
+        h('p', { class: 'screen-sub', text: `Age ${c.age}. Accounts for children under 13 switch on only when a parent says yes.` }),
+      ]),
+      h('section', { class: 'card account__card' }, [
+        h('h2', { class: 'report-section__title', text: 'What the account keeps' }),
+        h('ul', { class: 'privacy__list' }, [
+          h('li', { text: 'A username, a scrambled password and the birth year. No email, phone number or real name.' }),
+          h('li', { text: 'Your child’s progress, so it follows them to other devices, including the savings they record in the Piggy Bank. Penny never touches real money.' }),
+          h('li', { text: 'This page stays yours: you can follow along, confirm Piggy Bank entries and set a new password.' }),
+        ]),
+        h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: () => decide('parent_approve') }, 'Approve the account'),
+        h('button', { class: 'btn btn--block', type: 'button', onClick: () => decide('parent_decline') }, 'Decline and remove it'),
+        note,
+      ]),
+      h('p', { class: 'part__why', text: 'Without an account, your child can still play everything as a guest.' }),
     );
     view.querySelector('h1')?.focus({ preventScroll: true });
   }

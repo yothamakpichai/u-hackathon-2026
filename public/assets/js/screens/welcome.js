@@ -57,7 +57,7 @@ export function mount(root, ctx) {
       h('div', { class: 'note__body' }, [
         h('p', { text: `${config.PRODUCT_NAME} is a money companion for kids and grown-ups. Coins, markets and Town coins are simulated; the Piggy Bank only records cash you say you saved, and never touches it. There are no ads, no links to exchanges and no buy prompts.` }),
         h('p', { text: 'Guest play is the default: no sign-up, no personal data and no tracking. The birth year is self-declared, only picks the level, and stays on this device with the rest of the progress.' }),
-        h('p', { text: 'An account is optional: a username, a password and a birth year, never an email for children. It saves progress across devices, opens the Arena, and gives you a private parent link to follow progress, confirm Piggy Bank entries and reset a forgotten password. One login cookie, no analytics.' }),
+        h('p', { text: 'An account is optional: a username, a password and a birth year, never an email for children. It saves progress across devices, opens the Arena, and gives you a private parent link to follow progress, confirm Piggy Bank entries and reset a forgotten password. Accounts for children under 13 switch on only after a parent approves them. One login cookie, no analytics.' }),
       ]),
     ]),
     h('section', { class: 'card card--quiet partners', 'aria-labelledby': 'partners-title' }, [

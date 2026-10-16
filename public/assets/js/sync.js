@@ -26,7 +26,7 @@ export async function call(action, { method = 'GET', data, query = '' } = {}) {
     throw Object.assign(new Error('Could not reach Penny’s server. Check your connection and try again.'), { code: 'NETWORK' });
   }
   const json = await res.json().catch(() => null);
-  if (!res.ok || !json?.ok) throw Object.assign(new Error(json?.error?.message || `Something went wrong (error ${res.status}). Try again in a moment.`), { code: json?.error?.code || 'HTTP' });
+  if (!res.ok || !json?.ok) throw Object.assign(new Error(json?.error?.message || `Something went wrong (error ${res.status}). Try again in a moment.`), { code: json?.error?.code || 'HTTP', body: json });
   return json;
 }
 
@@ -45,8 +45,16 @@ export async function refreshMe() {
   return user;
 }
 
+// Resolves to the signed-in user, or to { pending, token, user } when an under-13 account waits for a parent.
 export async function signIn(mode, data) {
-  const r = await call(mode, { method: 'POST', data });
+  let r;
+  try {
+    r = await call(mode, { method: 'POST', data });
+  } catch (err) {
+    if (err.code === 'NEEDS_PARENT') return { pending: true, token: err.body?.parentToken, user: err.body?.user };
+    throw err;
+  }
+  if (r.pending) return { pending: true, token: r.parentToken, user: r.user };
   user = r.user;
   csrf = r.csrf;
   return user;

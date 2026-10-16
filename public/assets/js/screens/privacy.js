@@ -26,9 +26,10 @@ export function mount(root, ctx) {
       'Your progress is saved to your account so it can follow you to another device. That includes the Piggy Bank amounts you record. Penny never touches real money.',
       'In the Arena, other players see your username, your simulated trades and your place on the leaderboard.',
       'Children never give an email or a phone number. If a password is forgotten, a parent with the parent link can set a new one.',
+      'Accounts for players under 13 stay switched off until a parent approves them through the parent link. Until then the child plays as a guest, and only the username, password hash and birth year wait on our server. A parent who declines removes them.',
     ]),
     section('The parent link', [
-      'You can make a private link for a parent. On their own phone they see your progress, can confirm your Piggy Bank entries (a “verified” seal only) and can set a new password.',
+      'You can make a private link for a parent. On their own phone they can approve an account for a child under 13, see your progress, confirm your Piggy Bank entries (a “verified” seal only) and set a new password.',
       'Anyone with the link can do this, so share it only with a parent. Making a new link, or “Stop sharing”, switches the old one off.',
     ]),
     section('What we never ask for', [

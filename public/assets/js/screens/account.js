@@ -105,6 +105,7 @@ export function mount(root, ctx) {
         const data = { username: username.value.trim(), password: password.value };
         if (mode === 'signup') Object.assign(data, { birthYear: Number(year.value), quiz: answers });
         const u = await sync.signIn(mode, data);
+        if (u?.pending) return waiting(u);
         const loaded = await sync.loadAfterLogin(store);
         if (!alive) return;
         if (loaded?.ask) return choose(u, loaded);
@@ -117,6 +118,28 @@ export function mount(root, ctx) {
         password.value = '';
       }
     }
+  }
+
+  // Under 13: the account switches on only when a parent approves it through the parent link. Guest play goes on.
+  function waiting(p) {
+    const url = `${location.origin}${location.pathname}#/parent?t=${p.token}`;
+    show(
+      head('Ask a parent to say yes', `Your account “${p.user?.username || ''}” is ready, and it switches on when a parent approves it.`),
+      h('section', { class: 'card account__card' }, [
+        h('p', { text: 'Show a parent this link or QR code. They open it on their own phone and tap Approve.' }),
+        parentLinkBox(url),
+      ]),
+      h('p', { class: 'account__note', text: 'Until then, keep playing as a guest: everything works, it just isn’t saved to an account yet. When your parent has approved it, log in here.' }),
+      backToTown(),
+    );
+  }
+
+  // The parent link with Copy and Share.
+  function parentLinkBox(url) {
+    const field = h('input', { class: 'arena-input account__link', readonly: true, value: url, 'aria-label': 'Parent link' });
+    const copy = h('button', { class: 'btn btn--block', type: 'button', onClick: async () => { try { await navigator.clipboard.writeText(url); copy.textContent = 'Copied'; } catch { field.select(); } } }, 'Copy the link');
+    const share = navigator.share ? h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: () => navigator.share({ title: 'Penny parent link', url }).catch(() => {}) }, 'Share with a parent') : null;
+    return h('div', { class: 'account__linkbox' }, [field, share, copy]);
   }
 
   // Both this device and the account have progress: the player decides which to keep.
@@ -180,10 +203,7 @@ export function mount(root, ctx) {
       try {
         const { token } = await sync.call('parent_create', { method: 'POST' });
         const url = `${location.origin}${location.pathname}#/parent?t=${token}`;
-        const field = h('input', { class: 'arena-input account__link', readonly: true, value: url, 'aria-label': 'Parent link' });
-        const copy = h('button', { class: 'btn btn--block', type: 'button', onClick: async () => { try { await navigator.clipboard.writeText(url); copy.textContent = 'Copied!'; } catch { field.select(); } } }, 'Copy the link');
-        const share = navigator.share ? h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: () => navigator.share({ title: 'Follow my progress in Penny', url }).catch(() => {}) }, 'Share with a parent') : null;
-        box.replaceChildren(h('p', { class: 'account__note', text: 'Send this link to a parent. Anyone with it can see your progress and reset your password, so share it only with them.' }), field, share, copy, stopButton());
+        box.replaceChildren(h('p', { class: 'account__note', text: 'Send this link to a parent. Anyone with it can see your progress and reset your password, so share it only with them.' }), parentLinkBox(url), stopButton());
       } catch (err) {
         box.append(h('p', { class: 'arena-error', role: 'alert', text: err.message }));
       }

@@ -11,6 +11,7 @@
 //   GET  ?action=parent_status          POST ?action=parent_create | parent_revoke (X-CSRF-Token)
 //   GET  ?action=parent_view&t=TOKEN    -> a read-only progress snapshot for the parent
 //   POST ?action=parent_confirm {t, entryId}     POST ?action=parent_reset {t, password}
+//   POST ?action=parent_approve {t}              POST ?action=parent_decline {t}    (accounts of under-13s)
 // No email or phone for children: a parent link resets a forgotten password instead.
 declare(strict_types=1);
 
@@ -81,10 +82,7 @@ switch ($action) {
         require_method('POST');
         $user = require_user($db);
         // One link per child: a new link replaces the old one, so a lost link can always be switched off.
-        $db->prepare('DELETE FROM parent_links WHERE user_id = ?')->execute([$user['user_id']]);
-        $token = bin2hex(random_bytes(32));
-        $db->prepare('INSERT INTO parent_links (token_hash, user_id) VALUES (?, ?)')->execute([hash('sha256', $token), $user['user_id']]);
-        send_json(['ok' => true, 'token' => $token]);
+        send_json(['ok' => true, 'token' => new_parent_token($db, (int) $user['user_id'])]);
     case 'parent_revoke':
         require_method('POST');
         $user = require_user($db);
@@ -94,7 +92,26 @@ switch ($action) {
         require_method('GET');
         rate_limit('parent', 60, 60);
         $child = parent_child($db, $_GET['t'] ?? null);
+        if ($child['approved_at'] === null) {
+            send_json(['ok' => true, 'pending' => true, 'child' => ['username' => $child['username'], 'age' => bangkok_year() - (int) $child['birth_year']]]);
+        }
         send_json(['ok' => true] + snapshot($db, $child));
+    case 'parent_approve':
+    case 'parent_decline':
+        require_method('POST');
+        same_origin();
+        rate_limit('parent-write', 30, 60);
+        $child = parent_child($db, read_json()['t'] ?? null);
+        if ($child['approved_at'] !== null) {
+            send_json(['ok' => true, 'approved' => true]);
+        }
+        if ($action === 'parent_approve') {
+            $db->prepare('UPDATE arena_users SET approved_at = UTC_TIMESTAMP() WHERE id = ? AND approved_at IS NULL')->execute([$child['id']]);
+            send_json(['ok' => true, 'approved' => true]);
+        }
+        // Declining removes the waiting account entirely; the child keeps playing as a guest.
+        $db->prepare('DELETE FROM arena_users WHERE id = ? AND approved_at IS NULL')->execute([$child['id']]);
+        send_json(['ok' => true, 'approved' => false]);
     case 'parent_confirm':
         require_method('POST');
         same_origin();
@@ -161,7 +178,7 @@ function parent_child(PDO $db, mixed $token): array
     if (!is_string($token) || !preg_match('/^[a-f0-9]{64}$/', $token)) {
         send_error(404, 'NO_LINK', 'This parent link doesn’t work. Ask your child to make a new one in their account.');
     }
-    $st = $db->prepare('SELECT u.id, u.username, u.birth_year FROM parent_links p JOIN arena_users u ON u.id = p.user_id WHERE p.token_hash = ?');
+    $st = $db->prepare('SELECT u.id, u.username, u.birth_year, u.approved_at FROM parent_links p JOIN arena_users u ON u.id = p.user_id WHERE p.token_hash = ?');
     $st->execute([hash('sha256', $token)]);
     $child = $st->fetch();
     if (!$child) {

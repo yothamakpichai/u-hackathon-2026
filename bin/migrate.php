@@ -25,6 +25,7 @@ $tables = [
         password_hash VARCHAR(255) NOT NULL,
         birth_year SMALLINT UNSIGNED NOT NULL,
         cash DECIMAL(24,8) NOT NULL DEFAULT 1000,
+        approved_at DATETIME NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY uq_arena_users_key (username_key)
     ) " . ENGINE,
@@ -111,8 +112,12 @@ $tables = [
     ) " . ENGINE,
 ];
 
-// Columns added after a table first shipped go here as [table, column, definition]; each is added only if missing.
-$columns = [];
+// Columns added after a table first shipped go here as [table, column, definition, backfill SQL or null]. Each is
+// added only if missing, and its backfill runs only in that same run, so a rerun never touches newer rows.
+$columns = [
+    // Under-13 accounts wait for a parent (BRIEF §16, Y14). Accounts made before this existed count as approved.
+    ['arena_users', 'approved_at', 'DATETIME NULL', 'UPDATE arena_users SET approved_at = created_at WHERE approved_at IS NULL'],
+];
 
 try {
     $db = db();
@@ -121,11 +126,14 @@ try {
         $db->exec($sql);
         echo (in_array($name, $existing, true) ? 'exists  ' : 'created ') . $name . PHP_EOL;
     }
-    foreach ($columns as [$table, $column, $definition]) {
+    foreach ($columns as [$table, $column, $definition, $backfill]) {
         $has = $db->prepare('SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
         $has->execute([$table, $column]);
         if (!(int) $has->fetchColumn()) {
             $db->exec("ALTER TABLE `$table` ADD COLUMN `$column` $definition");
+            if ($backfill) {
+                $db->exec($backfill);
+            }
             echo "added   $table.$column" . PHP_EOL;
         }
     }

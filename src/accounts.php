@@ -7,6 +7,8 @@ declare(strict_types=1);
 const SESSION_COOKIE = '__Host-penny';
 const SESSION_DAYS = 30;
 const ACCOUNT_MIN_AGE = 8;
+// Accounts for players under this age stay inactive until a parent approves them through the parent link.
+const PARENT_APPROVAL_AGE = 13;
 const ACCOUNT_QUIZ = [
     ['prompt' => 'Is the money in Penny’s town real?', 'options' => ['Yes, it is real money', 'No, it is simulated, except the savings you record', 'Only at weekends'], 'answer' => 1],
     ['prompt' => 'What should you never share with other players?', 'options' => ['Your password or personal details', 'Your favourite lab coin', 'Your Money Health Score'], 'answer' => 0],
@@ -65,7 +67,7 @@ function current_user(PDO $db): ?array
     if (!is_string($token) || !preg_match('/^[a-f0-9]{64}$/', $token)) {
         return null;
     }
-    $st = $db->prepare('SELECT s.user_id, s.csrf, u.username, u.birth_year FROM arena_sessions s JOIN arena_users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > UTC_TIMESTAMP()');
+    $st = $db->prepare('SELECT s.user_id, s.csrf, u.username, u.birth_year FROM arena_sessions s JOIN arena_users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > UTC_TIMESTAMP() AND u.approved_at IS NOT NULL');
     $st->execute([hash('sha256', $token)]);
     return $st->fetch() ?: null;
 }
@@ -115,6 +117,15 @@ function end_session(PDO $db): void
         $db->prepare('DELETE FROM arena_sessions WHERE token_hash = ?')->execute([hash('sha256', $token)]);
     }
     set_session_cookie('', -3600);
+}
+
+// One parent link per child: a new link replaces the old one. Only the token's hash is stored.
+function new_parent_token(PDO $db, int $userId): string
+{
+    $db->prepare('DELETE FROM parent_links WHERE user_id = ?')->execute([$userId]);
+    $token = bin2hex(random_bytes(32));
+    $db->prepare('INSERT INTO parent_links (token_hash, user_id) VALUES (?, ?)')->execute([hash('sha256', $token), $userId]);
+    return $token;
 }
 
 function username_problem(string $name): ?string
@@ -177,8 +188,9 @@ function signup(array $in): never
     }
 
     $db = db();
+    $pending = $age < PARENT_APPROVAL_AGE;
     try {
-        $db->prepare('INSERT INTO arena_users (username, username_key, password_hash, birth_year, cash) VALUES (?, ?, ?, ?, ?)')
+        $db->prepare('INSERT INTO arena_users (username, username_key, password_hash, birth_year, cash, approved_at) VALUES (?, ?, ?, ?, ?, ' . ($pending ? 'NULL' : 'UTC_TIMESTAMP()') . ')')
             ->execute([$username, strtolower($username), password_hash($password, password_algo()), $year, 1000]);
     } catch (PDOException $e) {
         if ($e->getCode() === '23000') {
@@ -186,7 +198,12 @@ function signup(array $in): never
         }
         throw $e;
     }
-    start_session($db, ['id' => (int) $db->lastInsertId(), 'username' => $username, 'birth_year' => $year]);
+    $user = ['id' => (int) $db->lastInsertId(), 'username' => $username, 'birth_year' => $year];
+    if ($pending) {
+        // No session yet: the account switches on when a parent approves it. Guest play goes on meanwhile.
+        send_json(['ok' => true, 'pending' => true, 'user' => public_user($user), 'parentToken' => new_parent_token($db, $user['id'])]);
+    }
+    start_session($db, $user);
 }
 
 function login(array $in): never
@@ -195,13 +212,17 @@ function login(array $in): never
     $password = is_string($in['password'] ?? null) ? $in['password'] : '';
     rate_limit('login-user', 5, 900, strtolower($username));
     $db = db();
-    $st = $db->prepare('SELECT id, username, password_hash, birth_year FROM arena_users WHERE username_key = ?');
+    $st = $db->prepare('SELECT id, username, password_hash, birth_year, approved_at FROM arena_users WHERE username_key = ?');
     $st->execute([strtolower($username)]);
     $user = $st->fetch();
     // Unknown usernames still cost one hash, so timing doesn't reveal which usernames exist.
     $hash = $user['password_hash'] ?? password_hash('not-a-real-password', password_algo());
     if (!password_verify($password, $hash) || !$user) {
         send_error(401, 'BAD_LOGIN', 'That username and password don’t match.');
+    }
+    if ($user['approved_at'] === null) {
+        // Still waiting for a parent: hand the child a fresh link to show them (it replaces any earlier one).
+        send_json(['ok' => false, 'error' => ['code' => 'NEEDS_PARENT', 'message' => 'Your account is waiting for a parent to approve it. Show them your parent link. You can keep playing as a guest meanwhile.'], 'parentToken' => new_parent_token($db, (int) $user['id']), 'user' => public_user($user)], 403);
     }
     if (password_needs_rehash($user['password_hash'], password_algo())) {
         $db->prepare('UPDATE arena_users SET password_hash = ? WHERE id = ?')->execute([password_hash($password, password_algo()), $user['id']]);
