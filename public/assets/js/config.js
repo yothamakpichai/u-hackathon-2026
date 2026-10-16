@@ -57,3 +57,22 @@ export const COIN_COLORS = Object.freeze([
   'mint', 'teal', 'cyan', 'sky', 'blue', 'indigo',
   'violet', 'magenta', 'pink', 'coral', 'orange', 'gold',
 ]);
+
+// The L$ economy (BRIEF §17). One currency name, L$. The Town wallet (public/js/wallet.js) and the Arena (server)
+// read these; the Arena's copy lives in src/arena.php and must match. Lab sessions keep separate Practice L$, and the
+// Piggy Bank stays in real baht.
+export const ECONOMY = Object.freeze({
+  start: 1000, // L$ every new Town wallet starts with
+  dailyLogin: { base: 50, perStreakDay: 10, max: 100 }, // 50 L$, +10 per streak day, never more than 100
+  dailyFaucetCap: 300, // L$ a day across all Town sources together
+  storeSpread: 0.1, // the Store buys back 10% below its selling price
+  pennyPro: { price: 150, days: 7 }, // Penny Pro: 150 L$ per 7 days (headlines 30 s earlier)
+  arena: {
+    listingFee: 500, // L$ to launch a coin, burned
+    tradeFee: 0.003, // 0.3% of every Arena trade, burned
+    stipend: 100, // L$ a day, scaled down linearly to 0 ...
+    stipendFullBelow: 2000, // ... as Arena L$ per active player rises from 2,000
+    stipendZeroAt: 5000, // ... to 5,000
+    transferDailyCap: 200, // Town → Arena, L$ per account per Bangkok day
+  },
+});
