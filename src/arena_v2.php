@@ -104,35 +104,102 @@ function arena_coin_extra(array $row, array $in): array
     ];
 }
 
-// The same filter as the Create screen and usernames: real tickers and brands (public/data/facts.json) and the
-// ROT13 profanity list in src/accounts.php.
+// Name and ticker rules, ported from public/assets/js/sim/names.js (the Create screen's checkName / checkTicker), so a
+// coin the Create screen accepts is accepted here and nothing it blocks gets through. Keep the two lists in step.
+// Tickers are 3 to 6 letters here (BRIEF §17).
+const ARENA_BLOCKED_TICKERS = ['BTC', 'ETH', 'USDT', 'USDC', 'BNB', 'SOL', 'XRP', 'DOGE', 'SHIB', 'PEPE', 'AVAX', 'TON', 'ADA', 'TRX', 'LINK',
+    'DOT', 'MATIC', 'LTC', 'BCH', 'XLM', 'UTOPIA', 'EDUU'];
+const ARENA_BLOCKED_BRANDS = ['bitcoin', 'ethereum', 'ether', 'tether', 'binance', 'solana', 'ripple', 'dogecoin', 'doge', 'shiba', 'shib', 'pepe',
+    'avalanche', 'toncoin', 'tron', 'cardano', 'chainlink', 'polkadot', 'polygon', 'litecoin', 'stellar', 'utopia', 'eduu', 'cenedury'];
+const ARENA_BRAND_STEMS = ['bitcoin', 'ethereum', 'litecoin', 'dogecoin', 'solana', 'binance', 'cardano', 'chainlink', 'polkadot', 'toncoin'];
+const ARENA_FILLER = ['coin', 'coins', 'token', 'tokens', 'cash', 'army', 'inu'];
+const ARENA_EVERYDAY = ['ada', 'dot', 'link', 'sol', 'ton'];
+// ROT13, as in names.js, so the words don't sit in the source as plain text.
+const ARENA_PROFANITY = ['shpx', 'fuvg', 'cvff', 'phag', 'pbpx', 'qvpx', 'ovgpu', 'onfgneq', 'fyhg', 'juber', 'jnax', 'gjng', 'cevpx', 'nefr',
+    'nff', 'penc', 'gvgf', 'obbof', 'chffl', 'snt', 'avttre', 'ergneq', 'qvyqb', 'pyvg', 'phz', 'encr'];
+const ARENA_ALLOW = ['arsenal', 'arsenic', 'cockatiel', 'cockatiels', 'cockatoo', 'cockatoos', 'cockerel', 'cockerels', 'cockle', 'cockles',
+    'cockpit', 'cockpits', 'cockroach', 'cockroaches', 'cocktail', 'cocktails', 'cocky', 'dickens', 'prickle', 'prickles',
+    'prickly', 'pussycat', 'pussycats', 'retardant'];
+
+function arena_words(string $s): array
+{
+    return preg_split('/[^a-z]+/', strtolower($s), -1, PREG_SPLIT_NO_EMPTY);
+}
+
+// A blocked word matches a whole word, or (4+ letters) the start of one, so "grape" and "class" stay fine.
+function arena_rude(string $text): bool
+{
+    foreach (arena_words($text) as $t) {
+        if (in_array($t, ARENA_ALLOW, true)) {
+            continue;
+        }
+        foreach (array_merge(ARENA_PROFANITY, ROT13_BLOCK) as $w) {
+            $w = str_rot13($w);
+            if ($t === $w || (strlen($w) >= 4 && str_starts_with($t, $w))) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// A name reads as a real coin when a word, or the whole name without its filler words, is a real ticker or brand.
+function arena_real_coin(string $name): bool
+{
+    $all = arena_words($name);
+    $core = array_values(array_filter($all, static fn(string $w): bool => !in_array($w, ARENA_FILLER, true)));
+    $joined = implode('', $core);
+    $real = static fn(string $w): bool => in_array($w, ARENA_BLOCKED_BRANDS, true) || (in_array(strtoupper($w), ARENA_BLOCKED_TICKERS, true) && !in_array($w, ARENA_EVERYDAY, true));
+    foreach ($core as $w) {
+        if ($real($w)) {
+            return true;
+        }
+    }
+    if ($real($joined) || (count($core) < count($all) && in_array($joined, ARENA_EVERYDAY, true))) {
+        return true;
+    }
+    // The name from each word on, run together: "Mega Bit Coin" gives "megabitcoin", "bitcoin" and "coin".
+    $tails = [];
+    foreach (array_keys($all) as $i) {
+        $tails[] = implode('', array_slice($all, $i));
+    }
+    foreach (ARENA_BRAND_STEMS as $b) {
+        foreach (array_merge($all, $tails) as $i => $w) {
+            if ($i < count($all) ? str_contains($w, $b) : str_starts_with($w, $b)) {
+                return true;
+            }
+        }
+    }
+    // The shared facts list too (brands, people and our own names), as whole words or phrases.
+    $facts = json_decode((string) file_get_contents(REPO_ROOT . '/public/data/facts.json'), true) ?: [];
+    $spaced = ' ' . implode(' ', $all) . ' ';
+    foreach ($facts['banned']['words'] ?? [] as $w) {
+        if (str_contains($spaced, ' ' . implode(' ', arena_words($w)) . ' ')) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function arena_name_problem(string $name, string $ticker): ?string
 {
-    if (!preg_match('/^[A-Za-z0-9][A-Za-z0-9 ]{1,22}[A-Za-z0-9]$/', $name)) {
-        return 'Coin names are 3 to 24 letters, numbers or spaces.';
+    if (!preg_match('/^[A-Za-z ]{3,16}$/', $name)) {
+        return 'Use 3 to 16 letters or spaces for the name.';
+    }
+    if (arena_rude($name)) {
+        return 'Let’s keep it friendly. Try a different name.';
+    }
+    if (arena_real_coin($name)) {
+        return 'That name belongs to a real coin or brand. Make up your own.';
     }
     if (!preg_match('/^[A-Z]{3,6}$/', $ticker)) {
-        return 'Tickers are 3 to 6 capital letters, like ZAPP.';
+        return 'Use 3 to 6 letters (A to Z) for the ticker.';
     }
-    $facts = json_decode((string) file_get_contents(REPO_ROOT . '/public/data/facts.json'), true) ?: [];
-    $lower = strtolower($name);
-    $tokens = preg_split('/[^a-z0-9]+/', $lower, -1, PREG_SPLIT_NO_EMPTY);
-    $tokens[] = strtolower($ticker);
-    foreach ($facts['banned']['tickers'] ?? [] as $t) {
-        if (in_array(strtolower($t), $tokens, true)) {
-            return 'That looks like a real coin. Arena coins must be made up.';
-        }
+    if (in_array($ticker, ARENA_BLOCKED_TICKERS, true)) {
+        return "$ticker is a real coin’s ticker. Make up your own.";
     }
-    foreach ($facts['banned']['words'] ?? [] as $w) {
-        $w = strtolower($w);
-        if (str_contains($lower, $w) || str_contains(strtolower($ticker), $w)) {
-            return 'That looks like a real coin or brand. Arena coins must be made up.';
-        }
-    }
-    foreach (ROT13_BLOCK as $word) {
-        if (str_contains($lower, str_rot13($word)) || str_contains(strtolower($ticker), str_rot13($word))) {
-            return 'Please pick a friendlier name.';
-        }
+    if (arena_rude($ticker)) {
+        return 'Let’s keep it friendly. Try different letters.';
     }
     if (isset(ARENA_COINS[$ticker])) {
         return 'That ticker is taken. Try another one.';
