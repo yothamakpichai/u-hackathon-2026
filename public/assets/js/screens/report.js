@@ -47,7 +47,7 @@ export function mount(root, ctx) {
     ring,
     h('p', { class: 'report-hero__band', text: score.band.label }),
     h('p', { class: 'report-hero__note', text: 'Your Money Health Score rewards wise choices, not just profit.' }),
-    h('p', { class: 'report-hero__money' }, [`Finished with ${money(run.value)} `, delta(change)]),
+    h('p', { class: 'report-hero__money' }, [`Finished with Practice ${money(run.value)} `, delta(change)]),
   ]);
 
   const parts = h('section', { class: 'card report-parts', 'aria-labelledby': 'report-parts-title' }, [

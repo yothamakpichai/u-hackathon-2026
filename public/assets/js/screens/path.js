@@ -45,7 +45,7 @@ export function missionPassed(check, metrics) {
 }
 
 // Learning partners shelf (BRIEF §16 "Partners"): schools and learning organisations only, never investing. No ads,
-// no sponsor banners, no names or logos: one empty card and a mailto: button, which waits until PARTNER_EMAIL is set.
+// no sponsor banners, no names or logos: one empty card and a mailto: button (cenedury.com until PARTNER_EMAIL is set).
 function partnersShelf(email) {
   const hint = 'path-partners-hint';
   return h('section', { class: 'card path-partners', 'aria-labelledby': 'path-partners-title' }, [
@@ -57,8 +57,8 @@ function partnersShelf(email) {
     ]),
     email
       ? h('a', { class: 'btn btn--block', href: `mailto:${email}?subject=${encodeURIComponent('Learning partner')}` }, 'Become a learning partner')
-      : h('button', { class: 'btn btn--block', type: 'button', disabled: true, 'aria-describedby': hint }, 'Become a learning partner'),
-    email ? null : h('p', { class: 'path-partners__hint', id: hint, text: 'Partner email coming soon' }),
+      : h('a', { class: 'btn btn--block', href: 'https://cenedury.com', target: '_blank', rel: 'noopener', 'aria-describedby': hint }, 'Become a learning partner'),
+    email ? null : h('p', { class: 'path-partners__hint', id: hint, text: 'Opens cenedury.com, where you can reach the team.' }),
   ]);
 }
 

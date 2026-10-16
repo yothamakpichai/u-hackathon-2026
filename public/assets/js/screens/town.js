@@ -11,6 +11,7 @@ import { progressSummary, syncActions } from '../progress.js';
 import { arenaEnabled } from './arena.js';
 import { whySheet, lessonSheet, closeSheet } from '../town-sheets.js';
 import * as sync from '../sync.js';
+import { claimDaily, ensureStarter } from '../../../js/wallet.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
 export const OPEN_MS = 420; // the doors-open motion before a building opens
@@ -23,6 +24,9 @@ export function mount(root, ctx) {
   // Arriving in town opens the Market Lab for this level: the Money Check (or "Take it later") came first.
   store.set((s) => ({ unlocked: { ...s.unlocked, [s.tier]: true } }));
   syncActions(store);
+  // Every wallet starts with ECONOMY.start, and the daily visit pays once per Bangkok day (BRIEF §17).
+  ensureStarter(store);
+  claimDaily(store);
 
   const s = store.get();
   const thisYear = Number(new Intl.DateTimeFormat('en-US', { timeZone: config.TIME_ZONE, year: 'numeric' }).format(new Date()));

@@ -136,13 +136,13 @@ export const BUILDINGS = [
     ],
   },
   {
-    // Flips to status 'live' (and gains screen: 'store') when public/assets/js/screens/store.js lands.
+    // The Store opens the Daily Stall's screen (#/stall, registered by the stall entry above).
     id: 'store',
     group: 'money',
     name: 'Store',
-    route: '/store',
-    status: 'construction',
-    blurb: 'Seeds, feed and tools, opening soon',
+    route: '/stall',
+    status: 'live',
+    blurb: 'Buy and sell today’s goods',
     lesson: {
       title: 'Why a shop buys back for less',
       body: [
