@@ -36,6 +36,8 @@ export function walletBar({ store, api, onCash }) {
   function paint() {
     if (!me) return;
     cash.textContent = money(me.cash);
+    // The header chip shows the Arena wallet while the Arena is open (shell.js listens for this).
+    dispatchEvent(new CustomEvent('arena:wallet', { detail: { cash: me.cash } }));
     town.textContent = `Town wallet: ${money(townBalance(store))}`;
     moved.textContent = `${money(used(), 0)} of ${money(cap(), 0)} moved today`;
     bar.firstChild.style.width = `${Math.min(100, (used() / cap()) * 100)}%`;
