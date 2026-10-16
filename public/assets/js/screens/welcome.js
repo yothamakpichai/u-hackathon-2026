@@ -75,6 +75,9 @@ export function mount(root, ctx) {
     const button = h('button', { class: 'btn judge-demo__btn', type: 'button' }, [h('span', { class: 'judge-demo__tag', text: 'Judges' }), 'Judge demo: see a full town in one tap', icon('arrow-right', { size: 20 })]);
     const note = h('p', { class: 'judge-demo__note', 'aria-live': 'polite', text: 'Loads a sample grown-up profile on this device. “Leave demo” clears it.' });
     button.addEventListener('click', async () => {
+      // A real player's progress is never swapped out without asking.
+      const s = store.get();
+      if ((s.profile || s.assessment || s.progress?.xp) && !s.demo && !confirm('The demo replaces the progress saved on this device. Continue?')) return;
       button.disabled = true;
       note.textContent = 'Building the demo town…';
       try {
