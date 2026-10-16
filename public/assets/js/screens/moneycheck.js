@@ -51,7 +51,7 @@ export function mount(root, ctx) {
       ]),
       h('div', { class: 'penny-says' }, [
         penny('happy', { size: 72 }),
-        h('p', { class: 'bubble', text: 'You’ll get your Money Health Score and your Money Type, plus the building in town to start with. Tap the speaker to hear any question.' }),
+        h('p', { class: 'bubble', text: 'You’ll get your Money Health Score and your Money Type, plus the building in town to start with. Tap the speaker to hear any question and its answers.' }),
       ]),
       h('p', { class: 'research-label' }, [icon('shield', { size: 18 }), 'Inspired by peer-reviewed research. Not a clinical or licensed assessment.']),
       resume
