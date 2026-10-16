@@ -5,6 +5,7 @@ import { createAudio } from './audio.js';
 import { createRouter } from './router.js';
 import { h, icon } from './ui.js';
 import { mountAskFab } from './askfab.js';
+import { mountShell } from './shell.js';
 import { BUILDINGS } from '../../js/buildings.js';
 
 const store = createStore();
@@ -71,6 +72,9 @@ audio.hasAny().then((any) => {
 
 // "Ask Penny" (BRIEF §9) floats over every screen once a level is chosen, and gets out of the way of controls.
 mountAskFab({ store, onOpen: openTutor });
+
+// v4 shell (P1.B): L$ balance chip, Settings gear and the Judge demo strip.
+mountShell({ store });
 
 function openTutor() {
   import('./screens/tutor.js')
