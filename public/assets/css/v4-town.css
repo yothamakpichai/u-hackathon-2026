@@ -54,8 +54,8 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-areas:
     "school school"
-    "market money"
-    "future future"
+    "market market"
+    "money future"
     "research research";
   gap: var(--sp-3);
   margin: 0;
@@ -119,46 +119,44 @@
   outline-offset: 2px;
 }
 
-.tg--school .tg__main,
-.tg--future .tg__main,
-.tg--research .tg__main {
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-  justify-items: start;
-  text-align: left;
-}
+/* On phones the School, Market Lab and Research Lab are wide rows (the Market Lab mirrored, art on the right) and
+   Money Town and Future You stand side by side as tall tiles. */
+@media (max-width: 899.98px) {
+  .tg--school .tg__main,
+  .tg--market .tg__main,
+  .tg--research .tg__main {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    justify-items: start;
+    text-align: left;
+  }
 
-.tg--future .tg__main {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-}
+  .tg--market .tg__main {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
 
-.tg--future .tg__art {
-  order: 2;
-}
+  .tg--market .tg__art {
+    order: 2;
+    padding: var(--sp-5) var(--sp-3) 0 0; /* clear of the ⓘ button */
+  }
 
-.tg--research .tg__main {
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+  .tg--research .tg__main {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+  }
+
+  .tg--future .tg__text {
+    justify-items: center;
+    padding-right: 0;
+  }
 }
 
 @media (min-width: 900px) {
-  .tg--school .tg__main {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
-  }
-
-  .tg--future .tg__main,
-  .tg--research .tg__main {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
-  }
-
-  .tg--future .tg__art {
-    order: 0;
-  }
-
   .tg--school .tg__art {
     max-width: 26rem;
+  }
+
+  .tg--market .tg__text {
+    justify-items: center;
+    padding-right: 0;
   }
 }
 
@@ -429,7 +427,6 @@
   }
 }
 
-.tg--market .tg__text,
 .tg--money .tg__text {
   justify-items: center;
   padding-right: 0;
@@ -789,4 +786,70 @@
   color: var(--ink-700);
   font-size: var(--fs-sm);
   text-align: center;
+}
+
+/* ------------------------------------------------------------------ Micro-interactions */
+
+.tg__art,
+.mt-shop {
+  position: relative;
+}
+
+/* Opening a building: warm light spills out of the doorway. */
+.tg__art::after {
+  content: "";
+  position: absolute;
+  inset: 30% 25% 0;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 216 115 / 0.9), rgb(255 216 115 / 0));
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Opening a shop: a coin hops out from behind the awning. */
+.mt-shop::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  border: 2px solid #B07400;
+  border-radius: 50%;
+  background: #F5B82E;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tg.is-opening .tg__art::after {
+    animation: tg-glow 420ms ease-out forwards;
+  }
+
+  .mt-shop.is-opening::after {
+    animation: mt-hop 340ms ease-out forwards;
+  }
+
+  /* "Start here" breathes gently so the eye finds it. */
+  .tg__start,
+  .mt-shop__start {
+    animation: tg-breathe 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes tg-glow {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes mt-hop {
+  0% { opacity: 0; transform: translateY(8px) scale(0.6); }
+  40% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-26px) scale(1); }
+}
+
+@keyframes tg-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
 }
