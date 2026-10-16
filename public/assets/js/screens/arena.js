@@ -8,6 +8,7 @@ import * as sync from '../sync.js';
 import { walletBar } from './arena/wallet.js';
 import { launchPanel } from './arena/launch.js';
 import { coinPanel, tabTag } from './arena/coin.js';
+import { feedView } from './arena/feed.js';
 
 const API = 'api/arena.php';
 const POLL_MS = 1500;
@@ -187,7 +188,7 @@ export function mount(root, ctx) {
     const live = h('span', { class: 'arena-live' }, [h('span', { class: 'arena-live__dot', 'aria-hidden': 'true' }), 'Live']);
     const pf = h('div', { class: 'arena-pf' });
     const board = h('ol', { class: 'board__list' });
-    const feed = h('ul', { class: 'arena-feed' });
+    const feed = feedView({ botNames: BOT_NAMES });
 
     const amount = h('input', { id: 'arena-amount', class: 'arena-input', type: 'number', inputmode: 'decimal', min: '0', step: 'any', placeholder: '0' });
     const amountLabel = h('label', { class: 'arena-label', for: 'arena-amount' });
@@ -259,7 +260,7 @@ export function mount(root, ctx) {
           launchEl,
           h('div', { class: 'card' }, [h('div', { class: 'arena-card-head' }, [h('h2', { class: 'arena-title', text: 'Your portfolio' }), live]), pf]),
           h('div', { class: 'card' }, [h('h2', { class: 'arena-title', text: 'Leaderboard' }), h('p', { class: 'board__note', text: 'Ranked by portfolio value in simulated L$.' }), board]),
-          h('div', { class: 'card' }, [h('h2', { class: 'arena-title', text: 'Latest trades' }), h('p', { class: 'board__note', text: 'Players, the whale bot and the momentum bot.' }), feed]),
+          h('div', { class: 'card' }, [h('h2', { class: 'arena-title', text: 'Latest trades' }), h('p', { class: 'board__note', text: v2 ? 'Players and named bots like Panic Pete and Ape Annie. Launches and rugs stand out.' : 'Players, the whale bot and the momentum bot.' }), feed.el]),
           h('div', { class: 'card card--quiet' }, [
             h('h2', { class: 'arena-title', text: 'Who else is trading?' }),
             h('p', { class: 'arena-help', text: 'Four bots trade here all the time. A market maker keeps prices near a fair value, a momentum bot follows trends and makes moves bigger, a whale sometimes sells a huge pile at once, and a wash bot trades FUEL with itself to fake busy volume.' }),
@@ -396,6 +397,13 @@ export function mount(root, ctx) {
         if (!b) continue;
         b.classList.toggle('is-active', x.id === coin);
         b.setAttribute('aria-pressed', String(x.id === coin));
+        const was = Number(b.dataset.price);
+        if (was && x.price !== was) {
+          b.classList.remove('is-flash-up', 'is-flash-down');
+          void b.offsetWidth; // restart the flash
+          b.classList.add(x.price > was ? 'is-flash-up' : 'is-flash-down');
+        }
+        b.dataset.price = String(x.price);
         b.querySelector('.arena-coin__price').textContent = price(x.price);
         b.querySelector('.arena-coin__delta').replaceChildren(delta(x.changePct));
         const slot = b.querySelector('.arena-coin__slot');
@@ -434,17 +442,7 @@ export function mount(root, ctx) {
         ...(mine && mine.rank > s.leaderboard.length ? [row(mine)] : []),
         ...(mine || !s.me ? [] : [h('li', { class: 'board__join', text: s.leaderboard.length ? 'Make your first trade to join the leaderboard.' : 'No trades yet. Make the first one to top the leaderboard.' })]),
       );
-      feed.replaceChildren(
-        ...(s.trades.length
-          ? s.trades.map((t) =>
-              h('li', { class: `arena-feed__item${t.bot ? ' is-bot' : ''}` }, [
-                h('span', { class: 'arena-feed__who', text: t.bot ? BOT_NAMES[t.who] || 'Bot' : t.who }),
-                h('span', { text: `${t.side === 'buy' ? 'bought' : 'sold'} ${number(t.coins, t.coins >= 100 ? 0 : 3)} ${t.coin}` }),
-                h('span', { class: 'arena-feed__l', text: money(t.amountL, 0) }),
-              ]),
-            )
-          : [h('li', { class: 'arena-feed__item', text: 'No trades yet. Be the first!' })]),
-      );
+      feed.update(s.trades);
       renderTradeLabels();
       if (document.activeElement !== amount) renderPreview();
     }
