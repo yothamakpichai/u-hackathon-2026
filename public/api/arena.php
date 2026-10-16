@@ -321,13 +321,16 @@ function arena_me(PDO $db, int $userId, array $prices): array
     $st->execute([$userId]);
     $u = $st->fetch() ?: ['username' => '', 'cash' => 0];
     $cash = (float) $u['cash'];
-    $st = $db->prepare('SELECT coin_id, amount FROM arena_holdings WHERE user_id = ? AND amount > 0');
+    // locked: a creator's coins still vesting, which can't be sold yet.
+    $st = $v2
+        ? $db->prepare('SELECT h.coin_id, h.amount, IF(c.creator_id = h.user_id AND c.vest_until > UNIX_TIMESTAMP(), c.creator_locked, 0) AS locked FROM arena_holdings h LEFT JOIN arena_coins c ON c.id = h.coin_id WHERE h.user_id = ? AND h.amount > 0')
+        : $db->prepare('SELECT coin_id, amount, 0 AS locked FROM arena_holdings WHERE user_id = ? AND amount > 0');
     $st->execute([$userId]);
     $holdings = [];
     $value = $cash;
     foreach ($st as $row) {
         $v = (float) $row['amount'] * ($prices[$row['coin_id']] ?? 0);
-        $holdings[] = ['coin' => $row['coin_id'], 'coins' => (float) $row['amount'], 'value' => $v];
+        $holdings[] = ['coin' => $row['coin_id'], 'coins' => (float) $row['amount'], 'value' => $v, 'locked' => min((float) $row['amount'], (float) $row['locked'])];
         $value += $v;
     }
     $proUntil = (int) ($u['pro_until'] ?? 0);
