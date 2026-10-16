@@ -24,7 +24,7 @@ export function mount(root, ctx) {
   const laterLink = () => h('button', { class: 'skip-link', type: 'button', onClick: later }, 'Take it later');
 
   function show(...nodes) {
-    view.replaceChildren(...nodes);
+    view.replaceChildren(...nodes.filter(Boolean)); // a null would print as text
     animate(view, ENTER);
     const target = view.querySelector('.narration__text, h1');
     if (target) {
@@ -88,7 +88,7 @@ export function mount(root, ctx) {
   }
 
   async function load() {
-    view.replaceChildren(stateView({ kind: 'loading', title: 'Loading the Money Check…' }));
+    view.replaceChildren(stateView({ kind: 'loading', heading: 'h1', title: 'Loading the Money Check…' }));
     try {
       const data = await getJSON(`${config.DATA_BASE}money_check.json`);
       items = data?.items || [];
@@ -99,6 +99,7 @@ export function mount(root, ctx) {
       view.replaceChildren(
         stateView({
           kind: 'error',
+          heading: 'h1',
           title: 'The Money Check didn’t load',
           body: err.message,
           actions: [h('button', { class: 'btn btn--primary', type: 'button', onClick: load }, 'Try again'), h('button', { class: 'btn', type: 'button', onClick: later }, 'Go to my town')],

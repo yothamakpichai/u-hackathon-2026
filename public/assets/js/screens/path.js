@@ -47,7 +47,7 @@ export function mount(root, ctx) {
   const isOpen = (list, i) => i === 0 || isDone(list[i].id) || isDone(list[i - 1].id) || (list[i].type === 'checkpoint' && list[i].unit === '1' && placed());
 
   function show(...children) {
-    view.replaceChildren(...children);
+    view.replaceChildren(...children.filter(Boolean)); // a null would print as text
     animate(view, ENTER);
     view.querySelector('h1, h2')?.setAttribute('tabindex', '-1');
     view.querySelector('h1, h2')?.focus({ preventScroll: true });
@@ -296,7 +296,7 @@ export function mount(root, ctx) {
   }
 
   async function load() {
-    view.replaceChildren(stateView({ kind: 'loading', title: 'Loading your Learning Path…' }));
+    view.replaceChildren(stateView({ kind: 'loading', heading: 'h1', title: 'Loading your Learning Path…' }));
     try {
       const [data, coach] = await Promise.all([getJSON(`${config.DATA_BASE}path.json`), getJSON(`${config.DATA_BASE}coach.json`).catch(() => null)]);
       units = data?.[tier]?.units || [];
@@ -311,6 +311,7 @@ export function mount(root, ctx) {
       view.replaceChildren(
         stateView({
           kind: 'error',
+          heading: 'h1',
           title: 'The Learning Path didn’t load',
           body: err.message,
           actions: [h('button', { class: 'btn btn--primary', type: 'button', onClick: load }, 'Try again'), h('button', { class: 'btn', type: 'button', onClick: () => navigate('/') }, 'Back to start')],

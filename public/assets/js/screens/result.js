@@ -64,6 +64,7 @@ export function mount(root, ctx) {
     view.append(
       stateView({
         kind: 'empty',
+        heading: 'h1',
         title: 'Take the Money Check first',
         body: 'It takes about 3 minutes and tells you your Money Health Score and your Money Type.',
         actions: [h('button', { class: 'btn btn--primary', type: 'button', onClick: () => navigate('/money-check') }, 'Start the Money Check'), h('button', { class: 'btn', type: 'button', onClick: () => navigate('/town') }, 'Go to my town')],
@@ -77,7 +78,7 @@ export function mount(root, ctx) {
     try {
       data = await getJSON(`${config.DATA_BASE}money_check.json`);
     } catch (err) {
-      if (alive) view.replaceChildren(stateView({ kind: 'error', title: 'Your result didn’t load', body: err.message, actions: [h('button', { class: 'btn btn--primary', type: 'button', onClick: load }, 'Try again')] }));
+      if (alive) view.replaceChildren(stateView({ kind: 'error', heading: 'h1', title: 'Your result didn’t load', body: err.message, actions: [h('button', { class: 'btn btn--primary', type: 'button', onClick: load }, 'Try again')] }));
       return;
     }
     if (!alive) return;

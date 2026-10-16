@@ -35,7 +35,7 @@ const routes = {
   '/parent': { name: 'parent', title: 'Parent view', load: () => import('./screens/parent.js') },
   // The Arena screen itself explains when it is closed or locked (BRIEF §15).
   '/arena': { name: 'arena', title: 'Arena', load: () => import('./screens/arena.js'), guard: needsTier },
-  '/privacy': { name: 'privacy', title: 'Arena privacy', load: () => import('./screens/privacy.js') },
+  '/privacy': { name: 'privacy', title: 'Privacy', load: () => import('./screens/privacy.js') },
 };
 
 // Buildings with their own screen get a route from the registry (BRIEF §16), so a new building is one entry there.

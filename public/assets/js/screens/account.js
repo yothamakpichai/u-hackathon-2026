@@ -43,13 +43,13 @@ export function mount(root, ctx) {
     ]);
   const backToTown = () => h('button', { class: 'btn btn--block', type: 'button', onClick: () => navigate(store.get().tier ? '/town' : '/') }, 'Back to my town');
   const show = (...nodes) => {
-    view.replaceChildren(...nodes);
+    view.replaceChildren(...nodes.filter(Boolean)); // a null would print as text
     animate(view, [{ opacity: 0 }, { opacity: 1 }]);
     view.querySelector('h1')?.focus({ preventScroll: true });
   };
 
   async function start() {
-    view.replaceChildren(stateView({ kind: 'loading', title: 'Checking your account…' }));
+    view.replaceChildren(stateView({ kind: 'loading', heading: 'h1', title: 'Checking your account…' }));
     if (!(await sync.accountsAvailable())) {
       if (alive) show(head('Accounts are resting'), stateView({ kind: 'empty', title: 'Accounts aren’t available right now', body: 'Everything still works as a guest, and your progress stays on this device.' }), backToTown());
       return;
@@ -221,7 +221,7 @@ export function mount(root, ctx) {
       linked = false;
     }
     const make = h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: create }, linked ? 'Make a new parent link' : 'Make a parent link');
-    box.replaceChildren(linked ? h('p', { class: 'account__note', text: 'A parent link is active. A new link replaces it, and “Stop sharing” switches it off.' }) : null, make, linked ? stopButton() : null);
+    box.replaceChildren(...[linked ? h('p', { class: 'account__note', text: 'A parent link is active. A new link replaces it, and “Stop sharing” switches it off.' }) : null, make, linked ? stopButton() : null].filter(Boolean));
 
     async function create() {
       try {

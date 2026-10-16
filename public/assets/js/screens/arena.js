@@ -53,7 +53,7 @@ export function mount(root, ctx) {
       h('p', { class: 'screen-sub', text: 'Trade with real players and bots in one shared market. Simulated L$ only: never real money.' }),
     ]),
     body,
-    h('p', { class: 'arena__privacy' }, [h('a', { href: '#/privacy', text: 'Arena privacy notice' })]),
+    h('p', { class: 'arena__privacy' }, [h('a', { href: '#/privacy', text: 'Privacy notice' })]),
   ]);
   root.append(view);
 
@@ -74,7 +74,7 @@ export function mount(root, ctx) {
     return json;
   }
 
-  const show = (...nodes) => body.replaceChildren(...nodes);
+  const show = (...nodes) => body.replaceChildren(...nodes.filter(Boolean)); // a null would print as text
   const back = (label, to) => h('button', { class: 'btn btn--primary', type: 'button', onClick: () => navigate(to) }, label);
 
   async function start() {

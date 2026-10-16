@@ -22,14 +22,15 @@ export function mount(root, ctx) {
   }
 
   async function load() {
-    view.replaceChildren(stateView({ kind: 'loading', title: 'Opening your child’s progress…' }));
+    view.replaceChildren(stateView({ kind: 'loading', heading: 'h1', title: 'Opening your child’s progress…' }));
     let snap;
     try {
+      if (!token) throw new Error('This link is missing its private code. Open the whole link your child shared, or ask them to make a new one.');
       const res = await fetch(`${API}?action=parent_view&t=${encodeURIComponent(token)}`);
       snap = await res.json();
       if (!res.ok || !snap?.ok) throw new Error(snap?.error?.message || 'This parent link doesn’t work. Ask your child to make a new one.');
     } catch (err) {
-      if (alive) view.replaceChildren(stateView({ kind: 'error', title: 'This link can’t be opened', body: err.message, actions: [h('button', { class: 'btn', type: 'button', onClick: () => navigate('/') }, 'Go to Penny')] }));
+      if (alive) view.replaceChildren(stateView({ kind: 'error', heading: 'h1', title: 'This link can’t be opened', body: err.message, actions: [h('button', { class: 'btn', type: 'button', onClick: () => navigate('/') }, 'Go to Penny')] }));
       return;
     }
     if (!alive) return;
@@ -93,7 +94,7 @@ export function mount(root, ctx) {
       try {
         const r = await post(action, {});
         if (r.approved) return load();
-        view.replaceChildren(stateView({ kind: 'empty', title: 'Declined', body: 'The waiting account was removed. Your child can keep playing as a guest, with nothing saved to our server.', actions: [h('button', { class: 'btn', type: 'button', onClick: () => navigate('/') }, 'Go to Penny')] }));
+        view.replaceChildren(stateView({ kind: 'empty', heading: 'h1', title: 'Declined', body: 'The waiting account was removed. Your child can keep playing as a guest, with nothing saved to our server.', actions: [h('button', { class: 'btn', type: 'button', onClick: () => navigate('/') }, 'Go to Penny')] }));
       } catch (err) {
         note.textContent = err.message;
       }

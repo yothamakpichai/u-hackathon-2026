@@ -89,6 +89,12 @@ a {
   text-underline-offset: 0.18em;
 }
 
+/* Screens move focus to their heading on arrival; the heading is not a control, so it gets no focus ring. */
+h1[tabindex='-1']:focus-visible,
+h2[tabindex='-1']:focus-visible {
+  outline: none;
+}
+
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;

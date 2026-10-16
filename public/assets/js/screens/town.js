@@ -83,7 +83,7 @@ export function mount(root, ctx) {
     tiles.replaceChildren(
       ...BUILDINGS.map((b) => {
         const live = b.status === 'live';
-        const links = (b.links || []).filter((l) => !l.arena || arenaOn);
+        const links = (b.links || []).filter((l) => !l.arena || (arenaOn && age >= 13));
         return h('li', { class: `town-tile${live ? '' : ' is-construction'}${b.id === startHere ? ' is-start' : ''}`, dataset: { building: b.id } }, [
           h('button', { class: 'town-tile__main', type: 'button', onClick: () => (live ? navigate(b.route) : lessonCard(b)) }, [
             buildingArt(b.id, !live),

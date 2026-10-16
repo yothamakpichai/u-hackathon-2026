@@ -2231,7 +2231,11 @@ body.has-ask .app-footer {
 }
 
 .partners__link,
-.welcome__research a {
+.welcome__research a,
+.arena__privacy a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
   font-weight: 700;
 }
 
@@ -2489,6 +2493,7 @@ svg.is-flipped {
 
 .town-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-3);
 }
@@ -2652,7 +2657,10 @@ svg.is-flipped {
 }
 
 .town-link {
-  padding: var(--sp-1) var(--sp-2);
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--sp-3);
   border-radius: var(--r-pill);
   background: var(--surface-2);
   font-size: var(--fs-xs);
@@ -2733,6 +2741,12 @@ svg.is-flipped {
 
 .bld--bank .bld__wall {
   fill: var(--ink-300);
+}
+
+.bld--bank .bld__glass {
+  fill: var(--line);
+  stroke: var(--ink-400);
+  stroke-width: 1.5;
 }
 
 .bld--stocks .bld__wall {
@@ -2873,7 +2887,7 @@ svg.is-flipped {
 }
 
 .town-head__titles {
-  flex: 1;
+  flex: 1 1 11rem;
   min-width: 0;
 }
 
