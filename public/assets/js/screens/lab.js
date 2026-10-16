@@ -1399,7 +1399,7 @@ export function mount(root, ctx) {
       setText(m.stage, stage);
       setText(m.value, price(coin.price));
       m.change = setDelta(m.change, (coin.price / L.price0 - 1) * 100);
-      setText(m.since, `since launch on Day ${day(L.t)} · ${coin.holders} holders`);
+      setText(m.since, `since launch on Day ${day(L.t)} · ${coin.holders} ${coin.holders === 1 ? 'holder' : 'holders'}`);
       const notesKey = notes.map((n) => `${n.tone}:${n.text}`).join('|');
       if (notesKey !== m.notesKey) {
         const list = notesList(notes);
@@ -1429,7 +1429,8 @@ export function mount(root, ctx) {
       const c = st.coins[market.selected];
       const by = new Map();
       for (const x of recent) {
-        if (x.coin !== c.id) continue;
+        // The wash bot is shown and explained only at Builder (BRIEF §5), as in the block explorer.
+        if (x.coin !== c.id || (x.who === 'wash' && tierInfo.rank < 2)) continue;
         const r = by.get(x.who) || { buy: 0, sell: 0 };
         r[x.side] += x.L;
         by.set(x.who, r);

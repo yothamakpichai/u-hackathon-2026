@@ -14,7 +14,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 // Badge catalogue. Colours are palette ids from config.COIN_COLORS; shapes are drawn below.
 const COACH = {
   candle: { title: 'Candle Reader', how: 'Finished the Coach chapter “Reading a candle”.', color: 'gold', shape: 'candle' },
-  tools: { title: 'Tool Wise', how: 'Finished the Coach chapter “Volume, SMA and RSI”.', color: 'blue', shape: 'bars' },
+  tools: { title: 'Tool Wise', how: 'Finished the Coach chapter “Your chart tools”.', color: 'blue', shape: 'bars' },
   trade: { title: 'First Trade', how: 'Finished the Coach chapter “Your first trade”.', color: 'mint', shape: 'arrow' },
   whale: { title: 'Calm in a Storm', how: 'Finished the Coach chapter “Surviving a whale dump”.', color: 'sky', shape: 'wave' },
   build: { title: 'Honest Builder', how: 'Finished the Coach chapter “Build your coin”.', color: 'violet', shape: 'shield' },
@@ -49,11 +49,11 @@ export const setChainSink = (fn) => {
   chainSink = fn;
 };
 
-// Mint once. Resolves to the stored badge record (or the existing one when already minted).
+// Mint once. Resolves to the stored badge record, or a copy of the existing one marked `already`.
 export async function mintBadge(store, { kind, ref, tier, meta = null }) {
   const id = badgeId({ kind, ref, tier });
   const existing = store.get().badges?.[id];
-  if (existing) return existing;
+  if (existing) return { ...existing, already: true };
   if (!badgeInfo(id, { meta })) return null;
   const at = Date.now();
   const owner = store.get().nickname || 'you';
@@ -114,7 +114,7 @@ export function mintedNote(promise) {
       return;
     }
     box.replaceChildren(badgeArt(info, { size: 56 }), h('div', {}, [
-      h('p', { class: 'badge-note__title', text: `Badge minted: ${info.title}` }),
+      h('p', { class: 'badge-note__title', text: record.already ? `You already have this badge: ${info.title}` : `Badge minted: ${info.title}` }),
       h('p', { class: 'badge-note__text', text: 'Soulbound: it’s yours to keep and can’t be sold or traded.' }),
       h('a', { class: 'badge-note__link', href: '#/explorer', text: 'See it in the block explorer' }),
     ]));
