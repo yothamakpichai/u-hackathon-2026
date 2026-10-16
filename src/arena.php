@@ -56,6 +56,9 @@ function arena_v2_ready(): bool
     if ($ready !== null) {
         return $ready;
     }
+    if (env('ARENA_V2') === '0') {
+        return $ready = false; // switch: run the Arena as v1 even on a v2 schema
+    }
     try {
         db()->query('SELECT c.launched, c.icon, c.color, c.creator_id, c.supply, c.community, c.creator_start, c.creator_locked, c.creator_sold,
             c.lock_until, c.vest_until, c.created_s, c.created_tick, c.peak, c.rugged, c.ape,

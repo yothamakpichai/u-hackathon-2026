@@ -140,8 +140,8 @@ function arena_name_problem(string $name, string $ticker): ?string
     return null;
 }
 
-// Lists a player's coin. The 500 L$ fee is burned; the pool gets liquidityL and the liquidity share of the supply.
-function arena_launch(PDO $db, int $userId, array $in): array
+// Checks a launch request before anything is charged (and before the hourly launch limit counts it).
+function arena_launch_input(array $in): array
 {
     $name = is_string($in['name'] ?? null) ? trim(preg_replace('/\s+/', ' ', $in['name'])) : '';
     $ticker = is_string($in['ticker'] ?? null) ? strtoupper(trim($in['ticker'])) : '';
@@ -165,13 +165,21 @@ function arena_launch(PDO $db, int $userId, array $in): array
     if ($cr > 50 || $lq < 20) {
         send_error(400, 'BAD_INPUT', 'The creator can keep at most 50%, and at least 20% must go to the pool.');
     }
-    if (!(is_int($liqL) || is_float($liqL)) || !is_finite((float) $liqL) || $liqL < ARENA_MIN_LIQUIDITY) {
+    if (!(is_int($liqL) || is_float($liqL)) || !is_finite((float) $liqL) || $liqL < ARENA_MIN_LIQUIDITY || $liqL > 1e9) {
         send_error(400, 'BAD_INPUT', 'Put at least L$' . (int) ARENA_MIN_LIQUIDITY . ' in the pool.');
     }
     if (!in_array($lockDays, [0, 7, 30], true) || !in_array($vestDays, [0, 7, 30], true)) {
         send_error(400, 'BAD_INPUT', 'Lock and vesting are 0, 7 or 30 days.');
     }
-    $liqL = round((float) $liqL, 2);
+    return ['name' => $name, 'ticker' => $ticker, 'icon' => $icon, 'color' => $color, 'supply' => $supply, 'cr' => $cr, 'cm' => $cm, 'lq' => $lq,
+        'liqL' => round((float) $liqL, 2), 'lockDays' => $lockDays, 'vestDays' => $vestDays];
+}
+
+// Lists a player's coin. The 500 L$ fee is burned; the pool gets liquidityL and the liquidity share of the supply.
+function arena_launch(PDO $db, int $userId, array $spec): array
+{
+    ['name' => $name, 'ticker' => $ticker, 'icon' => $icon, 'color' => $color, 'supply' => $supply, 'cr' => $cr, 'cm' => $cm, 'lq' => $lq,
+        'liqL' => $liqL, 'lockDays' => $lockDays, 'vestDays' => $vestDays] = $spec;
     $now = time();
 
     $db->beginTransaction();

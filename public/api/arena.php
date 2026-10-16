@@ -58,11 +58,9 @@ switch ($action) {
             }
             throw $e;
         }
-        if ($v2 && $reason === null) {
-            arena_pay_stipend($db, $userId);
-        }
+        $stipend = $v2 && $reason === null ? arena_pay_stipend($db, $userId) : 0.0;
         arena_news_after_response();
-        send_json(['ok' => true] + state($db, $userId, coin_param($db, $_GET['coin'] ?? 'VAULT'), $reason));
+        send_json(['ok' => true] + state($db, $userId, coin_param($db, $_GET['coin'] ?? 'VAULT'), $reason) + ['stipendPaid' => $stipend]);
     case 'supply':
         require_method('GET');
         rate_limit('arena-read', 120, 60);
@@ -75,9 +73,10 @@ switch ($action) {
     case 'launch':
         require_method('POST');
         $user = arena_user(db(), true);
-        rate_limit('arena-launch', 3, 3600, 'launch:' . $user['user_id']);
+        $spec = arena_launch_input(read_json());
+        rate_limit('arena-launch', ARENA_LAUNCHES_PER_HOUR, 3600, 'launch:' . $user['user_id']);
         $db = db();
-        $coin = arena_launch($db, (int) $user['user_id'], read_json());
+        $coin = arena_launch($db, (int) $user['user_id'], $spec);
         arena_news_after_response();
         send_json(['ok' => true, 'coin' => $coin] + state($db, (int) $user['user_id'], $coin['id'], null));
     case 'transfer':
@@ -177,6 +176,10 @@ function coin_param(PDO $db, mixed $value): string
 function trade(PDO $db, int $userId, array $in): never
 {
     $coin = coin_param($db, $in['coin'] ?? '');
+    // Never fall back to VAULT for a trade: a delisted or mistyped coin is an error, not a different coin.
+    if (!is_string($in['coin'] ?? null) || strtoupper($in['coin']) !== $coin) {
+        send_error(400, 'BAD_INPUT', 'That coin isn’t trading right now.');
+    }
     $side = $in['side'] ?? '';
     $amount = $in['amount'] ?? null;
     if (!in_array($side, ['buy', 'sell'], true) || !(is_int($amount) || is_float($amount)) || $amount <= 0 || !is_finite((float) $amount)) {
