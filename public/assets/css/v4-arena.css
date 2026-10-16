@@ -1,1 +1,210 @@
-/* v4 arena styles (BRIEF §17). */
+/* Arena v2 (BRIEF §17): spectating, the Arena wallet, coin launches, red flags, personas, news, season and the
+   central bank. Only Arena classes live here. Text colours are tokens with >= 4.5:1 on their backgrounds. */
+
+.arena {
+  --arena-ink: #0F1C17;
+  --arena-night: #13221C;
+  --arena-night-2: #1C2F27;
+  --arena-on-night: #F2F7F4;   /* 14.9:1 on --arena-night */
+  --arena-on-night-2: #B8CBC2; /* 8.6:1 on --arena-night */
+  --arena-line-night: #2E463B;
+}
+
+.arena-disclaimer {
+  margin: var(--sp-3) 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--line);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-500);
+  text-align: center;
+}
+
+.arena-gate {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: var(--r-md);
+  background: var(--amber-50);
+  border: 1px solid var(--amber-100);
+}
+.arena-gate__text { margin: 0; color: var(--ink-900); font-weight: 600; }
+.arena-gate .btn { min-height: var(--tap); }
+.arena-trade__controls { display: grid; gap: 0.75rem; }
+.arena-trade__controls[hidden], .arena-gate[hidden] { display: none; }
+.arena-top__who a { color: var(--primary-700); font-weight: 600; }
+
+/* Arena wallet header: a dark trading-floor band */
+.arena-wallet {
+  display: grid;
+  gap: var(--sp-3);
+  grid-template-columns: 1fr;
+  margin-bottom: var(--sp-3);
+  padding: 1rem 1.125rem;
+  border-radius: var(--r-lg);
+  background: linear-gradient(135deg, var(--arena-night) 0%, var(--arena-night-2) 100%);
+  color: var(--arena-on-night);
+  box-shadow: var(--shadow-md);
+}
+.arena-wallet[hidden] { display: none; }
+@media (min-width: 48rem) { .arena-wallet { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: center; } }
+.arena-wallet__main { display: grid; gap: 0.125rem; }
+.arena-wallet__kicker, .arena-wallet__label { margin: 0; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--arena-on-night-2); }
+.arena-wallet__cash { font-family: var(--font-head); font-size: clamp(1.75rem, 5vw, 2.25rem); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.arena-wallet__town { font-size: var(--fs-sm); color: var(--arena-on-night-2); }
+.arena-wallet__form { display: grid; gap: 0.375rem; }
+.arena-wallet__row { display: flex; gap: 0.5rem; }
+.arena-wallet__input { flex: 1 1 6rem; min-width: 0; min-height: var(--tap); background: #FFFFFF; color: var(--ink-900); }
+.arena-wallet__go { min-height: var(--tap); white-space: nowrap; }
+.arena-wallet__cap { display: grid; gap: 0.25rem; margin: 0.5rem 0 0; font-size: var(--fs-sm); color: var(--arena-on-night-2); }
+.arena-wallet__bar { display: block; height: 6px; border-radius: var(--r-pill); background: var(--arena-line-night); overflow: hidden; }
+.arena-wallet__fill { display: block; height: 100%; width: 0; background: var(--amber-400); border-radius: inherit; transition: width 400ms var(--ease-out); }
+.arena-wallet__msg { margin: 0.25rem 0 0; min-height: 1.25em; font-size: var(--fs-sm); color: #9FE6C4; }
+.arena-wallet__msg.is-bad { color: #FFC9B8; }
+.arena-wallet__msg:empty { min-height: 0; margin: 0; }
+
+/* Launch a coin */
+.arena-launch-card { display: grid; gap: var(--sp-3); border-top: 4px solid var(--pal-violet); }
+.arena-launch-card[hidden] { display: none; }
+.arena-launch__open { min-height: var(--tap); }
+.arena-launch__note:empty { display: none; }
+.arena-launch {
+  width: min(40rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  color: var(--ink-900);
+  box-shadow: var(--shadow-lg);
+  overflow: auto;
+}
+.arena-launch::backdrop { background: rgb(15 28 23 / 0.55); }
+.arena-launch__form { display: grid; gap: var(--sp-3); padding: 1.25rem; }
+.arena-launch__head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.arena-launch__close { min-height: var(--tap); min-width: var(--tap); }
+.arena-launch__names { display: grid; gap: var(--sp-3); grid-template-columns: 1fr; align-items: start; }
+@media (min-width: 36rem) { .arena-launch__names { grid-template-columns: 1.4fr 1fr auto; } }
+.arena-launch__ticker { text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+.arena-launch__preview { display: flex; align-items: center; gap: 0.5rem; align-self: end; min-height: var(--tap); font-weight: 800; font-family: var(--font-head); }
+.arena-launch__err { margin: 0.25rem 0 0; font-size: var(--fs-sm); color: var(--loss-600); }
+.arena-launch__err:empty { display: none; }
+.arena-launch__set { margin: 0; padding: 0; border: 0; display: grid; gap: 0.5rem; min-width: 0; }
+.arena-launch__chips { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.arena-launch__chip { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: var(--tap); min-width: var(--tap); padding: 0.25rem 0.75rem; border: 2px solid var(--line); border-radius: var(--r-pill); background: var(--surface); cursor: pointer; font-size: var(--fs-sm); font-weight: 600; color: var(--ink-700); }
+.arena-launch__chips--icon .arena-launch__chip, .arena-launch__chips--color .arena-launch__chip { padding: 0.25rem; border-radius: 50%; }
+.arena-launch__radio { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.arena-launch__chip:has(:checked) { border-color: var(--ink-900); color: var(--ink-900); background: var(--primary-50); }
+.arena-launch__chip:has(:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.arena-launch__swatch { display: block; width: 1.75rem; height: 1.75rem; border-radius: 50%; background: var(--coin); }
+.arena-launch__slider { display: grid; gap: 0.25rem; }
+.arena-launch__range { width: 100%; min-height: var(--tap); accent-color: var(--pal-violet); }
+.arena-launch__pct { font-variant-numeric: tabular-nums; font-weight: 800; color: var(--ink-900); }
+.arena-launch__help { margin: 0; font-size: var(--fs-sm); color: var(--ink-500); }
+.arena-launch__sum { margin: 0; font-size: var(--fs-sm); font-weight: 700; color: var(--gain-700); }
+.arena-launch__sum.is-bad, .arena-launch__status.is-bad, .arena-launch__cost.is-bad { color: var(--loss-700); }
+.arena-launch__cost { margin: 0; padding: 0.75rem 1rem; border-radius: var(--r-md); background: var(--amber-50); color: var(--ink-900); font-size: var(--fs-sm); }
+.arena-launch__status { margin: 0; font-size: var(--fs-sm); }
+.arena-launch__status:empty { display: none; }
+
+/* Coin trust card and red-flag meter */
+.arena-coincard { display: grid; gap: var(--sp-3); }
+.arena-coincard[hidden] { display: none; }
+.arena-coincard__head { display: flex; align-items: center; gap: 0.625rem; }
+.arena-coincard__facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.375rem 1rem; margin: 0; font-size: var(--fs-sm); }
+.arena-coincard__facts dt { color: var(--ink-500); font-weight: 600; }
+.arena-coincard__facts dd { margin: 0; color: var(--ink-900); font-weight: 600; overflow-wrap: anywhere; }
+.arena-coincard__facts dd.is-warn { color: var(--warning-700); }
+.arena-rugged { padding: 0.75rem 1rem; border-radius: var(--r-md); background: var(--loss-600); color: #FFFFFF; font-size: var(--fs-sm); line-height: var(--lh-snug); }
+.arena-rugged strong { font-family: var(--font-head); font-size: var(--fs-lg); text-transform: uppercase; letter-spacing: 0.06em; }
+.arena-flags { display: grid; gap: 0.5rem; padding: 0.75rem 1rem; border-radius: var(--r-md); background: var(--surface-2, #F1F5F3); }
+.arena-flags__top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem; font-size: var(--fs-sm); color: var(--ink-900); }
+.arena-flags__label { font-weight: 700; }
+.arena-flags__track { position: relative; height: 10px; border-radius: var(--r-pill); background: var(--line); overflow: hidden; }
+.arena-flags__fill { display: block; height: 100%; width: 0; border-radius: inherit; transition: width 500ms var(--ease-out); background: var(--gain-500); }
+.arena-flags.is-mid .arena-flags__fill { background: var(--amber-500); }
+.arena-flags.is-high .arena-flags__fill { background: var(--loss-500); }
+.arena-flags.is-mid .arena-flags__top strong { color: var(--warning-700); }
+.arena-flags.is-high .arena-flags__top strong { color: var(--loss-700); }
+.arena-flags.is-low .arena-flags__top strong { color: var(--gain-700); }
+.arena-flags__list { margin: 0; padding-left: 1.125rem; display: grid; gap: 0.25rem; font-size: var(--fs-sm); color: var(--ink-700); }
+.arena-coin__slot:empty { display: none; }
+.arena-coin__tag { display: inline-block; padding: 0.0625rem 0.375rem; border-radius: var(--r-pill); background: var(--pal-violet); color: #FFFFFF; font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.arena-coin__tag.is-rug { background: var(--loss-600); }
+.arena-coin.is-rugged .arena-coin__id { text-decoration: line-through; }
+
+/* Feed: personas, launches, rugs, slide-in */
+.arena-feedwrap { display: grid; gap: 0.5rem; }
+.arena-feed__item.is-persona .arena-feed__who { color: var(--pal-indigo); }
+.arena-feed__item.is-launch { background: #F1ECFB; border-left: 4px solid var(--pal-violet); padding-left: 0.5rem; border-radius: var(--r-xs); }
+.arena-feed__item.is-rug { background: var(--loss-50); border-left: 4px solid var(--loss-600); padding-left: 0.5rem; border-radius: var(--r-xs); color: var(--loss-700); font-weight: 600; }
+.arena-feed__item.is-launch, .arena-feed__item.is-rug { flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; padding-top: 0.375rem; padding-bottom: 0.375rem; }
+.arena-feed__badge { flex: none; white-space: nowrap; line-height: 1.4;padding: 0.0625rem 0.4375rem; border-radius: var(--r-pill); font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; background: var(--pal-violet); color: #FFFFFF; }
+.is-rug .arena-feed__badge { background: var(--loss-600); }
+.arena-feed__text { flex: 1 1 auto; min-width: 0; }
+.arena-rugtip { font-size: var(--fs-sm); color: var(--ink-700); }
+.arena-rugtip[hidden] { display: none; }
+.arena-rugtip summary { min-height: var(--tap); display: flex; align-items: center; cursor: pointer; font-weight: 700; color: var(--loss-700); }
+.arena-rugtip p { margin: 0 0 0.5rem; }
+
+@keyframes arena-slide-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes arena-flash-up { from { background: var(--gain-50); } to { background: transparent; } }
+@keyframes arena-flash-down { from { background: var(--loss-50); } to { background: transparent; } }
+.arena-feed__item.is-new { animation: arena-slide-in 320ms var(--ease-out) both; }
+.arena-coin.is-flash-up { animation: arena-flash-up 900ms ease-out; }
+.arena-coin.is-flash-down { animation: arena-flash-down 900ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .arena-feed__item.is-new, .arena-coin.is-flash-up, .arena-coin.is-flash-down { animation: none; }
+  .arena-wallet__fill, .arena-flags__fill { transition: none; }
+  .arena-news__item.is-new { animation: none; }
+}
+
+/* News desk */
+.arena-news { display: grid; gap: var(--sp-3); background: var(--arena-night); color: var(--arena-on-night); border: 0; }
+.arena-news[hidden] { display: none; }
+.arena-news .arena-title { color: var(--arena-on-night); }
+.arena-news .board__note { color: var(--arena-on-night-2); margin: 0; }
+.arena-news__onair { display: inline-flex; align-items: center; gap: 0.375rem; font-size: var(--fs-xs); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #FFC9B8; }
+.arena-news__onair::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #FF7A59; }
+.arena-news__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.arena-news__item { display: grid; gap: 0.25rem; padding: 0.625rem 0.75rem; border-radius: var(--r-sm); background: var(--arena-night-2); border-left: 3px solid var(--amber-400); }
+.arena-news__item.is-empty { border-left-color: var(--arena-line-night); color: var(--arena-on-night-2); }
+.arena-news__item.is-new { animation: arena-slide-in 320ms var(--ease-out) both; }
+.arena-news__src { justify-self: start; padding: 0.0625rem 0.4375rem; border-radius: var(--r-pill); font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; background: var(--arena-line-night); color: var(--arena-on-night); }
+.arena-news__src.is-ai { background: var(--amber-400); color: var(--ink-900); }
+.arena-news__text { font-weight: 600; line-height: var(--lh-snug); }
+.arena-news__at { font-size: var(--fs-xs); color: var(--arena-on-night-2); font-variant-numeric: tabular-nums; }
+.arena-news__pro { margin: 0; font-weight: 700; color: #9FE6C4; }
+.arena-news__pro[hidden], .arena-news__buy[hidden] { display: none; }
+.arena-news__buy { min-height: var(--tap); }
+.arena-news__msg { margin: 0; font-size: var(--fs-sm); color: var(--arena-on-night-2); }
+.arena-news__msg:empty { display: none; }
+
+/* Season and medals */
+.arena-season { display: grid; gap: var(--sp-3); }
+.arena-season[hidden], .arena-season__mine[hidden] { display: none; }
+.arena-season__left { margin: 0; padding: 0.125rem 0.625rem; border-radius: var(--r-pill); background: var(--amber-50); color: var(--amber-800); font-size: var(--fs-sm); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.arena-season__h { margin: 0; font-size: var(--fs-sm); font-weight: 800; color: var(--ink-700); }
+.arena-season__top, .arena-medals { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.375rem; }
+.arena-season__row { display: flex; align-items: center; gap: 0.625rem; min-height: var(--tap); padding: 0.25rem 0.625rem; border-radius: var(--r-sm); background: var(--surface-2, #F1F5F3); }
+.arena-season__name { flex: 1 1 auto; min-width: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arena-season__value { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink-900); }
+.arena-medal { display: flex; align-items: center; gap: 0.625rem; }
+.arena-medal__body { display: grid; min-width: 0; font-size: var(--fs-sm); }
+.arena-medal__meta { color: var(--ink-500); font-size: var(--fs-xs); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.arena-medal__disc { flex: none; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; font-weight: 900; font-family: var(--font-head); color: var(--ink-900); box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.18); }
+.is-gold .arena-medal__disc { background: linear-gradient(145deg, #FFE08A, #E8B020); }
+.is-silver .arena-medal__disc { background: linear-gradient(145deg, #F1F4F6, #B9C3C9); }
+.is-bronze .arena-medal__disc { background: linear-gradient(145deg, #F6C9A2, #C98552); }
+
+/* Central Bank */
+.arena-bank { display: grid; gap: var(--sp-3); border-top: 4px solid var(--pal-gold); }
+.arena-bank[hidden] { display: none; }
+.arena-bank__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; margin: 0; }
+.arena-bank__stat { display: grid; gap: 0.125rem; padding: 0.625rem 0.75rem; border-radius: var(--r-sm); background: var(--amber-50); }
+.arena-bank__stat:first-child { grid-column: 1 / -1; background: var(--arena-night); }
+.arena-bank__stat dt { font-size: var(--fs-xs); font-weight: 700; color: var(--amber-800); }
+.arena-bank__stat dd { margin: 0; font-family: var(--font-head); font-size: var(--fs-lg); font-weight: 800; color: var(--ink-900); font-variant-numeric: tabular-nums; }
+.arena-bank__stat:first-child dt { color: var(--arena-on-night-2); }
+.arena-bank__stat:first-child dd { color: var(--arena-on-night); font-size: var(--fs-xl); }
