@@ -2575,11 +2575,27 @@ svg.is-flipped {
 }
 
 .town-sky {
-  display: block;
+  position: relative;
+  overflow: hidden;
   width: 100%;
   height: 90px;
   border-radius: var(--r-lg);
   background: linear-gradient(var(--primary-50), var(--surface));
+}
+
+.town-sky__land {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.town-sky__sunbox {
+  position: absolute;
+  top: 14px;
+  right: 14%;
+  width: 32px;
+  height: 32px;
 }
 
 .town-sky__sun {

@@ -160,15 +160,17 @@ function svgEl(tag, attrs = {}) {
 }
 
 // A row of hills, a sun and the road: decoration only.
+// The hills stretch to any width; the sun is drawn on its own, so it stays round and in view on wide screens.
 function skyline() {
-  const svg = svgEl('svg', { class: 'town-sky', viewBox: '0 0 360 90', preserveAspectRatio: 'xMidYMax slice', 'aria-hidden': 'true' });
-  svg.append(
-    svgEl('circle', { class: 'town-sky__sun', cx: 300, cy: 30, r: 16 }),
+  const sun = svgEl('svg', { class: 'town-sky__sunbox', viewBox: '0 0 32 32' });
+  sun.append(svgEl('circle', { class: 'town-sky__sun', cx: 16, cy: 16, r: 16 }));
+  const land = svgEl('svg', { class: 'town-sky__land', viewBox: '0 0 360 90', preserveAspectRatio: 'none' });
+  land.append(
     svgEl('path', { class: 'town-sky__hill', d: 'M0 70q60-40 120-6t120-8 120 4v30H0z' }),
     svgEl('path', { class: 'town-sky__hill2', d: 'M0 80q80-26 170-4t190-6v20H0z' }),
     svgEl('rect', { class: 'town-sky__road', x: 0, y: 84, width: 360, height: 6 }),
   );
-  return svg;
+  return h('div', { class: 'town-sky', 'aria-hidden': 'true' }, [sun, land]);
 }
 
 // Original, simple building illustrations; scaffolding over the ones under construction.
