@@ -37,6 +37,8 @@ const routes = {
   // The Arena screen itself explains when it is closed or locked (BRIEF §15).
   '/arena': { name: 'arena', title: 'Arena', load: () => import('./screens/arena.js'), guard: needsTier },
   '/privacy': { name: 'privacy', title: 'Privacy', load: () => import('./screens/privacy.js') },
+  // v4 shell (P1.B): nickname, character, Future You voice, narration, account and parent link.
+  '/settings': { name: 'settings', title: 'Settings', load: () => import('./screens/settings.js'), guard: needsTier },
 };
 
 // Buildings with their own screen get a route from the registry (BRIEF §16), so a new building is one entry there.
