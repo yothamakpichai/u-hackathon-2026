@@ -5,7 +5,7 @@
 // coins; Builders also get the research citation.
 import { RULES, addDays, canBorrow, daysBetween, earnsOnTime, interestOn, loanState, minimumDue, minimumPayoff, payLoan, payoffPlan, quoteLoan, restructure } from '../sim/bank.js';
 import { dateKeyOf } from '../sim/stall.js';
-import { CREDIT, adjustCredit, balance as walletBalance, coinsText, creditEvents, creditScore, ensureStarter, ledger, post, rateFor } from '../../../js/wallet.js';
+import { CREDIT, adjustCredit, balance as walletBalance, moneyText, creditEvents, creditScore, ensureStarter, ledger, post, rateFor } from '../../../js/wallet.js';
 import { announce, h, icon, number } from '../ui.js';
 
 const coins = (n) => `${number(n, 2)} coins`;
@@ -113,7 +113,7 @@ export function mount(root, ctx) {
         h('p', { class: 'screen-eyebrow', text: 'Bank' }),
         h('h1', { class: 'screen-title', text: 'Borrowing, repaying and credit', dataset: { key: 'title' } }),
         h('p', { class: 'screen-sub', text: 'Learn what borrowing really costs, with Town coins. Nothing here is real money.' }),
-        h('p', { class: 'chip', text: `${coinsText(walletBalance(store.get()))} in your Town wallet` }),
+        h('p', { class: 'chip', text: `${moneyText(walletBalance(store.get()))} in your Town wallet` }),
       ]),
       h('div', { class: 'bank' }, [
         h('div', { class: 'bank__col' }, [

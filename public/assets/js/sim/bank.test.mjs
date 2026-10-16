@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GOODS, SPREAD, dateKeyOf, dayGoods, dayPath, minuteOf, priceAt, sellPrice, spoilState } from './stall.js';
 import { RULES, addDays, canBorrow, earnsOnTime, interestOn, loanState, minimumDue, minimumPayoff, payLoan, payoffPlan, quoteLoan, restructure } from './bank.js';
-import { coinText, coinsText, post } from '../../../js/wallet.js';
+import { coinText, moneyText, post } from '../../../js/wallet.js';
 
 test('a refused spend shows the balance cut to the cent and says how much is short', () => {
   let state = {};
@@ -11,11 +11,11 @@ test('a refused spend shows the balance cut to the cent and says how much is sho
   post(store, { amount: 46.13, kind: 'grant' });
   const r = post(store, { amount: -233.82, kind: 'stall-buy' });
   assert.equal(r.ok, false);
-  assert.equal(r.error, 'You have 46.13 coins, which isn’t enough.');
+  assert.equal(r.error, 'You have L$46.13, which isn’t enough.');
   assert.equal(r.short, 187.69);
   assert.equal(coinText(9.999), '9.99', 'never rounded up');
-  assert.equal(coinsText(1), '1 coin');
-  assert.equal(coinsText(12.5), '12.50 coins');
+  assert.equal(moneyText(1), 'L$1');
+  assert.equal(moneyText(12.5), 'L$12.50');
 });
 
 test('the stall is the same for everyone on a date, and prices move during the day', () => {

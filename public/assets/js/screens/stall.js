@@ -3,7 +3,7 @@
 // coins (or the Town Card), and learn why borrowing to speculate is dangerous.
 import { GOODS, dateKeyOf, dayGoods, dayPath, minuteOf, priceAt, sellPrice, spoilState } from '../sim/stall.js';
 import { addDays, loanState } from '../sim/bank.js';
-import { balance as walletBalance, coinsText, ensureStarter, post } from '../../../js/wallet.js';
+import { balance as walletBalance, moneyText, ensureStarter, post } from '../../../js/wallet.js';
 import { announce, delta, h, icon, number } from '../ui.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -52,8 +52,8 @@ export function mount(root, ctx) {
         h('p', { class: 'screen-sub', text: 'Every day brings different goods. Prices change every 10 minutes, and some goods spoil if you hold them too long.' }),
       ]),
       h('div', { class: 'stall-bar' }, [
-        h('p', { class: 'chip', text: `${coinsText(wallet)} in your Town wallet` }),
-        card ? h('p', { class: 'chip', text: card.balance < card.limit ? `Town Card: ${coinsText(card.limit - card.balance)} left to spend` : 'Town Card: nothing left to spend' }) : null,
+        h('p', { class: 'chip', text: `${moneyText(wallet)} in your Town wallet` }),
+        card ? h('p', { class: 'chip', text: card.balance < card.limit ? `Town Card: ${moneyText(card.limit - card.balance)} left to spend` : 'Town Card: nothing left to spend' }) : null,
         h('p', { class: 'field__hint', text: `Prices for ${dayText(today)}, updated every 10 minutes. The stall buys back 10% below its selling price.` }),
       ]),
       borrowed
@@ -114,7 +114,7 @@ export function mount(root, ctx) {
       const cost = round(ask * qty);
       const short = round(cost - wallet);
       const cardPays = card && cost <= round(card.limit - card.balance) + 1e-9;
-      total.textContent = short > 0 ? `Total: ${coins(cost)}. You have ${coinsText(wallet)}, so you need ${number(short, 2)} more coins${cardPays ? ', or pay with the Town Card' : ''}.` : `Total: ${coins(cost)}`;
+      total.textContent = short > 0 ? `Total: ${coins(cost)}. You have ${moneyText(wallet)}, so you need ${number(short, 2)} more coins${cardPays ? ', or pay with the Town Card' : ''}.` : `Total: ${coins(cost)}`;
     };
     showTotal();
     const step = (d) => {
