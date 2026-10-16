@@ -94,3 +94,12 @@ const router = createRouter({
 });
 
 router.start();
+
+// The live server sometimes takes seconds to answer one request. Once the page has loaded, the next screens'
+// modules are fetched and parsed in the background (modulepreload runs nothing), so moving on never waits for them.
+const WARM = ['character', 'moneycheck', 'result', 'town', 'path', 'lab', 'report', 'tutor', 'account'];
+const warm = () => {
+  for (const name of WARM) document.head.append(Object.assign(document.createElement('link'), { rel: 'modulepreload', href: `assets/js/screens/${name}.js` }));
+};
+if (document.readyState === 'complete') setTimeout(warm, 1200);
+else addEventListener('load', () => setTimeout(warm, 1200), { once: true });
