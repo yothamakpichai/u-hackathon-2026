@@ -55,6 +55,11 @@ switch ($action) {
     case 'demo':
         require_method('POST');
         same_origin();
+        // The Judge demo's Arena account skips the age and parent gates (it is an adult demo account), so it can be
+        // switched off with DEMO_ENABLED=0 once judging is over. The demo profile itself still loads without it.
+        if (env('DEMO_ENABLED', '1') !== '1') {
+            send_error(404, 'DEMO_OFF', 'Demo accounts are switched off. You can make a normal account instead.');
+        }
         if (!arena_v2_ready()) {
             send_error(503, 'V2_OFF', 'Demo accounts aren’t available right now. You can make a normal account instead.');
         }
