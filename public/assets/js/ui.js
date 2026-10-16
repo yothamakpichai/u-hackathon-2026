@@ -127,7 +127,7 @@ export function stateView({ kind = 'empty', title, body = '', actions = [], head
   const items = actions.filter(Boolean);
   return h('div', { class: `state state--${kind}`, role: isError ? 'alert' : 'status' }, [
     visual,
-    h(heading, { class: 'state__title', text: title }),
+    h(heading, { class: 'state__title', text: title, ...(heading === 'h1' && { tabindex: '-1' }) }), // a screen's title can take focus
     body ? h('p', { class: 'state__body', text: body }) : null,
     items.length ? h('div', { class: 'state__actions' }, items) : null,
   ]);

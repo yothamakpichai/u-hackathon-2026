@@ -11,6 +11,24 @@ const PASS = 4; // checkpoint questions right out of 5
 const KIND = { lesson: 'Lesson', mission: 'Mission', checkpoint: 'Checkpoint' };
 const NODE_ICON = { lesson: 'book', mission: 'target', checkpoint: 'trophy' };
 const ENTER = [{ opacity: 0, transform: 'translateX(12px)' }, { opacity: 1, transform: 'none' }];
+let cached = null; // { data, coach }: Back remounts this screen, so the path isn't fetched again
+
+// The same answer order for everyone, but a different one for each question (the content puts many answers in the
+// same slot): a small seeded shuffle of the options, with the answer index moved along.
+function shuffled(q, seed) {
+  let x = 2166136261;
+  for (const ch of seed) x = Math.imul(x ^ ch.charCodeAt(0), 16777619);
+  const rand = () => {
+    x = Math.imul(x ^ (x >>> 15), 2246822507) ^ Math.imul(x ^ (x >>> 13), 3266489909);
+    return ((x ^= x >>> 16) >>> 0) / 4294967296;
+  };
+  const order = q.options.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return { options: order.map((i) => q.options[i]), answerIndex: order.indexOf(q.answerIndex) };
+}
 
 // Does a run's metrics object meet every condition of a mission? Paths like 'coinLaunched.lpLocked' reach inside.
 export function missionPassed(check, metrics) {
@@ -157,7 +175,7 @@ export function mount(root, ctx) {
           ]),
         ),
       ),
-      count < chapters.length ? h('button', { class: 'btn btn--block', type: 'button', onClick: () => navigate('/lab') }, 'Open the Coach in the Market Lab') : null,
+      count < chapters.length ? h('button', { class: 'btn btn--block', type: 'button', onClick: () => navigate('/lab?coach=1') }, 'Open the Coach in the Market Lab') : null,
     ]);
   }
 
@@ -171,16 +189,20 @@ export function mount(root, ctx) {
   }
 
   function openNode(n) {
+    history.pushState({ pathNode: n.id }, '', `#/path?step=${n.id}`);
     if (n.type === 'lesson') lesson(n);
     else if (n.type === 'mission') mission(n);
     else checkpoint(n);
   }
 
-  const backToMap = (label = 'Back to your path') => h('button', { class: 'btn btn--block', type: 'button', onClick: () => map() }, label);
+  // Back to the map: through history when a step added an entry (Back then works the same), otherwise directly.
+  const toMap = () => (history.state?.pathNode ? history.back() : map());
+  const backToMap = (label = 'Back to your path') => h('button', { class: 'btn btn--block', type: 'button', onClick: toMap }, label);
 
   function top(n, total, current) {
     return h('div', { class: 'screen-top' }, [
-      h('button', { class: 'icon-btn', type: 'button', onClick: () => map(), title: 'Back to your path' }, [icon('close'), h('span', { class: 'visually-hidden', text: 'Back to your path' })]),
+      h('h1', { class: 'visually-hidden', text: n.title }),
+      h('button', { class: 'icon-btn', type: 'button', onClick: toMap, title: 'Back to your path' }, [icon('close'), h('span', { class: 'visually-hidden', text: 'Back to your path' })]),
       progress({ total, current, label: n.title }),
     ]);
   }
@@ -191,9 +213,9 @@ export function mount(root, ctx) {
       mood: 'celebrating',
       title: first ? `+${XP[n.type]} XP` : 'Done again!',
       text,
-      actions: [...extras, h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: () => map() }, ['Back to your path', icon('arrow-right', { size: 20 })])],
+      actions: [...extras, h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: toMap }, ['Back to your path', icon('arrow-right', { size: 20 })])],
     });
-    show(panel);
+    show(h('h1', { class: 'visually-hidden', text: n.title }), panel);
     if (first) celebrate(panel);
     announce(`${n.title} done.`);
   }
@@ -217,8 +239,7 @@ export function mount(root, ctx) {
           audio,
           audioId: `path-${tier}-${n.id}-quiz`,
           prompt: l.quiz.prompt,
-          options: l.quiz.options,
-          answerIndex: l.quiz.answerIndex,
+          ...shuffled(l.quiz, `${tier}:${n.id}:quiz`),
           explain: l.quiz.explain,
           nextLabel: 'Finish the lesson',
           onNext: () =>
@@ -232,7 +253,23 @@ export function mount(root, ctx) {
   function mission(n) {
     const run = store.get().lab?.[tier];
     const started = mine().missions?.[n.id]?.startedAt;
-    const last = run?.metrics && started && run.at > started;
+    const finished = mine().done?.[n.id];
+    if (finished) {
+      show(
+        h('div', { class: 'screen-head' }, [
+          h('p', { class: 'screen-eyebrow', text: `Mission · ${XP.mission} XP` }),
+          h('h1', { class: 'screen-title', text: n.title }),
+        ]),
+        h('div', { class: 'card path-mission' }, [
+          h('p', { class: 'path-mission__goal', text: n.goal }),
+          h('p', { class: 'path-banner__text', text: `Mission complete on ${new Date(finished.at).toLocaleDateString('en-GB', { dateStyle: 'medium' })}: +${finished.xp ?? XP.mission} XP.` }),
+          h('button', { class: 'btn btn--block', type: 'button', onClick: () => navigate('/lab') }, 'Play today’s market'),
+          backToMap(),
+        ]),
+      );
+      return;
+    }
+    const last = run?.metrics && started && run.at > started && !missionPassed(n.check, run.metrics);
     show(
       h('div', { class: 'screen-head' }, [
         h('p', { class: 'screen-eyebrow', text: `Mission · ${XP.mission} XP` }),
@@ -267,8 +304,7 @@ export function mount(root, ctx) {
           audio,
           audioId: `path-${tier}-${n.id}-q${i + 1}`,
           prompt: q.prompt,
-          options: q.options,
-          answerIndex: q.answerIndex,
+          ...shuffled(q, `${tier}:${n.id}:${i}`),
           explain: q.explain,
           nextLabel: last ? 'See my result' : 'Next question',
           onAnswer: (ok) => {
@@ -284,6 +320,7 @@ export function mount(root, ctx) {
         return;
       }
       show(
+        h('h1', { class: 'visually-hidden', text: n.title }),
         resultPanel({
           mood: 'thinking',
           title: `${right} of ${qs.length}: nearly there`,
@@ -296,9 +333,10 @@ export function mount(root, ctx) {
   }
 
   async function load() {
-    view.replaceChildren(stateView({ kind: 'loading', heading: 'h1', title: 'Loading your Learning Path…' }));
+    if (!cached) view.replaceChildren(stateView({ kind: 'loading', heading: 'h1', title: 'Loading your Learning Path…' }));
     try {
-      const [data, coach] = await Promise.all([getJSON(`${config.DATA_BASE}path.json`), getJSON(`${config.DATA_BASE}coach.json`).catch(() => null)]);
+      cached ??= await Promise.all([getJSON(`${config.DATA_BASE}path.json`), getJSON(`${config.DATA_BASE}coach.json`).catch(() => null)]).then(([data, coach]) => ({ data, coach }));
+      const { data, coach } = cached;
       units = data?.[tier]?.units || [];
       chapters = (coach?.chapters || []).filter((c) => !c.tiers || c.tiers.includes(tier)).map((c) => ({ id: c.id, title: c.title }));
       coachXp = coach?.xp ?? 0;
@@ -317,6 +355,7 @@ export function mount(root, ctx) {
           actions: [h('button', { class: 'btn btn--primary', type: 'button', onClick: load }, 'Try again'), h('button', { class: 'btn', type: 'button', onClick: () => navigate('/') }, 'Back to start')],
         }),
       );
+      view.querySelector('h1')?.focus({ preventScroll: true });
     }
   }
 
