@@ -37,10 +37,30 @@ export function loanState(loan, todayKey) {
   return { interest, owed, due, late: owed > 0 && todayKey > due, paid: owed <= 0 };
 }
 
-// Restructuring: freeze the interest today and spread what is owed over equal weekly payments.
+// Restructuring: freeze the interest and spread what is owed over equal weekly payments. A plan made
+// before the due date still counts the interest up to the due date, so it never costs less than the
+// loan's own terms; it only stops the interest growing after that.
 export function restructure(loan, todayKey, weeks = 4) {
-  const { owed } = loanState(loan, todayKey);
-  return { ...loan, frozenOn: todayKey, plan: { weeks, weekly: round(owed / weeks), due: addDays(todayKey, weeks * 7), from: todayKey } };
+  const frozenOn = todayKey < loan.due ? loan.due : todayKey;
+  const { owed } = loanState(loan, frozenOn);
+  return { ...loan, frozenOn, plan: { weeks, weekly: round(owed / weeks), due: addDays(todayKey, weeks * 7), from: todayKey } };
+}
+
+// The +20 for repaying on time goes only to a loan that was held at least a day and never late or
+// on a plan, so borrowing and repaying at once can't farm the score.
+export const earnsOnTime = (loan, todayKey) => loan.start < todayKey && !loan.plan && !loan.lateMarked && !loanState(loan, todayKey).late;
+
+// The Bank checks before it lends; Quick Cash checks nothing but lends one loan at a time.
+// `limit` is the most the player may owe across all loans (set by the credit score).
+export function canBorrow({ loans, todayKey, amount, lender = 'bank', limit }) {
+  const open = loans.filter((l) => !loanState(l, todayKey).paid);
+  if (lender === 'quickcash') {
+    return open.some((l) => l.lender === 'quickcash') ? { ok: false, reason: 'quickcash-open' } : { ok: true };
+  }
+  if (open.some((l) => loanState(l, todayKey).late)) return { ok: false, reason: 'late' };
+  const owed = round(open.reduce((s, l) => s + loanState(l, todayKey).owed, 0));
+  const room = round(Math.max(0, limit - owed));
+  return amount > room + 1e-9 ? { ok: false, reason: 'limit', owed, room } : { ok: true, owed, room };
 }
 
 // ---- Town Card -----------------------------------------------------------------------------
@@ -66,32 +86,39 @@ export const minimumDue = (balance) => round(Math.min(balance, Math.max(RULES.ca
 
 // ---- several loans: which to pay first --------------------------------------------------------
 
-// Pay `budget` a day: everyone's minimum is the daily interest, the rest goes to one loan at a time,
-// ordered smallest balance first or highest rate first. Uncapped, to show the real trade-off.
+// Pay `budget` a day, starting today, all of it to one loan at a time, ordered smallest balance first
+// or highest rate first. Interest follows the loans' own game rule: simple, per day, never above the
+// principal, and none after a plan's freeze date. Each loan: { id, owed, dailyRate, principal,
+// interest (so far), freezeIn (days until its interest stops, if on a plan) }. `covered` is false when
+// the budget can't even pay the next day's interest, so only the game's cap lets the plan finish.
 export function payoffPlan(loans, budget, order) {
-  let ls = loans.map((l) => ({ id: l.id, owed: l.owed, rate: l.dailyRate }));
+  const ls = loans.map((l) => ({ id: l.id, owed: l.owed, rate: l.dailyRate, principal: l.principal ?? l.owed, interest: l.interest || 0, freezeIn: l.freezeIn ?? Infinity }));
   ls.sort(order === 'smallest' ? (a, b) => a.owed - b.owed : (a, b) => b.rate - a.rate);
+  const nextInterest = (l, day) => (l.owed <= 0.005 || day > l.freezeIn ? 0 : Math.max(0, Math.min(l.principal * l.rate, l.principal - l.interest)));
+  const covered = ls.reduce((s, l) => s + nextInterest(l, 1), 0) < budget;
   let interest = 0;
   let days = 0;
-  const firstCleared = [];
-  while (ls.some((l) => l.owed > 0.005) && days < 3650) {
-    days++;
-    for (const l of ls) {
-      if (l.owed <= 0) continue;
-      const add = l.owed * l.rate;
-      l.owed += add;
-      interest += add;
-    }
+  const cleared = [];
+  while (days < 3650) {
     let left = budget;
     for (const l of ls) {
       if (left <= 0) break;
+      if (l.owed <= 0.005) continue;
       const pay = Math.min(l.owed, left);
       l.owed -= pay;
       left -= pay;
-      if (l.owed <= 0.005 && !firstCleared.includes(l.id)) firstCleared.push(l.id);
+      if (l.owed <= 0.005) cleared.push(l.id);
+    }
+    days++;
+    if (ls.every((l) => l.owed <= 0.005)) break;
+    for (const l of ls) {
+      const add = nextInterest(l, days);
+      l.owed += add;
+      l.interest += add;
+      interest += add;
     }
   }
-  return { days, interest: round(interest), order: firstCleared };
+  return { days, interest: round(interest), order: cleared, finished: ls.every((l) => l.owed <= 0.005), covered };
 }
 
 const round = (n) => Math.round(n * 100) / 100;

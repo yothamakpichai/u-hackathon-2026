@@ -1,28 +1,36 @@
 // Bank (BRIEF §16.1; slice J12). Borrow and repay Town coins, a Town Card with weekly statements, an
 // in-game credit score that sets future rates, the Quick Cash trap, and which debt to pay first.
 // Game rule, unlike real loans: total interest is capped at the amount borrowed, and a plan to
-// restructure is always available. All coins are fake.
-import { RULES, addDays, loanState, minimumDue, minimumPayoff, payoffPlan, quoteLoan, restructure } from '../sim/bank.js';
+// restructure is always available. All coins are fake. Explorers get plainer words and costs in
+// coins; Builders also get the research citation.
+import { RULES, addDays, canBorrow, daysBetween, earnsOnTime, interestOn, loanState, minimumDue, minimumPayoff, payoffPlan, quoteLoan, restructure } from '../sim/bank.js';
 import { dateKeyOf } from '../sim/stall.js';
-import { CREDIT, adjustCredit, balance as walletBalance, creditScore, ensureStarter, post, rateFor } from '../../../js/wallet.js';
+import { CREDIT, adjustCredit, balance as walletBalance, coinsText, creditScore, ensureStarter, post, rateFor } from '../../../js/wallet.js';
 import { announce, h, icon, number } from '../ui.js';
 
 const coins = (n) => `${number(n, 2)} coins`;
 const pct = (r) => `${number(r * 100, 1)}%`;
+const round = (n) => Math.round(n * 100) / 100;
 const uid = () => `l${Date.now().toString(36)}${Math.floor(performance.now() * 1000).toString(36)}`;
 const band = (s) => (s >= 750 ? 'Excellent' : s >= 650 ? 'Good' : s >= 550 ? 'Fair' : 'Building');
 const limitFor = (score) => Math.round(50 + ((score - CREDIT.min) / (CREDIT.max - CREDIT.min)) * 150);
+// 'Fri 16 Oct' for a Bangkok date key.
+const dayText = (key) => new Date(`${key}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 export function mount(root, ctx) {
-  const { store, navigate } = ctx;
+  const { store, navigate, tier } = ctx;
+  const young = tier === 'explorer';
   const view = h('section', { class: 'screen bank-screen' });
   root.append(view);
   ensureStarter(store);
   let amount = RULES.loanAmounts[0];
   let days = RULES.loanDays[1];
+  let notice = null; // { key, text }: why an action was refused, shown in its card on the next draw
 
   const bankOf = () => ({ loans: [], card: null, ...store.get().bank });
   const saveBank = (bank) => store.set({ bank });
+  const bill = young ? 'bill' : 'statement';
+  const weekly = number(RULES.card.weeklyRate * 100, 0); // the Town Card's weekly rate, in %
 
   // Late payments and card statements are settled when the Bank is opened (interest is per real day).
   function settle(today) {
@@ -40,18 +48,25 @@ export function mount(root, ctx) {
     let card = bank.card;
     while (card && today >= addDays(card.statementDate, 7)) {
       const unpaid = Math.max(0, card.statementBalance - card.paidSince);
-      if (card.statementBalance > 0 && card.paidSince < card.minDue) adjustCredit(store, RULES.credit.late, 'Missed a Town Card minimum');
+      if (card.statementBalance > 0 && card.paidSince < card.minDue && !card.lateMarked) adjustCredit(store, RULES.credit.late, 'Missed a Town Card minimum');
       // Game rule: card interest never adds up to more than was spent on the card.
-      const add = Math.max(0, Math.min(unpaid * RULES.card.weeklyRate, (card.spent || 0) - (card.interest || 0)));
-      const balance = Math.round((card.balance + add) * 100) / 100;
+      const add = round(Math.max(0, Math.min(unpaid * RULES.card.weeklyRate, (card.spent || 0) - (card.interest || 0))));
+      const balance = round(card.balance + add);
       const statementDate = addDays(card.statementDate, 7);
-      card = { ...card, balance, interest: (card.interest || 0) + add, statementDate, statementBalance: balance, minDue: minimumDue(balance), dueDate: addDays(statementDate, RULES.card.dueDays), paidSince: 0 };
+      card = { ...card, balance, interest: (card.interest || 0) + add, added: add, statementDate, statementBalance: balance, minDue: minimumDue(balance), dueDate: addDays(statementDate, RULES.card.dueDays), paidSince: 0, lateMarked: false };
+      changed = true;
+    }
+    // The minimum is due 3 days after the statement: missing it is late on the due date, once.
+    if (card && today > card.dueDate && card.statementBalance > 0 && (card.paidSince || 0) < card.minDue && !card.lateMarked) {
+      adjustCredit(store, RULES.credit.late, 'Missed a Town Card minimum');
+      card = { ...card, lateMarked: true };
       changed = true;
     }
     if (changed) saveBank({ ...bank, loans, card });
   }
 
-  function render() {
+  // focus: data-keys to put focus back on after the redraw; the first one found wins.
+  function render(focus = []) {
     const today = dateKeyOf(Date.now());
     settle(today);
     const bank = bankOf();
@@ -61,119 +76,190 @@ export function mount(root, ctx) {
     view.replaceChildren(
       h('div', { class: 'screen-head' }, [
         h('p', { class: 'screen-eyebrow', text: 'Bank' }),
-        h('h1', { class: 'screen-title', text: 'Borrowing, repaying and credit' }),
+        h('h1', { class: 'screen-title', text: 'Borrowing, repaying and credit', dataset: { key: 'title' } }),
         h('p', { class: 'screen-sub', text: 'Learn what borrowing really costs, with Town coins. Nothing here is real money.' }),
-        h('p', { class: 'chip', text: `${number(walletBalance(store.get()), 0)} coins in your Town wallet` }),
+        h('p', { class: 'chip', text: `${coinsText(walletBalance(store.get()))} in your Town wallet` }),
       ]),
       h('div', { class: 'bank' }, [
-        h('div', { class: 'card bank-score' }, [
-          h('h2', { class: 'lab-card__title', text: 'Your credit score' }),
-          h('p', { class: 'bank-score__value' }, [h('strong', { text: String(score) }), ` · ${band(score)}`]),
-          h('p', { class: 'field__hint', text: `From ${CREDIT.min} to ${CREDIT.max}. Paying back on time raises it; paying late lowers it. A better score means a lower rate: yours today is ${pct(rate)} a day.` }),
+        h('div', { class: 'bank__col' }, [
+          h('div', { class: 'card bank-score' }, [
+            h('h2', { class: 'lab-card__title', text: 'Your credit score' }),
+            h('p', { class: 'bank-score__value' }, [h('strong', { text: String(score) }), ` · ${band(score)}`]),
+            h('p', {
+              class: 'field__hint',
+              text: young
+                ? `From ${CREDIT.min} to ${CREDIT.max}. Paying back on time raises it; paying late lowers it. A better score makes borrowing cheaper: right now, borrowing 100 coins costs ${coins(100 * rate)} a day.`
+                : `From ${CREDIT.min} to ${CREDIT.max}. Paying back on time raises it; paying late lowers it. A better score means a lower rate: yours today is ${pct(rate)} a day.`,
+            }),
+          ]),
+          loansCard(active, today),
+          active.length >= 2 ? payoffCard(active, today) : null,
         ]),
-        loansCard(active, today),
-        borrowCard(rate, today),
-        quickCashCard(today),
-        cardCard(bank.card, score, today),
-        active.length >= 2 ? payoffCard(active, today) : null,
+        h('div', { class: 'bank__col' }, [
+          borrowCard(bank, score, rate, today),
+          quickCashCard(bank, rate, today),
+          cardCard(bank.card, score, today),
+        ]),
         realLifeCard(),
       ]),
-      h('button', { class: 'btn btn--ghost', type: 'button', onClick: () => navigate('/stall') }, 'Back to the Daily Stall'),
+      h('button', { class: 'btn btn--ghost', type: 'button', dataset: { key: 'back' }, onClick: () => navigate('/stall') }, 'Back to the Daily Stall'),
     );
+    notice = null;
+    refocus(focus);
   }
+
+  function refocus(keys) {
+    for (const k of [].concat(keys)) {
+      const el = k && view.querySelector(`[data-key="${k}"]`);
+      if (!el) continue;
+      if (!el.matches('button, a[href], summary')) el.setAttribute('tabindex', '-1');
+      el.focus({ preventScroll: true });
+      return;
+    }
+  }
+
+  // A refused action says why next to its button, and to screen readers.
+  function refuse(key, text, focusKey) {
+    notice = { key, text };
+    announce(text);
+    render([focusKey, key]);
+  }
+  const note = (key) => (notice && notice.key === key ? h('p', { class: 'field__error', text: notice.text }) : null);
 
   // ---- loans --------------------------------------------------------------------------------
   function loansCard(active, today) {
     const rows = active.map((l) => {
       const s = loanState(l, today);
-      const repay = (amt) => {
-        const pay = Math.min(amt, s.owed);
-        const paid = post(store, { amount: -pay, kind: 'repay', note: l.lender === 'quickcash' ? 'Quick Cash' : 'Bank loan', ref: l.id });
-        if (!paid.ok) return announce(paid.error);
+      const quick = l.lender === 'quickcash';
+      const title = `${quick ? 'Quick Cash' : 'Bank loan'} of ${coins(l.principal)}`;
+      const key = `loan:${l.id}`;
+      const repay = (amt, which) => {
+        const pay = round(Math.min(amt, s.owed));
+        const paid = post(store, { amount: -pay, kind: 'repay', note: quick ? 'Quick Cash' : 'Bank loan', ref: l.id });
+        if (!paid.ok) return refuse(key, `${paid.error} You need ${number(paid.short, 2)} more coins. Sell something at the Daily Stall${l.plan ? '' : ', or make a plan to pay in parts'}.`, `${key}:${which}`);
         const bank = bankOf();
-        const loans = bank.loans.map((x) => (x.id === l.id ? { ...x, paid: Math.round(((x.paid || 0) + pay) * 100) / 100 } : x));
+        const loans = bank.loans.map((x) => (x.id === l.id ? { ...x, paid: round((x.paid || 0) + pay) } : x));
         saveBank({ ...bank, loans });
         const after = loanState(loans.find((x) => x.id === l.id), today);
-        if (after.paid && !s.late && !l.lateMarked) {
+        if (after.paid && earnsOnTime(l, today)) {
           adjustCredit(store, RULES.credit.onTime, 'Repaid a loan on time');
-          announce('Paid off on time. Your credit score went up.');
-        } else announce(`Paid ${coins(pay)}.`);
-        render();
+          announce('Paid off on time. Your credit score went up by 20.');
+        } else if (after.paid) {
+          announce(l.plan ? 'Paid off. Your plan is done.' : l.start >= today ? 'Paid off. A loan repaid the day you take it doesn’t change your score.' : 'Paid off.');
+        } else announce(`Paid ${coins(pay)}. You still owe ${coins(after.owed)}.`);
+        render([`${key}:${which}`, key, 'loans']);
       };
       const plan = () => {
         const bank = bankOf();
-        saveBank({ ...bank, loans: bank.loans.map((x) => (x.id === l.id ? restructure(x, today, 4) : x)) });
+        const next = restructure(bank.loans.find((x) => x.id === l.id) || l, today, 4);
+        saveBank({ ...bank, loans: bank.loans.map((x) => (x.id === l.id ? next : x)) });
         if (!l.plan) adjustCredit(store, RULES.credit.restructure, 'Restructured a loan');
-        announce('Your plan is set: interest is frozen and the rest is split into 4 weekly payments.');
-        render();
+        announce(`Your plan is set: ${coins(next.plan.weekly)} a week for 4 weeks. ${next.frozenOn > today ? `Interest stops on ${dayText(next.frozenOn)}, the day the loan was due.` : 'Interest is frozen.'} Your score went down by 10.`);
+        render([`${key}:week`, `${key}:all`, key]);
       };
+      const half = round(s.owed / 2);
+      const week = round(Math.min(s.owed, l.plan ? l.plan.weekly : 0));
+      const name = quick ? 'Quick Cash' : `the ${title}`;
       return h('li', { class: `bank-loan${s.late ? ' is-late' : ''}` }, [
-        h('p', { class: 'bank-loan__title', text: `${l.lender === 'quickcash' ? 'Quick Cash' : 'Bank loan'} of ${coins(l.principal)}` }),
-        h('p', { text: `You owe ${coins(s.owed)} (interest so far ${coins(s.interest)}). Due ${s.due}.` }),
-        s.late ? h('p', { class: 'chip chip--loss', text: 'Late: this lowered your score' }) : null,
-        l.plan ? h('p', { class: 'chip chip--ok', text: `On a plan: ${coins(l.plan.weekly)} a week, interest frozen` }) : null,
+        h('p', { class: 'bank-loan__title', text: title, dataset: { key } }),
+        h('p', { text: `You owe ${coins(s.owed)} (interest so far ${coins(s.interest)}). Due ${dayText(s.due)}.` }),
+        s.late ? h('p', { class: 'chip chip--loss', text: 'Late: this lowered your score by 40' }) : null,
+        l.plan ? h('p', { class: 'chip chip--ok', text: l.frozenOn > today ? `On a plan: ${coins(l.plan.weekly)} a week. Interest stops on ${dayText(l.frozenOn)}` : `On a plan: ${coins(l.plan.weekly)} a week, interest frozen` }) : null,
+        note(key),
         h('div', { class: 'bank-actions' }, [
-          h('button', { class: 'btn btn--sm btn--primary', type: 'button', onClick: () => repay(s.owed) }, `Repay all ${coins(s.owed)}`),
-          s.owed > 5 ? h('button', { class: 'btn btn--sm', type: 'button', onClick: () => repay(Math.min(s.owed, l.plan ? l.plan.weekly : Math.ceil(s.owed / 2))) }, l.plan ? `Pay this week ${coins(Math.min(s.owed, l.plan.weekly))}` : 'Repay half') : null,
-          !l.plan ? h('button', { class: 'btn btn--sm btn--ghost', type: 'button', onClick: plan }, 'Make a plan') : null,
+          h('button', { class: 'btn btn--sm btn--primary', type: 'button', dataset: { key: `${key}:all` }, 'aria-label': `Repay all ${coins(s.owed)} of ${name}`, onClick: () => repay(s.owed, 'all') }, `Repay all ${coins(s.owed)}`),
+          s.owed > 5 && l.plan ? h('button', { class: 'btn btn--sm', type: 'button', dataset: { key: `${key}:week` }, 'aria-label': `Pay this week ${coins(week)} on ${name}`, onClick: () => repay(week, 'week') }, `Pay this week ${coins(week)}`) : null,
+          s.owed > 5 && !l.plan ? h('button', { class: 'btn btn--sm', type: 'button', dataset: { key: `${key}:half` }, 'aria-label': `Repay half (${coins(half)}) of ${name}`, onClick: () => repay(half, 'half') }, `Repay half (${coins(half)})`) : null,
+          !l.plan ? h('button', { class: 'btn btn--sm btn--ghost', type: 'button', dataset: { key: `${key}:plan` }, 'aria-label': `Make a plan for ${name}`, 'aria-describedby': `plan-hint-${l.id}`, onClick: plan }, 'Make a plan') : null,
         ]),
+        !l.plan ? h('p', { class: 'field__hint', id: `plan-hint-${l.id}`, text: `A plan splits what you owe into 4 weekly payments, and interest stops ${today < l.due ? 'on the due date' : 'today'}. It lowers your score by 10.` }) : null,
       ]);
     });
     return h('div', { class: 'card bank-loans' }, [
-      h('h2', { class: 'lab-card__title', text: 'Your loans' }),
+      h('h2', { class: 'lab-card__title', text: 'Your loans', dataset: { key: 'loans' } }),
       rows.length ? h('ul', { class: 'bank-list' }, rows) : h('p', { class: 'piggy-empty', text: 'No loans. That’s a fine place to be.' }),
       h('p', { class: 'field__hint', text: 'Game rule: interest builds up each real day but never adds up to more than you borrowed. Real loans have no such cap. A plan to pay in weekly parts is always on offer.' }),
+      h('p', { class: 'field__hint', text: 'Your score goes up by 20 when you repay a loan on time, at least a day after you took it.' }),
     ]);
   }
 
-  function borrowCard(rate, today) {
+  function borrowCard(bank, score, rate, today) {
+    const limit = limitFor(score);
+    const check = canBorrow({ loans: bank.loans, todayKey: today, amount, limit });
     const q = quoteLoan({ principal: amount, days, dailyRate: rate });
-    const pick = (list, value, set, label, fmt) => h('div', { class: 'field' }, [
+    const pick = (list, value, set, label, fmt, kind) => h('div', { class: 'field' }, [
       h('p', { class: 'field__label', text: label }),
-      h('div', { class: 'segmented', role: 'group', 'aria-label': label }, list.map((v) => h('button', { class: 'segmented__btn', type: 'button', 'aria-pressed': String(v === value), onClick: () => { set(v); render(); } }, fmt(v)))),
+      h('div', { class: 'segmented', role: 'group', 'aria-label': label }, list.map((v) => h('button', {
+        class: 'segmented__btn',
+        type: 'button',
+        'aria-pressed': String(v === value),
+        dataset: { key: `pick:${kind}:${v}` },
+        onClick: () => {
+          set(v);
+          render([`pick:${kind}:${v}`]);
+          const nq = quoteLoan({ principal: amount, days, dailyRate: rate });
+          const c = canBorrow({ loans: bankOf().loans, todayKey: today, amount, limit });
+          announce(`Total to pay back: ${coins(nq.total)}.${c.ok ? '' : ` ${whyNot(c, limit)}`}`);
+        },
+      }, fmt(v)))),
     ]);
-    const agree = h('button', { class: 'btn btn--primary btn--block', type: 'button' }, `Borrow ${coins(amount)} and pay back ${coins(q.total)}`);
+    const agree = h('button', { class: 'btn btn--primary btn--block', type: 'button', dataset: { key: 'borrow' }, 'aria-disabled': check.ok ? null : 'true', 'aria-describedby': check.ok ? null : 'borrow-why' }, `Borrow ${coins(amount)} and pay back ${coins(q.total)}`);
     agree.addEventListener('click', () => {
+      const c = canBorrow({ loans: bankOf().loans, todayKey: today, amount, limit });
+      if (!c.ok) return announce(whyNot(c, limit));
       const loan = { id: uid(), lender: 'bank', principal: amount, dailyRate: rate, start: today, due: addDays(today, days - 1), paid: 0 };
       saveBank({ ...bankOf(), loans: [...bankOf().loans, loan] });
       post(store, { amount, kind: 'loan', note: 'Bank loan', ref: loan.id });
-      announce(`Borrowed ${coins(amount)}. Pay back ${coins(q.total)} by ${loan.due}.`);
-      render();
+      announce(`Borrowed ${coins(amount)}. Pay back ${coins(q.total)} by ${dayText(loan.due)}.`);
+      render(['borrow']);
     });
     return h('div', { class: 'card bank-borrow' }, [
       h('h2', { class: 'lab-card__title', text: 'Borrow from the Bank' }),
-      pick(RULES.loanAmounts, amount, (v) => (amount = v), 'How much', (v) => `${v} coins`),
-      pick(RULES.loanDays, days, (v) => (days = v), 'For how long', (v) => `${v} days`),
-      h('div', { class: 'bank-quote', role: 'status' }, [
+      pick(RULES.loanAmounts, amount, (v) => (amount = v), 'How much', (v) => `${v} coins`, 'amount'),
+      pick(RULES.loanDays, days, (v) => (days = v), 'For how long', (v) => `${v} days`, 'days'),
+      h('div', { class: 'bank-quote' }, [
         h('p', {}, ['Total to pay back: ', h('strong', { text: coins(q.total) })]),
-        h('p', { class: 'field__hint', text: `${coins(q.principal)} borrowed + ${coins(q.interest)} interest (${pct(rate)} a day for ${days} days).` }),
+        h('p', { class: 'field__hint', text: `${coins(q.principal)} borrowed + ${coins(q.interest)} interest (${young ? coins(q.principal * rate) : pct(rate)} a day for ${days} days).` }),
       ]),
       h('div', { class: 'card card--quiet lesson-mini' }, [
         h('h3', { class: 'lesson-mini__title', text: 'Before you borrow' }),
         h('p', { text: 'A loan is future you paying for something now, plus interest. Ask: will this help me earn or save more than the interest costs? If it only buys something to enjoy now, saving first is cheaper.' }),
       ]),
+      check.ok ? null : h('p', { class: 'field__error', id: 'borrow-why', text: whyNot(check, limit) }),
       agree,
+      h('p', { class: 'field__hint', text: `The Bank checks before it lends. With your score, you can owe it up to ${coins(limit)} in all, and it won’t lend while a loan is late.` }),
     ]);
   }
 
-  function quickCashCard(today) {
+  function whyNot(check, limit) {
+    if (check.reason === 'late') return 'The Bank says no: one of your loans is late. Repay it or make a plan first.';
+    if (!(check.owed > 0)) return `The Bank says no: with your score, it lends you up to ${coins(limit)}. Pick a smaller amount.`;
+    const more = check.room >= RULES.loanAmounts[0] ? ` You can borrow up to ${coins(check.room)} more.` : ' Repay a loan first.';
+    return `The Bank says no: with your score you can owe up to ${coins(limit)}, and you already owe ${coins(check.owed)}.${more}`;
+  }
+
+  function quickCashCard(bank, rate, today) {
     const qc = RULES.quickCash;
     const q = quoteLoan({ principal: qc.amount, days: qc.days, dailyRate: qc.dailyRate });
-    const take = h('button', { class: 'btn btn--sm', type: 'button' }, 'Take Quick Cash anyway');
+    const check = canBorrow({ loans: bank.loans, todayKey: today, lender: 'quickcash' });
+    const why = 'Quick Cash says no: pay back your Quick Cash loan first.';
+    const take = h('button', { class: 'btn btn--sm', type: 'button', dataset: { key: 'quick' }, 'aria-disabled': check.ok ? null : 'true', 'aria-describedby': check.ok ? null : 'quick-why' }, 'Take Quick Cash anyway');
     take.addEventListener('click', () => {
+      if (!canBorrow({ loans: bankOf().loans, todayKey: today, lender: 'quickcash' }).ok) return announce(why);
       const loan = { id: uid(), lender: 'quickcash', principal: qc.amount, dailyRate: qc.dailyRate, start: today, due: addDays(today, qc.days - 1), paid: 0 };
       saveBank({ ...bankOf(), loans: [...bankOf().loans, loan] });
       post(store, { amount: qc.amount, kind: 'loan', note: 'Quick Cash', ref: loan.id });
       announce(`Took ${coins(qc.amount)} from Quick Cash. Pay back ${coins(q.total)} in ${qc.days} days.`);
-      render();
+      render(['quick']);
     });
     return h('div', { class: 'card bank-quick' }, [
       h('p', { class: 'bank-quick__shout', text: `Need coins NOW? ${qc.amount} coins, no checks, no questions!` }),
-      h('p', {}, ['The real cost: pay back ', h('strong', { text: coins(q.total) }), ` in ${qc.days} days. That’s ${pct(qc.dailyRate)} a day, ${number(qc.dailyRate / RULES.bankDailyRate, 0)} times the Bank’s rate.`]),
+      h('p', {}, ['The real cost: pay back ', h('strong', { text: coins(q.total) }), ` in ${qc.days} days. That’s ${young ? coins(qc.amount * qc.dailyRate) : pct(qc.dailyRate)} a day, ${number(qc.dailyRate / rate, 0)} times ${young ? 'what the Bank charges you' : 'your Bank rate'}.`]),
       h('div', { class: 'card card--quiet lesson-mini' }, [
         h('h3', { class: 'lesson-mini__title', text: 'The quick-cash trap' }),
-        h('p', { text: 'Lenders who skip every check charge huge rates, because they expect some people to struggle. In real life, informal lenders can also pressure and threaten borrowers. If you ever need money fast, talk to a trusted adult or a licensed bank first.' }),
+        h('p', { text: 'Lenders who skip every check charge huge rates, because they expect some people to struggle. If you ever need money fast, talk to a trusted adult or a licensed bank first.' }),
       ]),
+      check.ok ? null : h('p', { class: 'field__error', id: 'quick-why', text: why }),
       take,
     ]);
   }
@@ -182,70 +268,106 @@ export function mount(root, ctx) {
   function cardCard(card, score, today) {
     if (!card) {
       const limit = limitFor(score);
-      const open = h('button', { class: 'btn btn--primary', type: 'button' }, `Open a Town Card (limit ${limit} coins)`);
+      const open = h('button', { class: 'btn btn--primary', type: 'button', dataset: { key: 'card:open' } }, `Open a Town Card (limit ${coins(limit)})`);
       open.addEventListener('click', () => {
         saveBank({ ...bankOf(), card: { limit, balance: 0, spent: 0, interest: 0, opened: today, statementDate: today, statementBalance: 0, minDue: 0, dueDate: addDays(today, RULES.card.dueDays), paidSince: 0 } });
-        announce('Your Town Card is open. You can pay with it at the Daily Stall.');
-        render();
+        announce(`Your Town Card is open. You can pay with it at the Daily Stall. Your first ${bill} comes on ${dayText(addDays(today, 7))}.`);
+        render(['card']);
       });
       return h('div', { class: 'card bank-card' }, [
-        h('h2', { class: 'lab-card__title', text: 'Town Card' }),
-        h('p', { text: 'A credit card lets you buy now and pay later. Pay the full statement each week and it costs nothing; pay only the minimum and interest piles up.' }),
+        h('h2', { class: 'lab-card__title', text: 'Town Card', dataset: { key: 'card' } }),
+        h('p', { text: young ? 'A Town Card lets you buy now and pay later. Pay the whole bill each week and it costs nothing; pay only the smallest amount and the cost grows.' : 'A credit card lets you buy now and pay later. Pay the full statement each week and it costs nothing; pay only the minimum and interest piles up.' }),
         open,
       ]);
     }
-    const pay = (amt, label) => {
-      const a = Math.min(amt, card.balance);
+    const pay = (amt, label, which) => {
+      const a = round(Math.min(amt, card.balance));
       if (!(a > 0)) return;
       const paid = post(store, { amount: -a, kind: 'card', note: label });
-      if (!paid.ok) return announce(paid.error);
+      if (!paid.ok) return refuse('card', `${paid.error} You need ${number(paid.short, 2)} more coins to pay ${coins(a)}.`, `card:${which}`);
       const bank = bankOf();
-      saveBank({ ...bank, card: { ...bank.card, balance: Math.round((bank.card.balance - a) * 100) / 100, paidSince: (bank.card.paidSince || 0) + a } });
-      announce(`Paid ${coins(a)} on your Town Card.`);
-      render();
+      const balance = round(bank.card.balance - a);
+      saveBank({ ...bank, card: { ...bank.card, balance, paidSince: round((bank.card.paidSince || 0) + a) } });
+      announce(balance > 0 ? `Paid ${coins(a)} on your Town Card. ${coins(balance)} still to pay.` : `Paid ${coins(a)}. Your Town Card is all paid off.`);
+      render([`card:${which}`, 'card:full', 'card']);
     };
+    const firstWeek = !(card.statementBalance > 0);
+    const minLeft = round(Math.max(0, card.minDue - (card.paidSince || 0)));
     const calc = minimumPayoff(Math.max(card.balance, 0));
-    const minNow = minimumDue(card.balance);
+    const grows = young ? `Anything left unpaid grows by ${weekly} coins for every 100 each week.` : `Unpaid statement balances add ${weekly}% a week.`;
     return h('div', { class: 'card bank-card' }, [
-      h('h2', { class: 'lab-card__title', text: 'Town Card' }),
-      h('p', { text: `Balance ${coins(card.balance)} of a ${coins(card.limit)} limit.` }),
-      h('p', { class: 'field__hint', text: `This week’s statement: ${coins(card.statementBalance)}, minimum ${coins(card.minDue)}, due ${card.dueDate}. Unpaid statement balances add ${pct(RULES.card.weeklyRate)} a week.` }),
+      h('h2', { class: 'lab-card__title', text: 'Town Card', dataset: { key: 'card' } }),
+      h('p', { text: `Limit ${coins(card.limit)} · ${coins(card.balance)} used.` }),
+      h('p', {
+        class: 'field__hint',
+        text: firstWeek
+          ? `Your first ${bill} comes on ${dayText(addDays(card.statementDate, 7))}. ${grows}`
+          : `This week’s ${bill}: ${coins(card.statementBalance)}, minimum ${coins(card.minDue)}, due ${dayText(card.dueDate)}.${card.paidSince > 0 ? ` You’ve paid ${coins(card.paidSince)} since.` : ''} ${grows}`,
+      }),
+      card.added > 0 ? h('p', { class: 'chip chip--warn', text: `We added ${coins(card.added)} (${weekly}%) to the unpaid ${bill}.` }) : null,
+      card.lateMarked
+        ? h('p', { class: 'chip chip--loss', text: minLeft > 0 ? 'Late: minimum not paid. Your score went down by 40.' : 'Minimum paid late. Your score went down by 40.' })
+        : !firstWeek && minLeft === 0 && card.balance > 0 ? h('p', { class: 'chip chip--ok', text: 'Minimum paid for this week' }) : null,
+      note('card'),
       card.balance > 0
         ? h('div', { class: 'bank-actions' }, [
-            h('button', { class: 'btn btn--sm btn--primary', type: 'button', onClick: () => pay(card.balance, 'Town Card in full') }, `Pay in full ${coins(card.balance)}`),
-            h('button', { class: 'btn btn--sm', type: 'button', onClick: () => pay(minNow, 'Town Card minimum') }, `Pay the minimum ${coins(minNow)}`),
+            h('button', { class: 'btn btn--sm btn--primary', type: 'button', dataset: { key: 'card:full' }, onClick: () => pay(card.balance, 'Town Card in full', 'full') }, `Pay in full ${coins(card.balance)}`),
+            !firstWeek && minLeft > 0 ? h('button', { class: 'btn btn--sm', type: 'button', dataset: { key: 'card:min' }, onClick: () => pay(minLeft, 'Town Card minimum', 'min') }, `Pay the minimum ${coins(minLeft)}`) : null,
           ])
         : h('p', { class: 'piggy-done' }, [icon('check', { size: 18 }), 'Nothing owed. Spend with it at the Daily Stall.']),
       card.balance > 0
         ? h('div', { class: 'card card--quiet lesson-mini' }, [
             h('h3', { class: 'lesson-mini__title', text: 'The minimum-payment calculator' }),
-            h('p', { text: `Paying only the minimum on ${coins(card.balance)} would take ${calc.weeks} weeks and cost ${coins(calc.interest)} in interest on a real card. Paying in full costs nothing extra.` }),
+            h('p', { text: young
+              ? `Paying only the smallest amount on ${coins(card.balance)} would take ${calc.weeks} weeks and cost ${coins(calc.interest)} extra. Paying it all costs nothing extra.`
+              : `Paying only the minimum on ${coins(card.balance)} would take ${calc.weeks} weeks and cost ${coins(calc.interest)} in interest at the game’s ${weekly}% a week. Paying in full costs nothing extra.` }),
+            h('p', { class: 'field__hint', text: 'Game rates are much higher than real ones, so you can see interest grow in days. Real limits are under Real life in Thailand.' }),
           ])
         : null,
     ]);
   }
 
   function payoffCard(active, today) {
-    const loans = active.map((l) => ({ id: l.id, owed: loanState(l, today).owed, dailyRate: l.dailyRate, label: l.lender === 'quickcash' ? 'Quick Cash' : `Bank loan of ${l.principal}` }));
+    const loans = active.map((l) => ({
+      id: l.id,
+      owed: loanState(l, today).owed,
+      dailyRate: l.dailyRate,
+      principal: l.principal,
+      interest: interestOn(l, today),
+      freezeIn: l.frozenOn ? daysBetween(today, l.frozenOn) : undefined,
+      label: l.lender === 'quickcash' ? 'Quick Cash' : `the Bank loan of ${coins(l.principal)}`,
+    }));
     const budget = 10;
     const rateFirst = payoffPlan(loans, budget, 'rate');
     const smallFirst = payoffPlan(loans, budget, 'smallest');
     const name = (id) => loans.find((l) => l.id === id)?.label || id;
+    const result = (p) => (p.finished ? `done in ${p.days} days, ${coins(p.interest)} more interest` : `still not done after ${p.days} days`);
+    const same = rateFirst.order.join() === smallFirst.order.join();
+    const hint = young
+      ? 'Paying the dearest loan first usually costs less. Paying the smallest first gives a quick win. Both beat paying a little on everything.'
+      : `Highest rate first usually costs less. Smallest first gives a quick win, and people who clear a whole loan early are more likely to keep going${tier === 'builder' ? ' (Gal and McShane, 2012)' : ''}. Both beat paying a little on everything.`;
     return h('div', { class: 'card bank-payoff' }, [
       h('h2', { class: 'lab-card__title', text: 'Which loan to pay first?' }),
       h('p', { text: `Paying ${budget} coins a day:` }),
-      h('ul', { class: 'bank-list' }, [
-        h('li', { text: `Highest rate first: done in ${rateFirst.days} days, ${coins(rateFirst.interest)} interest. Starts with ${name(rateFirst.order[0])}.` }),
-        h('li', { text: `Smallest first: done in ${smallFirst.days} days, ${coins(smallFirst.interest)} interest. Starts with ${name(smallFirst.order[0])}.` }),
-      ]),
-      h('p', { class: 'field__hint', text: 'Highest rate first usually costs less. Smallest first gives a quick win, and people who clear a whole loan early are more likely to keep going (Gal and McShane, 2012). Both beat paying a little on everything.' }),
+      h('ul', { class: 'bank-list' }, same
+        ? [h('li', { text: `Here the smallest loan ${young ? 'is also the dearest' : 'also has the highest rate'}, so both ways start with ${name(rateFirst.order[0])}: ${result(rateFirst)}.` })]
+        : [
+            h('li', { text: `${young ? 'Dearest loan first' : 'Highest rate first'}: ${result(rateFirst)}. Starts with ${name(rateFirst.order[0])}.` }),
+            h('li', { text: `Smallest first: ${result(smallFirst)}. Starts with ${name(smallFirst.order[0])}.` }),
+          ]),
+      rateFirst.covered ? null : h('p', { class: 'field__error', text: `At first, ${budget} coins a day wouldn’t even cover the interest. This only ends because the game caps interest; a real loan would keep growing. Repay the dearest loan first or make a plan.` }),
+      h('p', { class: 'field__hint', text: hint }),
     ]);
   }
 
   const realLifeCard = () => h('details', { class: 'card card--quiet bank-real' }, [
     h('summary', { text: 'Real life in Thailand (still being checked)' }),
     h('p', { text: 'Thailand sets legal limits on what banks and other lenders can charge, and on credit card minimum payments. Lending above the legal limit is against the law. These figures are on our list to check before we show numbers here.' }),
-    h('p', { class: 'field__hint', text: 'Sources marked [unverified] in docs/SOURCES.md: Bank of Thailand credit card and personal loan ceilings and minimum payment rate; National Credit Bureau scoring; the maximum interest for private lending.' }),
+    h('p', { class: 'field__hint' }, [
+      'Still being checked, and listed under ',
+      h('a', { href: '#/research', text: 'Why this works' }),
+      ': Bank of Thailand credit card and personal loan ceilings and minimum payment rate; National Credit Bureau scoring; the maximum interest for private lending.',
+    ]),
   ]);
 
   render();

@@ -2,7 +2,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GOODS, SPREAD, dateKeyOf, dayGoods, dayPath, minuteOf, priceAt, sellPrice, spoilState } from './stall.js';
-import { RULES, addDays, interestOn, loanState, minimumDue, minimumPayoff, payoffPlan, quoteLoan, restructure } from './bank.js';
+import { RULES, addDays, canBorrow, earnsOnTime, interestOn, loanState, minimumDue, minimumPayoff, payoffPlan, quoteLoan, restructure } from './bank.js';
+import { coinText, coinsText, post } from '../../../js/wallet.js';
+
+test('a refused spend shows the balance cut to the cent and says how much is short', () => {
+  let state = {};
+  const store = { get: () => state, set: (patch) => (state = { ...state, ...patch }) };
+  post(store, { amount: 46.13, kind: 'grant' });
+  const r = post(store, { amount: -233.82, kind: 'stall-buy' });
+  assert.equal(r.ok, false);
+  assert.equal(r.error, 'You have 46.13 coins, which isn’t enough.');
+  assert.equal(r.short, 187.69);
+  assert.equal(coinText(9.999), '9.99', 'never rounded up');
+  assert.equal(coinsText(1), '1 coin');
+  assert.equal(coinsText(12.5), '12.50 coins');
+});
 
 test('the stall is the same for everyone on a date, and prices move during the day', () => {
   assert.deepEqual(dayGoods('2026-10-16'), dayGoods('2026-10-16'));
@@ -63,4 +77,68 @@ test('highest rate first costs less interest; smallest first clears a loan soone
   const snowball = payoffPlan(loans, 10, 'smallest');
   assert.ok(avalanche.interest < snowball.interest, `${avalanche.interest} < ${snowball.interest}`);
   assert.equal(snowball.order[0], 'small', 'a quick win first');
+});
+
+// The payoff card's input, built from stored loans the way the Bank screen builds it.
+const asPayoff = (l, today) => ({ id: l.id, owed: loanState(l, today).owed, dailyRate: l.dailyRate, principal: l.principal, interest: interestOn(l, today), freezeIn: l.frozenOn ? Math.round((Date.parse(l.frozenOn) - Date.parse(today)) / 86_400_000) : undefined });
+
+test('the payoff comparison follows the game rule and always ends with finite numbers', () => {
+  const today = '2026-10-16';
+  const qc = (id) => ({ id, lender: 'quickcash', principal: 30, dailyRate: 0.15, start: today, due: addDays(today, 2), paid: 0 });
+  const two = [qc('a'), qc('b')].map((l) => asPayoff(l, today));
+  for (const order of ['rate', 'smallest']) {
+    const p = payoffPlan(two, 10, order);
+    assert.ok(p.finished && Number.isFinite(p.interest) && p.days < 30, `${order}: ${p.days} days, ${p.interest}`);
+    assert.ok(p.interest <= 60 - 9, 'never more interest than the cap leaves');
+  }
+  // A late Quick Cash at its cap plus a small Bank loan.
+  const late = { id: 'qc', lender: 'quickcash', principal: 30, dailyRate: 0.15, start: addDays(today, -10), due: addDays(today, -8), paid: 0 };
+  const b20 = { id: 'b20', lender: 'bank', principal: 20, dailyRate: 0.01, start: today, due: addDays(today, 6), paid: 0 };
+  const mixed = [late, b20].map((l) => asPayoff(l, today));
+  const small = payoffPlan(mixed, 10, 'smallest');
+  const rate = payoffPlan(mixed, 10, 'rate');
+  assert.ok(small.finished && rate.finished && small.days < 15 && rate.days < 15, `${small.days} / ${rate.days} days`);
+  assert.ok(rate.interest <= 20, 'the capped Quick Cash adds nothing; the Bank loan at most its principal');
+  // Eight loans of 100 at 1.5% a day: 12 coins of interest a day is more than the budget.
+  const many = [...Array(8)].map((_, i) => asPayoff({ id: `m${i}`, lender: 'bank', principal: 100, dailyRate: 0.015, start: today, due: addDays(today, 13), paid: 0 }, today));
+  const slow = payoffPlan(many, 10, 'rate');
+  assert.equal(slow.covered, false, 'the budget does not cover the interest');
+  assert.ok(slow.finished && Number.isFinite(slow.interest) && slow.interest <= 800, `${slow.days} days, ${slow.interest}`);
+  // A loan on a plan adds no interest after its freeze date.
+  const planned = restructure({ ...b20, start: addDays(today, -20), due: addDays(today, -14) }, today, 4);
+  const frozen = payoffPlan([asPayoff(planned, today)], 1, 'rate');
+  assert.equal(frozen.interest, 0);
+});
+
+test('a plan never costs less than the loan’s own terms', () => {
+  const loan = { id: 'a', principal: 100, dailyRate: 0.01, start: '2026-10-16', due: '2026-10-29', paid: 0 };
+  const quote = quoteLoan({ principal: 100, days: 14, dailyRate: 0.01 });
+  const early = restructure(loan, '2026-10-16', 4);
+  assert.equal(loanState(early, '2026-11-30').owed, quote.total, 'a day-one plan still owes the quoted total');
+  assert.equal(early.plan.weekly, Math.round((quote.total / 4) * 100) / 100);
+});
+
+test('the score grows only from loans really carried and repaid on time', () => {
+  const loan = { id: 'a', principal: 20, dailyRate: 0.01, start: '2026-10-16', due: '2026-10-18', paid: 0 };
+  assert.equal(earnsOnTime(loan, '2026-10-16'), false, 'borrow and repay the same day: no +20');
+  assert.equal(earnsOnTime(loan, '2026-10-17'), true);
+  assert.equal(earnsOnTime(restructure(loan, '2026-10-16'), '2026-10-17'), false, 'no +20 after a plan');
+  assert.equal(earnsOnTime({ ...loan, lateMarked: true }, '2026-10-17'), false);
+});
+
+test('the Bank checks before it lends; Quick Cash lends one loan at a time', () => {
+  const today = '2026-10-16';
+  const bank = (id, principal, extra = {}) => ({ id, lender: 'bank', principal, dailyRate: 0.01, start: today, due: addDays(today, 6), paid: 0, ...extra });
+  assert.equal(canBorrow({ loans: [], todayKey: today, amount: 100, limit: 132 }).ok, true);
+  const full = canBorrow({ loans: [bank('a', 100)], todayKey: today, amount: 50, limit: 132 });
+  assert.equal(full.ok, false);
+  assert.equal(full.reason, 'limit');
+  assert.equal(full.owed, 101);
+  assert.equal(full.room, 31);
+  assert.equal(canBorrow({ loans: [bank('a', 100)], todayKey: today, amount: 20, limit: 132 }).ok, true);
+  assert.equal(canBorrow({ loans: [bank('a', 20, { start: addDays(today, -9), due: addDays(today, -3) })], todayKey: today, amount: 20, limit: 200 }).reason, 'late');
+  const qc = { id: 'q', lender: 'quickcash', principal: 30, dailyRate: 0.15, start: today, due: addDays(today, 2), paid: 0 };
+  assert.equal(canBorrow({ loans: [qc], todayKey: today, lender: 'quickcash' }).reason, 'quickcash-open');
+  assert.equal(canBorrow({ loans: [{ ...qc, paid: 34.5 }], todayKey: today, lender: 'quickcash' }).ok, true);
+  assert.equal(canBorrow({ loans: [bank('a', 100)], todayKey: today, amount: 20, limit: 300 }).ok, true);
 });

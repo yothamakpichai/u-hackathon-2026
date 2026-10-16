@@ -2765,9 +2765,11 @@
   max-width: 64rem;
 }
 
+/* One column that may shrink, so a long line wraps instead of widening the page. */
 .stall-screen,
 .bank-screen,
 .bank,
+.bank__col,
 .stall-holdings,
 .bank-loans,
 .bank-borrow,
@@ -2776,6 +2778,7 @@
 .bank-payoff,
 .bank-score {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-3);
 }
 
@@ -2784,11 +2787,38 @@
   gap: var(--sp-4);
 }
 
+.bank__col {
+  align-content: start;
+}
+
+/* Two columns that stack on their own, so a short card never leaves a hole beside a tall one. */
 @media (min-width: 900px) {
   .bank {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
   }
+
+  .bank-real {
+    grid-column: 1 / -1;
+  }
+}
+
+.bank-screen .screen-head .chip {
+  justify-self: start;
+}
+
+.bank-payoff li {
+  overflow-wrap: anywhere;
+}
+
+.bank-screen .btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bank-borrow .segmented__btn {
+  padding-inline: var(--sp-2);
+  white-space: nowrap;
 }
 
 .stall-bar,
@@ -2810,12 +2840,19 @@
   font-weight: 600;
 }
 
+/* Four goods a day: one column on phones, 2 x 2 from tablets up, so no good sits alone in a row. */
 .stall-goods {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-3);
   padding: 0;
   list-style: none;
+}
+
+@media (min-width: 600px) {
+  .stall-goods {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .stall-good {
@@ -2859,6 +2896,11 @@
   stroke: var(--primary-600);
   stroke-width: 2;
   stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.stall-spark circle {
+  fill: var(--primary-600);
 }
 
 .stall-qty {
