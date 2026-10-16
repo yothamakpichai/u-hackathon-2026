@@ -80,7 +80,7 @@ export function mount(root, ctx) {
     if (mode === 'signup') {
       const thisYear = Number(new Intl.DateTimeFormat('en-US', { timeZone: config.TIME_ZONE, year: 'numeric' }).format(new Date()));
       year = h('select', { id: 'acc-year', class: 'arena-input' }, Array.from({ length: 98 }, (_, i) => thisYear - 3 - i).map((y) => h('option', { value: String(y), text: String(y), selected: y === store.get().birthYear })));
-      fields.push(field('acc-year', 'Birth year', year, 'Only used to check your age for the Arena.'));
+      fields.push(field('acc-year', 'Birth year', year, 'Used only to check your age: a parent approves accounts under 13, and the Arena opens at 13.'));
       let quiz = [];
       try {
         quiz = (await sync.call('quiz')).quiz;
