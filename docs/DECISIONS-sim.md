@@ -51,6 +51,8 @@ A full session runs in under 0.1 s.
 - `createCoin()` also accepts `hype` (0–1). §2 gives Trader a "launch hype" knob, but §5's signature doesn't include it.
 - Tier ids are `explorer` | `trader` | `builder` (case-insensitive).
 - `iconId` (0–23) and `colorId` (0–11) are indexes into the glyph set and the coin colour tokens. EDUU uses `colorId` 0, which should map to the primary `#0DA678`.
+- `on('event')` passes `{ id, coinId, t, negative }`, so the Lab takes Penny's mood from the event itself (J13 QA).
+- `placeOrder()` refuses a limit buy on a rug-pulled coin with `RUGGED`, like a Market buy. Orders already open on it still trigger and fail with `RUGGED`.
 
 **Proposal:** fold these additions into §5 in a brief-only commit.
 
@@ -172,7 +174,9 @@ The sim records raw data; it does not compute the score.
 - **Avatar.** `public/js/avatar.js` exports `render(character, age)`, which returns an SVG string, plus `dataUri()`, `OPTIONS`, `LABELS` and `AGES`.
   - `character = { skin, hairStyle, hairColor, outfit, glasses }`, with no gender field. Every value is looked up in fixed tables, so caller text never reaches the SVG, and it uses no style attributes.
   - Ages snap to 25, 40, 60 or 80. Hair greys and thins, and lines appear on the forehead and around the eyes and mouth.
-- **Future maths.** `sim/future.js` `project(data, plan)` runs a monthly, seeded Monte Carlo of at least 500 paths. The seed is a hash of the inputs, so the same inputs always give the same fan.
+- **Future maths.** `sim/future.js` `project(data, plan)` runs a monthly, seeded Monte Carlo of at least 500 paths. One fixed seed, `hashString('future-you')`, with the same seven draws every month, so every plan and scenario runs on the same paths: saving more never lowers a percentile, and a shock that starts after the plan ends changes nothing (J13 QA).
+  - New saving goes in by the chosen mix, spending comes out of every asset in proportion, and the plan is rebalanced to the mix once a year. Spending per month is capped like saving.
+  - It runs in a module worker (worker-src falls back to script-src 'self'), with a main-thread fallback after 8 s or an error.
   - Four assets (cash, Thai bonds, Thai stocks, global stocks in USD), with correlated stocks.
   - A price index with an inflation scenario (low, target or high), and a THB/USD path (steady or weak baht).
   - Optional 12-month shocks for 1997, 2020 or 2022, as economic variables only.
@@ -186,12 +190,13 @@ The sim records raw data; it does not compute the score.
 
 ## Piggy Bank and Farm (slice J11, BRIEF §16)
 
-- **Piggy rules.** `sim/piggy.js` holds them, tested. Points ("seeds") go to log (2, three a day), plan (3, two a day), reflect (3, once a day) and streak (2, on the first action of a day that continues a streak). The daily cap is 12.
+- **Piggy rules.** `sim/piggy.js` holds them, tested. Points ("feed", the same word as on the Farm; "seeds" means only the Orchard's seeds) go to log (2, three a day), plan (3, two a day), reflect (3, once a day) and streak (2, on the first action of a day that continues a streak). The daily cap is 12.
   - The reward API has no amount parameter, so the amount can never change the reward.
   - Challenges: Calendar saves the date's number. Birthday year saves 1 to 365 from a start date the user picks ("your birthday or today"), so no birth date is stored. 52 weeks saves 10 × the week number.
   - `store.piggy = { goals, entries, reflections, challenges, rewards, monthlyExpenses }`. `entries[].verified` (set by the parent link) shows a "Verified by a parent" chip only.
   - Adults (20+ from the birth year) see an emergency fund of 3–6 months of expenses. There are no leaderboards and no comparisons.
-- **Farm rules.** `sim/farm.js` computes feed = piggy seeds + 5 per finished lesson + 5 per Coach chapter + 3 per finished Lab run.
+- **Farm rules.** `sim/farm.js` computes feed = Piggy feed + 5 per finished Learning Path step (lesson, mission or checkpoint, from `store.path`) + 5 per Coach chapter + 3 per Bangkok day with a finished market, per level + 2 per day with any action (J13 QA).
+  - A day whose only action is the wallet's starter grant doesn't count. Feed never goes down, so a broken streak takes nothing away.
   - Cows are born at 5, 60 and 150 feed, and grow from calf to young (15) to grown (35) on the feed earned since birth.
   - Traits (name, coat, pattern, bell, horns, a rare star in about 1 in 10, milk 2–4 litres) are seeded from the cow id and the farm's seed.
   - Grown cows give milk once per Bangkok day, sold at 5 coins a litre.
@@ -208,9 +213,11 @@ The sim records raw data; it does not compute the score.
 
   | Plant | Cost | Ready in | Harvest |
   |---|---|---|---|
-  | Herb sprout | 5 | 2 minutes | 6 |
+  | Herb sprout | 5 | 2 minutes | 6, once a day in each plot |
   | Fruit tree | 10 | 1 day | 20 |
-  | Big mango tree | 20 | 7 days | 60, then 12 more every day |
+  | Big mango tree | 20 | 7 days | 100, then 15 more every day |
+
+  Waiting pays most per day, as the lesson says (J13 QA): the big tree earns +80 in its first week and then +15 a day, against +10 a day for a fruit tree and +1 a plot a day for sprouts.
 
   It has four plots and real-time growth, with countdowns updating each second; the card only redraws when a stage changes.
 - **Time preference.** Each planting is recorded in `store.orchard.choices` with `patience` set to `now`, `soon` or `later`. `revealedPreference(choices)` returns `{ count, laterShare, nowShare, lean }` for the Money Type screen's "Your choices look more Later than your quiz said".
@@ -226,9 +233,11 @@ The sim records raw data; it does not compute the score.
   - Loans charge simple interest per real (Bangkok) day, counting the first day. The quote shows the total cost before the player agrees. The game rule caps total interest at the principal, and the screen says real loans have no such cap.
   - The Bank's rate is 1% a day, adjusted by `rateFor(score)`. Quick Cash lends 30 coins for 3 days at 15% a day.
   - Credit changes: on-time full repayment +20, late −40 (once per loan, settled when the Bank opens), restructuring −10 once. A restructure freezes interest and splits what's owed into 4 weekly payments, and is always offered.
-  - Town Card: the limit is 50–200 by score, with weekly statements. The minimum is 10% (at least 5), due 3 days after the statement. A missed minimum is −40, and unpaid statement balances add 5% a week, capped at what was spent on the card.
-  - The minimum-payment calculator uses an uncapped real-card model.
-  - With two or more loans, the payoff card compares highest rate first with smallest first at 10 coins a day (Gal & McShane 2012).
+    - J13 QA: the +20 counts only for a loan repaid on a later Bangkok day than it was taken, never late or on a plan, and at most once every 7 days, so borrow-and-repay can't farm the score. A plan made before the due date includes the interest up to the due date. A loan repaid in full is closed and builds no more interest.
+  - Borrowing limit (J13 QA): the Bank lends only while everything owed on loans plus the new loan stays within `limitFor(score)` (50–200), and not while any loan is late. Quick Cash checks nothing but lends one loan at a time. The card says why it refuses.
+  - Town Card: the limit is 50–200 by score, with weekly statements. The minimum is 10% (at least 5), due 3 days after the statement. A missed minimum is −40 the day after the due date, once per statement, and the card says so. Unpaid statement balances add 5% a week, capped at what was spent on the card.
+  - The minimum-payment calculator is uncapped, at the game's 5% a week, and says game rates are much higher than real ones.
+  - With two or more loans, the payoff card compares highest rate first with smallest first at 10 coins a day (Gal & McShane 2012), using the game's own interest rule. When both orders cost the same it shows one line. The citation shows at Builder; Explorer copy uses plainer words and costs in coins a day.
   - `store.bank = { loans, card }`.
 - **Real-world figures.** The "Real life in Thailand" card shows no numbers yet, only that limits exist, and points to the [unverified] SOURCES entries until they're checked.
 
@@ -264,7 +273,26 @@ The sim records raw data; it does not compute the score.
 - **Shared coin pieces.** `screens/coinkit.js` holds the coin glyphs and badge, design notes, the contract view, `coinAmount`, `WHO` and the open-market handle (`currentMarket`, `liveMarket`, `setLiveMarket`). Create, the block explorer and the Piggy Bank import it, never `lab.js`.
 - **Chart library.** The library (about 200 KB) loads only in the Lab, by dynamic import alongside today's data, while the Lab shows "Opening today's market…".
 - **Create.** `create.js` is a light shell. It draws the screen with "Getting the coin designer ready…" at once, then loads `coin-designer.js`. If that fails, it shows an error with Try again and Back to the market, instead of the router's bare "Loading…".
-  - Once Create opens up, the Lab prefetches the designer, so the trip from the market is usually instant.
+  - Once Create opens up, the Lab calls the shell's `prefetch()` (the Lab imports the 2 KB shell), so the trip from the market is usually instant.
+  - A failed dynamic import stays in the page's module map, so Try again asks for `coin-designer.js?retry=N`, and the Lab's chart library retries the same way. A reload is never offered, because it restarts today's market.
+  - The shell checks `blockedReason(market)` from `coinkit.js` first. With no market, a closed one, a coin already out or no news yet, it says so without loading the designer and the Coach.
+
+## QA pass (J13 QA)
+
+The findings, their status and what was tested are in `docs/QA-joewee.md`. Rules shared across the screens:
+
+- **Focus.** An action never leaves focus on the page body. When it rebuilds part of a view, focus goes back to the same control or to a nearby heading or message (tabindex −1, no scroll). After the Lab draws, it focuses its h1 only when the router left focus on `#main`, so a first page load keeps its focus. The Coach gives focus back to where it was when it opened, except on a route change.
+- **Disabled controls.** One look in every Joewee screen: surface-2 background, line border, ink-500 text, no shadow, not-allowed cursor. Controls that must keep focus use `aria-disabled` and say why when pressed (the trade submit, fair Buy and Sell, orchard seeds).
+- **Words by level.** Explorer never sees "bonding curve": the chip says "New coin: N% grown" and the card "N% of the way to its own trading pool". Trader and Builder say "Bonding curve: N% of the way to a real pool". Lab money is always "L$9,000", never "9,000 L$".
+- **Chart lines.** SMA 7 is solid blue and SMA 25 dashed pink, with a legend, and the copy names both. The chart has a text alternative that updates once per candle.
+- **Coins.** Town wallet balances use `coinText()`/`coinsText()` from `wallet.js`: cut to the cent, never rounded up.
+- **Lab.** Fills in one tick give one notice and one announcement. A stop-loss that fills below 0.97 × its trigger is shown in amber. Open orders that lapse at the close are named in the closing panel. News that arrives while Penny's dialog is open waits in `market.queued`, even across a visit away. The wash bot is shown and explained only at Builder, in the explorer and in Who's trading.
+- **Coach.** `coach.json` steps can be `interactive` (taps reach the page), `live` (the market runs), `optional` (skipped when the target isn't shown) and `also` (a second element lit with the first), and `title`/`body` can differ for Explorer. Chapter 2 is "Your chart tools". A replay is practice: no new XP or badge, and a badge already minted at another level says "You already have this badge".
+- **Create.** Every roster ticker counts as taken, hidden coins included. A name reads as a real coin when a word, or the name without filler words, is a real ticker or brand, or it contains a made-up coin word. An allowlist keeps everyday words like Arsenal and Cockatoo. A half-made coin is kept as `market.draft` until it launches.
+- **Block explorer.** It seals only the level's own transactions and badge mints. The tamper demo edits a trade, never a mint. The forger reseals later blocks, so each red block shows its new fingerprint against everyone else's.
+- **Piggy Bank.** Amounts and targets are whole baht. Taking out more than was written down is refused. Entries and goals can be removed, with one Undo. Starting a goal or a challenge counts toward the streak. Challenges have start dates from the past year to a year ahead, and a restarted challenge begins fresh.
+- **Cow Fair.** The hype rise starts with the collector news (step 3). The result buckets are early, near the top (steps 14–24), the crash and after.
+- **Stall.** A trade uses the price at the moment of the tap, and refuses with "The price just changed" if it moved. Spoil copy names the last night.
 
 ## Config location
 
