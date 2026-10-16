@@ -259,6 +259,13 @@ The sim records raw data; it does not compute the score.
 - **Result and lesson.** The result says whether you bought early or near the top and whether you held through the crash. The lesson explains the greater-fool mechanism, and contrasts your cow's daily milk with a card that makes nothing. It cites CryptoKitties (2017) and Axie Infinity (2022) from the SOURCES entry still marked [unverified].
 - **Store.** `store.fair = { played, last: { end, date, trait } }`.
 
+## Module loading (J13)
+
+- **Shared coin pieces.** `screens/coinkit.js` holds the coin glyphs and badge, design notes, the contract view, `coinAmount`, `WHO` and the open-market handle (`currentMarket`, `liveMarket`, `setLiveMarket`). Create, the block explorer and the Piggy Bank import it, never `lab.js`.
+- **Chart library.** The library (about 200 KB) loads only in the Lab, by dynamic import alongside today's data, while the Lab shows "Opening today's market…".
+- **Create.** `create.js` is a light shell. It draws the screen with "Getting the coin designer ready…" at once, then loads `coin-designer.js`. If that fails, it shows an error with Try again and Back to the market, instead of the router's bare "Loading…".
+  - Once Create opens up, the Lab prefetches the designer, so the trip from the market is usually instant.
+
 ## Config location
 
 - The sim configs live in `public/data/`, so the browser can fetch them (brief §8/§11 as amended). The Lab loads them and passes the parsed objects to `createSession()`; the engine never fetches anything itself.

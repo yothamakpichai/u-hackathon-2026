@@ -1,7 +1,7 @@
 // Block explorer (BRIEF §7; slice J4). Today's trades as a chain of blocks with real SHA-256
 // fingerprints, each opening to its transactions, and the tamper demo: change one old trade and
 // watch its block and every block after it stop matching.
-import { WHO, currentMarket } from './lab.js';
+import { WHO, currentMarket } from './coinkit.js';
 import { BLOCK_TICKS, formBlocks, gasFor, hashBlock, linkChain } from '../sim/chain.js';
 import { animate, announce, h, icon, money, number, stateView } from '../ui.js';
 import { NFT_LESSON, badgeArt, badgeInfo, listBadges } from './badges.js';

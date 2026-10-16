@@ -2,7 +2,7 @@
 // savings challenges and reflection prompts. Penny never touches the money. Points go only to what
 // the app can see (logging, planning, reflecting, streaks), are capped per day, and feed the cow on
 // the Farm. No leaderboards and no comparison with anyone else.
-import { GLYPHS, coinBadge } from './lab.js';
+import { GLYPHS, coinBadge } from './coinkit.js';
 import { REWARDS, balance, birthdayAmount, calendarAmount, dayKey, emergencyTarget, emptyPiggy, goalProgress, reward, streakDays, week52Amount } from '../sim/piggy.js';
 import { animate, announce, h, icon, number } from '../ui.js';
 
