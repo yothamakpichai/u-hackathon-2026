@@ -5,6 +5,7 @@
 import { h, icon, stateView, money, price, delta, number } from '../ui.js';
 import { scoreRun } from '../score.js';
 import * as sync from '../sync.js';
+import { walletBar } from './arena/wallet.js';
 
 const API = 'api/arena.php';
 const POLL_MS = 1500;
@@ -55,6 +56,7 @@ export function mount(root, ctx) {
   let last = null;
   let onVisible = null;
   let adultNote = null;
+  let parts = []; // Arena v2 panels: each has el, update(state) and maybe destroy()
 
   const body = h('div', { class: 'arena__body' });
   const view = h('section', { class: 'screen arena' }, [
@@ -222,6 +224,10 @@ export function mount(root, ctx) {
       );
     }
     amount.addEventListener('input', renderPreview);
+    parts.forEach((p) => p.destroy?.());
+    parts = [];
+    const part = (p) => (v2 ? (parts.push(p), p.el) : null);
+    const walletEl = part(walletBar({ store, api, onCash: (me) => last?.me && render({ ...last, me: { ...last.me, ...me } }) }));
 
     show(
       adultNote,
@@ -232,6 +238,7 @@ export function mount(root, ctx) {
           ? [h('p', { class: 'arena-top__who' }, ['Signed in as ', h('strong', { text: user.username })]), h('button', { class: 'btn btn--sm btn--ghost', type: 'button', onClick: logout }, 'Log out')]
           : [h('p', { class: 'arena-top__who' }, ['Watching as a guest. ', h('a', { href: '#/account?next=/arena', text: 'Log in or make an account' }), ' to trade.'])],
       ),
+      walletEl,
       tabs,
       h('div', { class: 'arena-grid' }, [
         h('div', { class: 'arena-main' }, [h('div', { class: 'card' }, [chartHead, chart, washNote]), tradeForm]),
@@ -356,6 +363,7 @@ export function mount(root, ctx) {
       if (!s.coins.length) return;
       if (!s.coins.some((x) => x.id === coin)) coin = s.coins[0].id;
       const c = s.coins.find((x) => x.id === coin);
+      parts.forEach((p) => p.update(s));
       if (v2) setGate(s.me && s.canTrade !== false ? null : s.reason || (s.me ? 'NOT_QUALIFIED' : 'NO_ACCOUNT'));
       if (tabs.childElementCount !== s.coins.length) {
         tabs.replaceChildren(
@@ -453,6 +461,8 @@ export function mount(root, ctx) {
     timer = null;
     if (onVisible) document.removeEventListener('visibilitychange', onVisible);
     onVisible = null;
+    parts.forEach((p) => p.destroy?.());
+    parts = [];
   }
 
   start();

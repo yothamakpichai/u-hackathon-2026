@@ -34,3 +34,32 @@
 .arena-trade__controls { display: grid; gap: 0.75rem; }
 .arena-trade__controls[hidden], .arena-gate[hidden] { display: none; }
 .arena-top__who a { color: var(--primary-700); font-weight: 600; }
+
+/* Arena wallet header: a dark trading-floor band */
+.arena-wallet {
+  display: grid;
+  gap: var(--sp-3);
+  grid-template-columns: 1fr;
+  margin-bottom: var(--sp-3);
+  padding: 1rem 1.125rem;
+  border-radius: var(--r-lg);
+  background: linear-gradient(135deg, var(--arena-night) 0%, var(--arena-night-2) 100%);
+  color: var(--arena-on-night);
+  box-shadow: var(--shadow-md);
+}
+.arena-wallet[hidden] { display: none; }
+@media (min-width: 48rem) { .arena-wallet { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: center; } }
+.arena-wallet__main { display: grid; gap: 0.125rem; }
+.arena-wallet__kicker, .arena-wallet__label { margin: 0; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--arena-on-night-2); }
+.arena-wallet__cash { font-family: var(--font-head); font-size: clamp(1.75rem, 5vw, 2.25rem); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.arena-wallet__town { font-size: var(--fs-sm); color: var(--arena-on-night-2); }
+.arena-wallet__form { display: grid; gap: 0.375rem; }
+.arena-wallet__row { display: flex; gap: 0.5rem; }
+.arena-wallet__input { flex: 1 1 6rem; min-width: 0; min-height: var(--tap); background: #FFFFFF; color: var(--ink-900); }
+.arena-wallet__go { min-height: var(--tap); white-space: nowrap; }
+.arena-wallet__cap { display: grid; gap: 0.25rem; margin: 0.5rem 0 0; font-size: var(--fs-sm); color: var(--arena-on-night-2); }
+.arena-wallet__bar { display: block; height: 6px; border-radius: var(--r-pill); background: var(--arena-line-night); overflow: hidden; }
+.arena-wallet__fill { display: block; height: 100%; width: 0; background: var(--amber-400); border-radius: inherit; transition: width 400ms var(--ease-out); }
+.arena-wallet__msg { margin: 0.25rem 0 0; min-height: 1.25em; font-size: var(--fs-sm); color: #9FE6C4; }
+.arena-wallet__msg.is-bad { color: #FFC9B8; }
+.arena-wallet__msg:empty { min-height: 0; margin: 0; }
