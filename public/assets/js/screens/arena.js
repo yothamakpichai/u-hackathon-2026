@@ -11,6 +11,7 @@ import { coinPanel, tabTag } from './arena/coin.js';
 import { feedView } from './arena/feed.js';
 import { newsDesk } from './arena/news.js';
 import { seasonPanel } from './arena/season.js';
+import { bankPanel } from './arena/bank.js';
 
 const API = 'api/arena.php';
 const POLL_MS = 1500;
@@ -237,6 +238,7 @@ export function mount(root, ctx) {
     const merge = (res) => last && render({ ...last, ...(res?.coins ? res : {}), me: res?.me ? res.me : last.me, coin });
     const newsEl = part(newsDesk({ api, onState: merge }));
     const seasonEl = part(seasonPanel());
+    const bankEl = part(bankPanel());
     const launchEl = part(
       launchPanel({
         api,
@@ -268,6 +270,7 @@ export function mount(root, ctx) {
           h('div', { class: 'card' }, [h('div', { class: 'arena-card-head' }, [h('h2', { class: 'arena-title', text: 'Your portfolio' }), live]), pf]),
           h('div', { class: 'card' }, [h('h2', { class: 'arena-title', text: 'Leaderboard' }), h('p', { class: 'board__note', text: 'Ranked by portfolio value in simulated L$.' }), board]),
           h('div', { class: 'card' }, [h('h2', { class: 'arena-title', text: 'Latest trades' }), h('p', { class: 'board__note', text: v2 ? 'Players and named bots like Panic Pete and Ape Annie. Launches and rugs stand out.' : 'Players, the whale bot and the momentum bot.' }), feed.el]),
+          bankEl,
           h('div', { class: 'card card--quiet' }, [
             h('h2', { class: 'arena-title', text: 'Who else is trading?' }),
             h('p', { class: 'arena-help', text: 'Four bots trade here all the time. A market maker keeps prices near a fair value, a momentum bot follows trends and makes moves bigger, a whale sometimes sells a huge pile at once, and a wash bot trades FUEL with itself to fake busy volume.' }),

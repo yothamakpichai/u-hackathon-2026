@@ -196,3 +196,14 @@
 .is-gold .arena-medal__disc { background: linear-gradient(145deg, #FFE08A, #E8B020); }
 .is-silver .arena-medal__disc { background: linear-gradient(145deg, #F1F4F6, #B9C3C9); }
 .is-bronze .arena-medal__disc { background: linear-gradient(145deg, #F6C9A2, #C98552); }
+
+/* Central Bank */
+.arena-bank { display: grid; gap: var(--sp-3); border-top: 4px solid var(--pal-gold); }
+.arena-bank[hidden] { display: none; }
+.arena-bank__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; margin: 0; }
+.arena-bank__stat { display: grid; gap: 0.125rem; padding: 0.625rem 0.75rem; border-radius: var(--r-sm); background: var(--amber-50); }
+.arena-bank__stat:first-child { grid-column: 1 / -1; background: var(--arena-night); }
+.arena-bank__stat dt { font-size: var(--fs-xs); font-weight: 700; color: var(--amber-800); }
+.arena-bank__stat dd { margin: 0; font-family: var(--font-head); font-size: var(--fs-lg); font-weight: 800; color: var(--ink-900); font-variant-numeric: tabular-nums; }
+.arena-bank__stat:first-child dt { color: var(--arena-on-night-2); }
+.arena-bank__stat:first-child dd { color: var(--arena-on-night); font-size: var(--fs-xl); }
