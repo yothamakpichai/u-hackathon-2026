@@ -405,3 +405,23 @@ Bank (#/bank, J12):
 - Real-world cards on Thai credit use only [unverified] entries until checked.
 
 Buildings: the orchard lives inside the farm; add stall and bank to buildings.js, set to 'live' only after they pass checks at 360px and 1440px.
+
+## 17. Shared contract (v4; identical in both sessions; change only together)
+- Branches: Yotha tags main as v3-safe. P0 work goes on main until 12:05. At 12:05 Yotha creates branch v4 from the latest main and pushes it; Joewee switches to v4 once it exists. All later work is on v4. Joewee pushes everything by 13:10 and STOPs. At 13:15 Yotha merges v4 into main only if the core path passes at 360px and 1440px. Rollback = git revert -m 1 <merge sha> and push. Never force-push.
+- Money: one currency name, L$.
+  - Town wallet = public/js/wallet.js (Joewee), on the device. It exposes getBalance(store) and dispatches window event 'wallet:change' {balance}.
+  - Arena wallet = server (Yotha). Town→Arena transfer goes through POST api/arena.php action=transfer, max 200 L$ per account per Bangkok day; the Town wallet is debited only after the server accepts.
+  - Lab sessions keep separate "Practice L$". The Piggy Bank stays real THB, never L$.
+- Economy (config.js ECONOMY, Yotha):
+  - Start 1,000 L$. Daily login 50 L$, +10 per streak day up to 100. Daily faucet cap 300 L$ across all Town sources.
+  - Sinks: seeds, feed, Store spread 10%, loan interest, Penny Pro 150 L$ per 7 days, Arena listing fee 500 L$ (burned), Arena trade fee 0.3% (burned).
+  - Arena daily stipend 100 L$, scaled linearly down to 0 as Arena L$ per active player rises from 2,000 to 5,000.
+- Penny: any screen opens Penny with window.dispatchEvent(new CustomEvent('penny:open', { detail: { mode, context } })). Modes: ask | review_run | explain_result | future. The 'future' context = projection inputs and outputs plus store.profile.futureVoice ('female' | 'male' | 'neutral').
+- Town groups (buildings.js, Yotha):
+  - school
+  - market (lab, coach, create, explorer, arena)
+  - future
+  - money = one building opening a scene with piggy, farm + orchard, store, bank and an Arena shortcut
+  - research = stocks and gold, closed, one lesson card
+- Disclaimer: "Simulation · No real money" leaves the nav but stays in the footer and on every trade panel in the Lab and the Arena.
+- Still binding: English only; no real money; no ads or sponsor banners for under-20s; no gender question; under-13 accounts need parent approval; strict CSP (audio only from our own domain); never invent a statistic or citation, cite only docs/SOURCES.md; core path at 360px and 1440px before every push; one commit per item.

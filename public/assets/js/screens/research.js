@@ -60,9 +60,36 @@ const SECTIONS = [
     ],
   },
   {
+    title: 'Farm',
+    lines: ['Habits form when you repeat a small action every day, and missing one day does not undo the habit.'],
+    refs: ['Lally, P., van Jaarsveld, C. H. M., Potts, H. W. W. & Wardle, J. (2010). How are habits formed: modelling habit formation in the real world. European Journal of Social Psychology 40(6), 998–1009.'],
+  },
+  {
     title: 'Borrowing and paying debts',
-    lines: ['When paying off several debts, clearing small ones first can keep people going.'],
-    refs: ['Gal, D. & McShane, B. B. (2012). Can small victories help win the war? Evidence from consumer debt management. Journal of Marketing Research 49(4), 487–501.'],
+    lines: [
+      'When paying off several debts, clearing small ones first can keep people going.',
+      'In Thailand, credit card interest is capped at 16% a year, the minimum payment is 8% through the end of 2026, and private lending is capped at 15% a year. The law caps the rate, not the total you pay.',
+    ],
+    refs: [
+      'Gal, D. & McShane, B. B. (2012). Can small victories help win the war? Evidence from consumer debt management. Journal of Marketing Research 49(4), 487–501.',
+      'Bangkok Post, "Credit card firms want to hike top rate": the credit card interest ceiling is 16% a year.',
+      'The Nation: the credit card minimum payment stays at 8% through the end of 2026.',
+      'Thai Civil and Commercial Code, section 654: interest on private lending is capped at 15% a year.',
+    ],
+  },
+  {
+    title: 'Prices, stocks and gold in Thailand',
+    lines: [
+      'The Bank of Thailand aims for inflation of 1–3% a year. In 2022 it was 6.08%, which is why Future You has a high-inflation scenario.',
+      'The SET index fell from 831.57 at the end of 1996 to 372.69 at the end of 1997. Future You uses real years like this as shock tests.',
+      'Thai bar gold is 96.5% pure and one baht of it weighs 15.244 g.',
+    ],
+    refs: [
+      'Bank of Thailand, monetary policy target: headline inflation of 1–3% a year in 2026.',
+      'Trade Policy and Strategy Office, Ministry of Commerce (December 2022 press release): Thai average headline inflation in 2022 was 6.08%.',
+      'SET Index year-end closes: 1996 831.57, 1997 372.69, 2019 1,579.84, 2020 1,449.35, 2021 1,657.62, 2022 1,668.66.',
+      'BullionStar, the Thailand gold market: Thai bar gold is 96.5% pure, 1 baht-weight = 15.244 g, and prices are set by the Gold Traders Association of Thailand.',
+    ],
   },
   {
     title: 'Why it matters in Thailand',
@@ -72,14 +99,19 @@ const SECTIONS = [
 ];
 
 const CHECKING = [
-  'Bank of Thailand inflation target, headline CPI history (incl. 2022), THB/USD history (incl. the 1997 float).',
-  'SET Total Return Index long-run returns; Thai deposit and government bond yields.',
-  'Gold Traders Association of Thailand: 96.5% bar gold, 1 baht-weight = 15.244 g.',
+  'THB/USD history (incl. the 1997 float).',
   'CryptoKitties congestion (Dec 2017); Axie Infinity collapse and Ronin bridge hack (Mar 2022); TerraUSD depeg (May 2022).',
-  'Long-run nominal return (about 7% a year) and volatility (about 16% a year) of broad global equity indices in US dollars.',
-  'Correlation between Thai and global stock returns (about 0.6).',
-  'Yearly market changes used as shock scenarios: SET index 1997 about −55%, 2020 about −8%, 2022 about +1%; US/global stocks 1997 about +31%, 2020 about +16%, 2022 about −18%; baht against the US dollar 1997 from about 25 to about 47 after the July float, 2020 roughly unchanged, 2022 about 4% weaker; Thai CPI 1997 about 5.6%, 2020 about −0.8%, 2022 about 6.1%.',
-  'Bank of Thailand: credit card interest ceiling and minimum payment rate; personal loan ceilings; National Credit Bureau scoring; Thai law on the maximum interest for private lending.',
+  'Other yearly changes used as shock scenarios: US/global stocks 1997 about +31%, 2020 about +16%, 2022 about −18%; baht against the US dollar 1997 from about 25 to about 47 after the July float, 2020 roughly unchanged, 2022 about 4% weaker; Thai CPI 1997 about 5.6%, 2020 about −0.8%.',
+  'Bank of Thailand personal loan ceilings; National Credit Bureau scoring.',
+];
+
+const ASSUMPTIONS = [
+  'Long-run nominal returns: Thai stocks about 7% a year; broad global stocks about 7% a year in US dollars.',
+  'Volatilities: Thai stocks about 20% a year; global stocks about 16% a year.',
+  'Correlation between Thai and global stock returns: about 0.6.',
+  'Deposit and bond rates: savings deposits about 0.5–1.5% a year (the model uses 1%); Thai government bonds about 2–3% a year (the model uses 2.5%).',
+  'FX: the baht against the US dollar drifts near zero in the long run outside crises, with volatility of about 7% a year.',
+  'High-inflation scenario: 4% a year, above the Bank of Thailand target range.',
 ];
 
 export function mount(root, ctx) {
@@ -102,6 +134,11 @@ export function mount(root, ctx) {
       h('h2', { class: 'report-section__title', text: 'Being checked' }),
       h('p', { text: 'These sources are still being checked, so Penny labels anything that uses them.' }),
       h('ul', { class: 'research__refs' }, CHECKING.map((t) => h('li', { text: t }))),
+    ]),
+    h('section', { class: 'card card--quiet research__section' }, [
+      h('h2', { class: 'report-section__title', text: 'Penny team assumptions (not sourced facts)' }),
+      h('p', { text: 'Round numbers we chose so the simulations can run. They are not facts, and no screen presents them as facts.' }),
+      h('ul', { class: 'research__refs' }, ASSUMPTIONS.map((t) => h('li', { text: t }))),
     ]),
     h('p', { class: 'research-label' }, [icon('shield', { size: 18 }), 'The Money Check is inspired by peer-reviewed research. It is not a clinical or licensed assessment.']),
     h('button', { class: 'btn btn--block', type: 'button', onClick: () => navigate(store.get().tier ? '/town' : '/') }, store.get().tier ? 'Back to my town' : 'Back to start'),

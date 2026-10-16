@@ -407,7 +407,7 @@ export function mount(root, ctx) {
     const why = h('details', { class: 'card card--quiet future-why' }, [
       h('summary', { text: 'ⓘ Why this works' }),
       h('p', { text: 'In experiments, people who saw an aged picture of themselves chose to put more money aside for later (Hershfield and others, 2011). Showing amounts in today’s baht makes them easy to compare with prices now.' }),
-      h('p', { class: 'field__hint' }, ['Some numbers, like market returns, inflation and the 1997, 2020 and 2022 figures, are still being checked. ', h('a', { href: '#/research', text: 'See the research and sources' }), '.']),
+      h('p', { class: 'field__hint' }, ['Returns, volatility and exchange-rate numbers are Penny team assumptions, not sourced facts, and a few historical numbers are still being checked. ', h('a', { href: '#/research', text: 'See the research and sources' }), '.']),
     ]);
 
     function lifeUntil() {
