@@ -31,10 +31,45 @@ const tradeText = (tx, badges) =>
     : `${tx.side === 'buy' ? 'Bought' : 'Sold'} ${coinAmount(tx.coins)} ${tx.coin} for ${money(tx.L)}`;
 const mintedAt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' });
 
+// Lessons are open cards from 900 px. Narrower screens fold them into a closed <details>, so the
+// badges and the blocks aren't pushed far down a phone screen.
+const folded = (cls, title, nodes) =>
+  h('details', { class: `card card--quiet lesson-fold ${cls}` }, [
+    h('summary', { class: 'lesson-fold__title', text: title }),
+    h('div', { class: 'lesson-fold__body' }, nodes),
+  ]);
+const NFT_TITLE = 'NFTs, and why these can’t be sold';
+const nftLesson = (open) => {
+  const paras = NFT_LESSON.map((t) => h('p', { text: t }));
+  return open
+    ? h('div', { class: 'card card--quiet lesson-mini badges__lesson' }, [h('h2', { class: 'lesson-mini__title', text: NFT_TITLE }), ...paras])
+    : folded('badges__lesson', NFT_TITLE, paras);
+};
+const LESSONS = [
+  ['Wallets and keys', 'A wallet is an address that holds coins. A secret key proves it’s yours, like a password that can never be reset. Never share a real one with anyone. This lab has no real wallets or keys.'],
+  ['Confirmations', 'A trade is confirmed once it’s sealed in a block. Every new block on top makes it harder to change, which is why people wait for a few blocks.'],
+  ['Fees (gas)', 'Each transaction pays a small network fee called gas. It goes up when blocks are busy. This lab shows the fee but doesn’t charge it.'],
+];
+const chainLessons = (open) =>
+  open
+    ? h('div', { class: 'explorer__lessons' }, LESSONS.map(([title, body]) => h('div', { class: 'card card--quiet lesson-mini' }, [h('h2', { class: 'lesson-mini__title', text: title }), h('p', { text: body })])))
+    : folded('explorer__fold', 'Wallets, confirmations and gas', LESSONS.map(([title, body]) => h('div', { class: 'lesson-fold__part' }, [h('h3', { class: 'lesson-mini__title', text: title }), h('p', { text: body })])));
+// Puts `next` where `old` was. If focus was inside `old` (its summary), it moves to the new title.
+function swapIn(old, next) {
+  const had = old.contains(document.activeElement);
+  old.replaceWith(next);
+  const title = had && next.querySelector('summary, h2');
+  if (title) {
+    if (title.tagName === 'H2') title.setAttribute('tabindex', '-1');
+    title.focus({ preventScroll: true });
+  }
+  return next;
+}
+
 // The badge gallery (BRIEF §15): soulbound badges with their mint transactions, and the NFT lesson.
 // A card says "in today's chain" only while the open market's chain holds its mint (`mints`, with
 // `sealed` complete blocks); after a reload or on another day it shows just the mint date.
-function badgeGallery(store, mints, sealed, closed) {
+function badgeGallery(store, mints, sealed, closed, lesson) {
   const where = (id) => {
     const tx = mints.find((x) => x.badge === id);
     if (!tx) return '';
@@ -59,10 +94,7 @@ function badgeGallery(store, mints, sealed, closed) {
     : h('p', { class: 'badges__empty', text: 'No badges yet. Finish a Coach chapter or a Learning Path unit, or raise a calf on the Farm, to mint your first one.' });
   return h('section', { class: 'badges', 'aria-labelledby': 'badges-title' }, [
     h('div', { class: 'badges__main' }, [h('h2', { class: 'badges__title', id: 'badges-title', text: 'Your soulbound badges' }), list]),
-    h('div', { class: 'card card--quiet lesson-mini badges__lesson' }, [
-      h('h2', { class: 'lesson-mini__title', text: 'NFTs, and why these can’t be sold' }),
-      ...NFT_LESSON.map((t) => h('p', { text: t })),
-    ]),
+    lesson,
   ]);
 }
 
@@ -71,8 +103,11 @@ export function mount(root, ctx) {
   const tierInfo = config.getTier(tier);
   const market = currentMarket(tier);
   const wide = matchMedia('(min-width: 900px)');
+  // Each lesson redraws itself (open or folded) when the width crosses 900 px.
+  const refolds = [];
+  const refold = () => refolds.forEach((redraw) => redraw());
+  wide.addEventListener('change', refold);
   let alive = true;
-  let unwatch = null;
   const view = h('section', { class: 'screen explorer-screen' });
   root.append(view);
   const head = h('div', { class: 'screen-head' }, [
@@ -85,11 +120,11 @@ export function mount(root, ctx) {
   ]);
   const backButton = (label = 'Back to the market', kind = 'btn btn--primary') =>
     h('button', { class: kind, type: 'button', onClick: () => navigate('/lab') }, [label, icon('arrow-right', { size: 20 })]);
-  // Below Builder the PEG arbitrage bot gets a plain name, as the PEG news at those levels has.
-  const who = (id) => (id === 'arb' && tierInfo.rank < 2 ? 'PEG keeper bot' : WHO[id] || id);
+  // Below Builder the PEG arbitrage bot keeps the Lab's name, with what it does in plain words.
+  const who = (id) => (id === 'arb' && tierInfo.rank < 2 ? `${WHO.arb} (keeps PEG near L$1)` : WHO[id] || id);
   const done = () => {
     alive = false;
-    unwatch?.();
+    wide.removeEventListener('change', refold);
     view.remove();
   };
 
@@ -102,7 +137,9 @@ export function mount(root, ctx) {
     : [];
   const blocks = market ? formBlocks(txs, st.t) : [];
   const closed = Boolean(market?.closed || st?.closed);
-  const gallery = badgeGallery(store, txs.filter((tx) => tx.who === 'mint'), blocks.length, closed);
+  let nft = nftLesson(wide.matches);
+  refolds.push(() => (nft = swapIn(nft, nftLesson(wide.matches))));
+  const gallery = badgeGallery(store, txs.filter((tx) => tx.who === 'mint'), blocks.length, closed, nft);
   view.append(head, gallery);
 
   // Everything below the gallery is swapped in place, so the head (and the h1 the router focused)
@@ -195,7 +232,9 @@ export function mount(root, ctx) {
                 h('span', { class: 'tx__who', text: who(tx.who) }),
                 h('span', { class: 'tx__what' }, [
                   tradeText(tx, badges),
-                  // Colour is never the only signal (BRIEF §10): the edited row says so, with the real amount.
+                  // Colour is never the only signal (BRIEF §10): the edited row says so, with the real
+                  // amount. The space keeps the two apart when the row is read or copied as text.
+                  tx === changed ? ' ' : null,
                   tx === changed ? h('span', { class: 'chip chip--loss tx__changed', text: `Changed from ${money(b.txs[target.index].L)}` }) : null,
                 ]),
                 h('span', { class: 'tx__gas', text: `gas ${money(gas, 3)}` }),
@@ -311,20 +350,12 @@ export function mount(root, ctx) {
       demo.querySelector('button')?.focus();
     }
 
-    const lessons = [
-      ['Wallets and keys', 'A wallet is an address that holds coins. A secret key proves it’s yours, like a password that can never be reset. Never share a real one with anyone. This lab has no real wallets or keys.'],
-      ['Confirmations', 'A trade is confirmed once it’s sealed in a block. Every new block on top makes it harder to change, which is why people wait for a few blocks.'],
-      ['Fees (gas)', 'Each transaction pays a small network fee called gas. It goes up when blocks are busy. This lab shows the fee but doesn’t charge it.'],
-    ];
-    const lessonCards = h('div', { class: 'explorer__lessons' }, lessons.map(([title, body]) => h('div', { class: 'card card--quiet lesson-mini' }, [h('h2', { class: 'lesson-mini__title', text: title }), h('p', { text: body })])));
-    const side = h('div', { class: 'explorer__side' }, [demo]);
+    // The lessons sit under the demo: open cards in the wide side column, one folded row on phones,
+    // so the demo stays close above the blocks it breaks.
+    let lessons = chainLessons(wide.matches);
+    refolds.push(() => (lessons = swapIn(lessons, chainLessons(wide.matches))));
+    const side = h('div', { class: 'explorer__side' }, [demo, lessons]);
     const layout = h('div', { class: 'explorer' }, [side, chainList]);
-    // Wide screens keep the lesson cards in the side column under the demo. Phones list them after
-    // the chain, so the demo sits right above the blocks it breaks.
-    const placeLessons = () => (wide.matches ? side : layout).append(lessonCards);
-    placeLessons();
-    wide.addEventListener('change', placeLessons);
-    unwatch = () => wide.removeEventListener('change', placeLessons);
 
     const summary = h('p', {
       class: 'explorer__summary',

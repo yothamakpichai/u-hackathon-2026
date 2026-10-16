@@ -1350,6 +1350,32 @@
   font-size: var(--fs-md);
 }
 
+/* Below 900 px the lessons fold into <details>; the summary is the whole tappable row. */
+.lesson-fold {
+  padding: 0 var(--sp-4);
+  font-size: var(--fs-sm);
+}
+
+.lesson-fold__title {
+  min-height: var(--tap);
+  padding-block: var(--sp-3);
+  font-family: var(--font-head);
+  font-size: var(--fs-md);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.lesson-fold__body {
+  display: grid;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-4);
+}
+
+.lesson-fold__part {
+  display: grid;
+  gap: var(--sp-1);
+}
+
 .chain {
   display: grid;
   gap: var(--sp-3);
@@ -1459,7 +1485,7 @@
 }
 
 .tx__changed {
-  margin-inline-start: var(--sp-2);
+  margin-inline-start: var(--sp-1);
   border: 1px solid var(--loss-600);
   background: var(--surface);
 }
