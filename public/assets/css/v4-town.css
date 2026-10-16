@@ -435,3 +435,311 @@
   padding-right: 0;
   text-align: center;
 }
+
+/* ------------------------------------------------------------------ Money Town (#/money) */
+
+[data-route="money"] .app-main {
+  max-width: var(--lab-max);
+}
+
+.money-town {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.mt-back__icon {
+  transform: scaleX(-1);
+}
+
+.mt-head .screen-title {
+  color: var(--g-money-ink);
+}
+
+.mt-scene-box {
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--g-money-ink) 18%, transparent);
+  border-radius: var(--r-lg);
+  background: linear-gradient(#FFF6E2, #FFFDF7);
+}
+
+/* On wide screens the drawing stops at 170 px tall and sits in the middle; its hill, pavement and road are drawn
+   far past both sides (overflow visible), and the box clips them at its edges. */
+
+.mt-scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 170px;
+  aspect-ratio: 400 / 120;
+  overflow: visible;
+}
+
+.mt-scene__hill { fill: #F6E3B4; }
+.mt-scene__sun { fill: var(--amber-400); }
+.mt-scene__cloud { fill: #FFFFFF; }
+.mt-scene__pink { fill: var(--p-piggy-main); }
+.mt-scene__red { fill: var(--p-farm-main); }
+.mt-scene__orange { fill: var(--p-stall-main); }
+.mt-scene__teal { fill: var(--p-store-main); }
+.mt-scene__blue { fill: var(--p-bank-main); }
+.mt-scene__tree { stroke: #7A4B22; stroke-width: 4; }
+.mt-scene__leaf { fill: #3FA45B; }
+.mt-scene__fruit { fill: #E5484D; }
+.mt-scene__walk { fill: #E9DCC0; }
+.mt-scene__road { fill: #5D6B65; }
+.mt-scene__lane { stroke: #FFE7A0; stroke-width: 2; stroke-dasharray: 12 10; }
+.mt-scene__cart-body { fill: var(--g-money-roof); }
+.mt-scene__cart-top { fill: #FFFFFF; }
+.mt-scene__coin { fill: #F5B82E; stroke: #B07400; stroke-width: 1.5; }
+.mt-scene__wheel { fill: #1D2A25; stroke: #FFFFFF; stroke-width: 1.5; }
+.mt-scene__cart { transform: translateX(180px); }
+
+/* The shop fronts: a row on a pavement at desktop width, two by two on a phone. */
+.mt-street {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-5) var(--sp-3);
+  margin: 0;
+  padding: var(--sp-3) 0 var(--sp-4);
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  background: linear-gradient(transparent calc(100% - 14px), #E9DCC0 calc(100% - 14px));
+  list-style: none;
+}
+
+.mt-street > .mt-shop:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 760px) {
+  .mt-street {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: end;
+  }
+
+  .mt-street > .mt-shop:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  /* Varied heights, like a real street. */
+  .mt-shop:nth-child(2) .mt-shop__door { min-height: 15rem; }
+  .mt-shop:nth-child(4) .mt-shop__door { min-height: 14rem; }
+}
+
+.mt-shop {
+  --ms-ink: var(--p-piggy-ink);
+  --ms-tint: var(--p-piggy-tint);
+  --ms-main: var(--p-piggy-main);
+  position: relative;
+  display: grid;
+  min-width: 0;
+}
+
+.mt-shop--farm { --ms-ink: var(--p-farm-ink); --ms-tint: var(--p-farm-tint); --ms-main: var(--p-farm-main); }
+.mt-shop--stall { --ms-ink: var(--p-stall-ink); --ms-tint: var(--p-stall-tint); --ms-main: var(--p-stall-main); }
+.mt-shop--store { --ms-ink: var(--p-store-ink); --ms-tint: var(--p-store-tint); --ms-main: var(--p-store-main); }
+.mt-shop--bank { --ms-ink: var(--p-bank-ink); --ms-tint: var(--p-bank-tint); --ms-main: var(--p-bank-main); }
+
+.mt-shop__awning {
+  position: relative;
+  z-index: 1;
+  height: 22px;
+  margin: 0 -4px -6px;
+  border-radius: 6px 6px 12px 12px;
+  background: repeating-linear-gradient(90deg, var(--ms-main) 0 18px, #FFFFFF 18px 36px);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--ms-ink) 35%, transparent);
+  transform-origin: top center;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mt-shop__door {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 2px;
+  min-height: 13rem;
+  padding: var(--sp-4) var(--sp-2) var(--sp-3);
+  border: 2px solid color-mix(in srgb, var(--ms-ink) 25%, transparent);
+  border-top: 0;
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  background: var(--ms-tint);
+  color: var(--ink-900);
+  text-align: center;
+  cursor: pointer;
+}
+
+.mt-shop__door:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.ms {
+  width: 100%;
+  max-width: 7.5rem;
+  height: auto;
+  overflow: visible;
+}
+
+.mt-shop__name {
+  color: var(--ms-ink);
+  font-family: var(--font-head);
+  font-size: var(--fs-md);
+  font-weight: 900;
+  line-height: var(--lh-tight);
+}
+
+.mt-shop__blurb {
+  color: var(--ink-700);
+  font-size: var(--fs-xs);
+}
+
+.mt-shop__sign {
+  margin-top: var(--sp-1);
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-xs);
+  background: var(--ms-ink);
+  color: #FFFFFF;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.mt-shop__sign--closed {
+  background: repeating-linear-gradient(-45deg, #FFE7A8 0 8px, #FFF6DB 8px 16px);
+  color: var(--amber-800);
+}
+
+.mt-shop__start {
+  background: var(--ms-ink);
+  color: #FFFFFF;
+}
+
+.mt-shop.is-start .mt-shop__door {
+  border-color: var(--ms-ink);
+  box-shadow: 0 4px 0 var(--ms-ink);
+}
+
+.mt-shop__why {
+  position: absolute;
+  top: 18px;
+  right: 0;
+  z-index: 2;
+  color: var(--ms-ink);
+}
+
+.ms__main { fill: var(--ms-main); }
+.ms__deep { fill: var(--ms-ink); }
+.ms__ink { fill: var(--ink-800); }
+.ms__white { fill: #FFFFFF; }
+.ms__x { stroke: var(--ms-ink); stroke-width: 3; }
+.ms__trunk { fill: #7A4B22; }
+.ms__leaf { fill: #3FA45B; }
+.ms__fruit { fill: #E5484D; }
+.ms__coin { fill: #F5B82E; stroke: #B07400; stroke-width: 1.5; }
+.ms__tag { fill: #FFFFFF; stroke: var(--ms-ink); stroke-width: 2; }
+.ms__scaffold { fill: none; stroke: var(--amber-600); stroke-width: 2.5; }
+.ms__string { stroke: var(--ink-700); stroke-width: 1.5; }
+.ms__closed { fill: #FFE7A8; stroke: var(--amber-800); stroke-width: 1.5; }
+.ms__col { stroke: color-mix(in srgb, var(--ms-ink) 40%, transparent); stroke-width: 1; }
+.ms__drop, .ms__tree, .ms__bob, .ms__hang { transform-box: fill-box; transform-origin: center; }
+.ms__tree { transform-origin: bottom center; }
+.ms__hang { transform-origin: top center; }
+
+/* Arena shortcut: a signpost at the end of the street. */
+.mt-arena {
+  display: flex;
+  align-items: center;
+  justify-self: start;
+  gap: var(--sp-3);
+  max-width: 100%;
+  min-height: var(--tap);
+  padding: var(--sp-3) var(--sp-4);
+  border: 2px solid color-mix(in srgb, var(--p-arena-ink) 30%, transparent);
+  border-radius: var(--r-pill);
+  background: var(--p-arena-tint);
+  color: var(--p-arena-ink);
+  text-decoration: none;
+}
+
+.mt-arena:hover {
+  background: var(--p-arena-ink);
+  color: #FFFFFF;
+}
+
+.mt-arena:hover .mt-arena__text span {
+  color: #FFFFFF;
+}
+
+.mt-arena__post {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  background: conic-gradient(var(--p-arena-main) 0 25%, #FFFFFF 0 50%, var(--p-arena-main) 0 75%, #FFFFFF 0);
+}
+
+.mt-arena__text {
+  display: grid;
+  min-width: 0;
+}
+
+.mt-arena__text span {
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+}
+
+/* Motion: the cart drives, the lane marks roll, awnings lift on hover, a live shop's awning rolls up as it opens
+   and a closed one rattles its sign. */
+.mt-shop.is-opening .mt-shop__awning { transform: scaleY(0.4); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .mt-scene__cart { animation: mt-drive 14s linear infinite; }
+  .mt-scene__lane { animation: mt-lane 1.2s linear infinite; }
+  .mt-scene__cloud { animation: mt-cloud 30s linear infinite; }
+  .ms__drop { animation: mt-drop 2.4s ease-in infinite; }
+  .ms__tree { animation: mt-sway 3s ease-in-out infinite; }
+  .ms__bob { animation: ta-bob 1.8s ease-in-out infinite; }
+  .ms__bob--2 { animation-delay: 0.3s; }
+  .ms__bob--3 { animation-delay: 0.6s; }
+  .ms__hang { animation: mt-sway 2.6s ease-in-out infinite; }
+
+  .mt-street > .mt-shop {
+    animation: tg-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+
+  .mt-shop__door { transition: transform 160ms ease; }
+  .mt-shop:hover .mt-shop__awning { transform: scaleY(1.25) translateY(-2px); }
+  .mt-shop:hover .mt-shop__door { transform: translateY(-2px); }
+  .mt-shop:active .mt-shop__door { transform: translateY(1px); }
+  .mt-shop.is-opening .mt-shop__awning { transform: scaleY(0.3); }
+  .mt-shop.is-opening .ms { transform: scale(1.12); transition: transform 320ms ease; }
+  .mt-shop.is-knocking .ms__hang { animation: tg-knock 340ms ease-in-out; }
+  .mt-arena { transition: background-color 140ms ease, transform 140ms ease; }
+  .mt-arena:hover { transform: translateX(3px); }
+}
+
+@keyframes mt-drive {
+  from { transform: translateX(-300px); }
+  to { transform: translateX(700px); }
+}
+
+@keyframes mt-lane {
+  to { stroke-dashoffset: -22; }
+}
+
+@keyframes mt-cloud {
+  from { transform: translateX(-80px); }
+  to { transform: translateX(420px); }
+}
+
+@keyframes mt-drop {
+  0% { transform: translateY(-8px); opacity: 0; }
+  20% { opacity: 1; }
+  60%, 100% { transform: translateY(14px); opacity: 0; }
+}
+
+@keyframes mt-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
