@@ -83,27 +83,6 @@ export function mount(root, ctx) {
       if (alive) show(stateView({ kind: 'empty', title: 'The Arena is closed right now', body: 'Today’s market is open, and you can practise there any time.', actions: [back('Open today’s market', '/lab')] }));
       return;
     }
-    const s = store.get();
-    const thisYear = Number(new Intl.DateTimeFormat('en-US', { timeZone: config.TIME_ZONE, year: 'numeric' }).format(new Date()));
-    const adult = s.birthYear ? thisYear - Number(s.birthYear) >= 20 : false;
-    if (!adult && config.getTier(tier)?.rank < 1) {
-      show(stateView({ kind: 'empty', title: 'The Arena opens at Trader level', body: 'It is for players aged 13 and up. Keep exploring today’s market: every run makes you a sharper trader.', actions: [back('Open today’s market', '/lab')] }));
-      return;
-    }
-    const best = arenaScore(s);
-    const unitTwo = ['trader', 'builder'].some((t) => s.path?.[t]?.done?.['u2-c']);
-    if (!adult && !unitTwo && (best === null || best < ENTRY_SCORE)) {
-      show(
-        stateView({
-          kind: 'empty',
-          title: `Score ${ENTRY_SCORE} or more to enter`,
-          body: `${best === null ? 'You haven’t finished a market at Trader or Builder level yet.' : `Your best Money Health Score is ${best}.`} Spread your risk, stay calm after bad news and answer Penny’s questions, then finish today’s market with ${ENTRY_SCORE}+. Passing the Unit 2 checkpoint at School opens it too.`,
-          actions: [back('Open today’s market', '/lab'), h('button', { class: 'btn', type: 'button', onClick: () => navigate('/path') }, 'Go to School')],
-        }),
-      );
-      return;
-    }
-    adultNote = adult ? h('p', { class: 'arena-adult', text: 'Kids unlock this at Money Health Score 70.' }) : null;
     try {
       if (!(await sync.accountsAvailable())) {
         if (alive) show(stateView({ kind: 'empty', title: 'Accounts aren’t available right now', body: 'The Arena needs a free account. Everything else still works as a guest.', actions: [back('Open today’s market', '/lab')] }));
@@ -111,11 +90,47 @@ export function mount(root, ctx) {
       }
       const user = await sync.refreshMe();
       if (!alive) return;
-      if (user) market(user);
-      else needAccount();
+      if (!user) return needAccount();
+      enter(user);
     } catch (err) {
       if (alive) show(stateView({ kind: 'error', title: 'The Arena didn’t load', body: err.message, actions: [h('button', { class: 'btn', type: 'button', onClick: start }, 'Try again')] }));
     }
+  }
+
+  // Every age decision uses the birth year stored with the account, never this browser's (the server checks too).
+  async function enter(user) {
+    const thisYear = Number(new Intl.DateTimeFormat('en-US', { timeZone: config.TIME_ZONE, year: 'numeric' }).format(new Date()));
+    const age = thisYear - Number(user.birthYear);
+    if (age < 13) {
+      show(stateView({ kind: 'empty', title: 'The Arena opens at age 13', body: 'Keep exploring today’s market: every run makes you a sharper trader.', actions: [back('Open today’s market', '/lab')] }));
+      return;
+    }
+    const adult = age >= 20;
+    adultNote = adult ? h('p', { class: 'arena-adult', text: 'Kids unlock this at Money Health Score 70.' }) : null;
+    if (!adult) {
+      const s = store.get();
+      const best = arenaScore(s);
+      const unitTwo = ['trader', 'builder'].some((x) => s.path?.[x]?.done?.['u2-c']);
+      if (!unitTwo && (best === null || best < ENTRY_SCORE)) return notYet(best);
+      // Record the pass in the saved progress, where the server looks for it, before entering.
+      if (!unitTwo && !(s.arenaPass?.score >= ENTRY_SCORE)) {
+        store.set({ arenaPass: { score: best, at: Date.now() } });
+        await sync.saveNow(store).catch(() => {});
+      }
+    }
+    if (alive) market(user);
+  }
+
+  function notYet(best) {
+    stop();
+    show(
+      stateView({
+        kind: 'empty',
+        title: `Score ${ENTRY_SCORE} or more to enter`,
+        body: `${best === null ? 'You haven’t finished a market at Trader or Builder level yet.' : `Your best Money Health Score is ${best}.`} Spread your risk, stay calm after bad news and answer Penny’s questions, then finish today’s market with ${ENTRY_SCORE}+. Passing the Unit 2 checkpoint at School opens it too.`,
+        actions: [back('Open today’s market', '/lab'), h('button', { class: 'btn', type: 'button', onClick: () => navigate('/path') }, 'Go to School')],
+      }),
+    );
   }
 
   // The Arena needs a free account; the account screen brings the player back here.
@@ -274,6 +289,8 @@ export function mount(root, ctx) {
         if (alive) render(res);
       } catch (err) {
         if (err.code === 'SIGNED_OUT') return needAccount();
+        if (err.code === 'NOT_QUALIFIED') return notYet(arenaScore(store.get()));
+        if (err.code === 'TOO_YOUNG') return show(stateView({ kind: 'empty', title: 'The Arena opens at age 13', body: err.message, actions: [back('Open today’s market', '/lab')] }));
         live.classList.add('is-off');
         live.lastChild.textContent = 'Reconnecting…';
       } finally {

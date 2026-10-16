@@ -12,6 +12,7 @@ require REPO_ROOT . '/src/arena.php';
 require REPO_ROOT . '/src/accounts.php';
 
 const MIN_AGE = 13;
+const ADULT_AGE = 20;
 
 $action = is_string($_GET['action'] ?? null) ? $_GET['action'] : '';
 if ($action === 'status') {
@@ -46,14 +47,39 @@ function arena_on(): bool
     return env('ARENA_ENABLED') === '1';
 }
 
-// A signed-in account, 13 or older by its birth year (checked here, not just in the app).
+// A signed-in account that may enter. Every age decision uses the birth year stored with the account, never the
+// browser's: 13+ to enter at all, and 20+ to skip the score gate. A 13–19-year-old must have qualified in their
+// saved progress: the Unit 2 checkpoint passed, or a Money Health Score of 70+ that the app recorded.
 function arena_user(PDO $db, bool $change): array
 {
     $user = require_user($db, $change);
-    if (age_of($user) < MIN_AGE) {
+    $age = age_of($user);
+    if ($age < MIN_AGE) {
         send_error(403, 'TOO_YOUNG', 'The Arena opens at age 13. Keep practising in the Market Lab!');
     }
+    if ($age < ADULT_AGE && !(int) $user['arena_ok']) {
+        if (!arena_qualified($db, (int) $user['user_id'])) {
+            send_error(403, 'NOT_QUALIFIED', 'Kids unlock the Arena at a Money Health Score of 70 in the Market Lab, or by passing the Unit 2 checkpoint at School.');
+        }
+        $db->prepare('UPDATE arena_users SET arena_ok = 1 WHERE id = ?')->execute([$user['user_id']]);
+    }
     return $user;
+}
+
+function arena_qualified(PDO $db, int $userId): bool
+{
+    $st = $db->prepare('SELECT state FROM account_state WHERE user_id = ?');
+    $st->execute([$userId]);
+    $s = json_decode((string) $st->fetchColumn(), true);
+    if (!is_array($s)) {
+        return false;
+    }
+    foreach (['trader', 'builder'] as $tier) {
+        if (!empty($s['path'][$tier]['done']['u2-c'])) {
+            return true;
+        }
+    }
+    return is_array($s['arenaPass'] ?? null) && (int) ($s['arenaPass']['score'] ?? 0) >= 70;
 }
 
 function coin_param(mixed $value): string

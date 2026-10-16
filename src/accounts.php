@@ -67,7 +67,7 @@ function current_user(PDO $db): ?array
     if (!is_string($token) || !preg_match('/^[a-f0-9]{64}$/', $token)) {
         return null;
     }
-    $st = $db->prepare('SELECT s.user_id, s.csrf, u.username, u.birth_year FROM arena_sessions s JOIN arena_users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > UTC_TIMESTAMP() AND u.approved_at IS NOT NULL');
+    $st = $db->prepare('SELECT s.user_id, s.csrf, u.username, u.birth_year, u.arena_ok FROM arena_sessions s JOIN arena_users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > UTC_TIMESTAMP() AND u.approved_at IS NOT NULL');
     $st->execute([hash('sha256', $token)]);
     return $st->fetch() ?: null;
 }

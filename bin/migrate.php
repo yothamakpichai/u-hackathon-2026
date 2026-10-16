@@ -26,6 +26,7 @@ $tables = [
         birth_year SMALLINT UNSIGNED NOT NULL,
         cash DECIMAL(24,8) NOT NULL DEFAULT 1000,
         approved_at DATETIME NULL,
+        arena_ok TINYINT(1) NOT NULL DEFAULT 0,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY uq_arena_users_key (username_key)
     ) " . ENGINE,
@@ -117,6 +118,8 @@ $tables = [
 $columns = [
     // Under-13 accounts wait for a parent (BRIEF §16, Y14). Accounts made before this existed count as approved.
     ['arena_users', 'approved_at', 'DATETIME NULL', 'UPDATE arena_users SET approved_at = created_at WHERE approved_at IS NULL'],
+    // Set once a 13–19-year-old has qualified for the Arena, so polls don't re-read their saved progress.
+    ['arena_users', 'arena_ok', 'TINYINT(1) NOT NULL DEFAULT 0', null],
 ];
 
 try {
