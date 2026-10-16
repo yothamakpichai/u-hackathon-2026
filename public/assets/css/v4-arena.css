@@ -107,3 +107,29 @@
 .arena-launch__cost { margin: 0; padding: 0.75rem 1rem; border-radius: var(--r-md); background: var(--amber-50); color: var(--ink-900); font-size: var(--fs-sm); }
 .arena-launch__status { margin: 0; font-size: var(--fs-sm); }
 .arena-launch__status:empty { display: none; }
+
+/* Coin trust card and red-flag meter */
+.arena-coincard { display: grid; gap: var(--sp-3); }
+.arena-coincard[hidden] { display: none; }
+.arena-coincard__head { display: flex; align-items: center; gap: 0.625rem; }
+.arena-coincard__facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.375rem 1rem; margin: 0; font-size: var(--fs-sm); }
+.arena-coincard__facts dt { color: var(--ink-500); font-weight: 600; }
+.arena-coincard__facts dd { margin: 0; color: var(--ink-900); font-weight: 600; overflow-wrap: anywhere; }
+.arena-coincard__facts dd.is-warn { color: var(--warning-700); }
+.arena-rugged { padding: 0.75rem 1rem; border-radius: var(--r-md); background: var(--loss-600); color: #FFFFFF; font-size: var(--fs-sm); line-height: var(--lh-snug); }
+.arena-rugged strong { font-family: var(--font-head); font-size: var(--fs-lg); text-transform: uppercase; letter-spacing: 0.06em; }
+.arena-flags { display: grid; gap: 0.5rem; padding: 0.75rem 1rem; border-radius: var(--r-md); background: var(--surface-2, #F1F5F3); }
+.arena-flags__top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem; font-size: var(--fs-sm); color: var(--ink-900); }
+.arena-flags__label { font-weight: 700; }
+.arena-flags__track { position: relative; height: 10px; border-radius: var(--r-pill); background: var(--line); overflow: hidden; }
+.arena-flags__fill { display: block; height: 100%; width: 0; border-radius: inherit; transition: width 500ms var(--ease-out); background: var(--gain-500); }
+.arena-flags.is-mid .arena-flags__fill { background: var(--amber-500); }
+.arena-flags.is-high .arena-flags__fill { background: var(--loss-500); }
+.arena-flags.is-mid .arena-flags__top strong { color: var(--warning-700); }
+.arena-flags.is-high .arena-flags__top strong { color: var(--loss-700); }
+.arena-flags.is-low .arena-flags__top strong { color: var(--gain-700); }
+.arena-flags__list { margin: 0; padding-left: 1.125rem; display: grid; gap: 0.25rem; font-size: var(--fs-sm); color: var(--ink-700); }
+.arena-coin__slot:empty { display: none; }
+.arena-coin__tag { display: inline-block; padding: 0.0625rem 0.375rem; border-radius: var(--r-pill); background: var(--pal-violet); color: #FFFFFF; font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.arena-coin__tag.is-rug { background: var(--loss-600); }
+.arena-coin.is-rugged .arena-coin__id { text-decoration: line-through; }

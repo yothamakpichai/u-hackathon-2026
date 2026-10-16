@@ -7,6 +7,7 @@ import { scoreRun } from '../score.js';
 import * as sync from '../sync.js';
 import { walletBar } from './arena/wallet.js';
 import { launchPanel } from './arena/launch.js';
+import { coinPanel, tabTag } from './arena/coin.js';
 
 const API = 'api/arena.php';
 const POLL_MS = 1500;
@@ -229,6 +230,7 @@ export function mount(root, ctx) {
     parts = [];
     const part = (p) => (v2 ? (parts.push(p), p.el) : null);
     const walletEl = part(walletBar({ store, api, onCash: (me) => last?.me && render({ ...last, me: { ...last.me, ...me } }) }));
+    const coinEl = part(coinPanel());
     const launchEl = part(
       launchPanel({
         api,
@@ -252,7 +254,7 @@ export function mount(root, ctx) {
       walletEl,
       tabs,
       h('div', { class: 'arena-grid' }, [
-        h('div', { class: 'arena-main' }, [h('div', { class: 'card' }, [chartHead, chart, washNote]), tradeForm]),
+        h('div', { class: 'arena-main' }, [h('div', { class: 'card' }, [chartHead, chart, washNote]), coinEl, tradeForm]),
         h('div', { class: 'arena-side' }, [
           launchEl,
           h('div', { class: 'card' }, [h('div', { class: 'arena-card-head' }, [h('h2', { class: 'arena-title', text: 'Your portfolio' }), live]), pf]),
@@ -375,7 +377,7 @@ export function mount(root, ctx) {
       if (!s.coins.length) return;
       if (!s.coins.some((x) => x.id === coin)) coin = s.coins[0].id;
       const c = s.coins.find((x) => x.id === coin);
-      parts.forEach((p) => p.update(s));
+      parts.forEach((p) => p.update({ ...s, coin }));
       if (v2) setGate(s.me && s.canTrade !== false ? null : s.reason || (s.me ? 'NOT_QUALIFIED' : 'NO_ACCOUNT'));
       if (tabs.childElementCount !== s.coins.length) {
         tabs.replaceChildren(
@@ -384,6 +386,7 @@ export function mount(root, ctx) {
               h('span', { class: 'arena-coin__id', text: x.id }),
               h('span', { class: 'arena-coin__price' }),
               h('span', { class: 'arena-coin__delta' }),
+              h('span', { class: 'arena-coin__slot' }),
             ]),
           ),
         );
@@ -395,6 +398,10 @@ export function mount(root, ctx) {
         b.setAttribute('aria-pressed', String(x.id === coin));
         b.querySelector('.arena-coin__price').textContent = price(x.price);
         b.querySelector('.arena-coin__delta').replaceChildren(delta(x.changePct));
+        const slot = b.querySelector('.arena-coin__slot');
+        const tag = v2 ? tabTag(x) : null;
+        if ((slot.textContent || '') !== (tag?.textContent || '')) slot.replaceChildren(...(tag ? [tag] : []));
+        b.classList.toggle('is-rugged', Boolean(x.rugged));
       }
       chartHead.replaceChildren(
         h('h2', { class: 'arena-title', text: `${c.id} · ${c.name}` }),
