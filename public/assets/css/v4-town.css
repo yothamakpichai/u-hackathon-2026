@@ -743,3 +743,50 @@
   0%, 100% { transform: rotate(-3deg); }
   50% { transform: rotate(3deg); }
 }
+
+/* ------------------------------------------------------------------ School: learning partners shelf */
+
+.path-partners {
+  display: grid;
+  gap: var(--sp-3);
+  border-color: color-mix(in srgb, var(--g-school-ink) 25%, transparent);
+  background: var(--g-school-tint);
+}
+
+.path-partners .path-unit__title {
+  color: var(--g-school-ink);
+}
+
+.path-partners__shelf {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-3);
+  margin: 0;
+  padding: 0 0 var(--sp-3);
+  border-bottom: 6px solid color-mix(in srgb, var(--g-school-ink) 35%, #FFFFFF);
+  list-style: none;
+}
+
+.path-partners__slot {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 5rem;
+  padding: var(--sp-3) var(--sp-4);
+  border: 2px dashed color-mix(in srgb, var(--g-school-ink) 45%, transparent);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--g-school-ink);
+  font-weight: 700;
+}
+
+.path-partners__slot svg {
+  flex: none;
+}
+
+.path-partners__hint {
+  margin-top: calc(-1 * var(--sp-2));
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
