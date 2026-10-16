@@ -15,13 +15,13 @@
     },
     {
       "id": "tools",
-      "title": "Volume, SMA and RSI",
+      "title": "Your chart tools",
       "blurb": "What each chart tool shows, and what it can’t tell you.",
       "steps": [
-        { "target": ".chart-tools", "title": "Your chart tools", "body": "Tap a chip to switch a tool on or off. Tap the i next to it to read what the tool shows and what it can’t tell you." },
+        { "target": ".chart-tools", "interactive": true, "title": "Tool chips", "body": "Tap a chip to switch a tool on or off. Tap the i next to it to read what the tool shows and what it can’t tell you." },
         { "target": ".chart-tool[data-tool=\"volume\"]", "title": "Volume", "body": "The bars along the bottom show how much was traded. Tall bars mean busy trading. They can’t tell you whether buyers or sellers won, or whether the trading was even real." },
-        { "tiers": ["trader", "builder"], "target": ".chart-tool[data-tool=\"sma\"]", "title": "Moving averages (SMA)", "body": "The blue line averages the last 7 candles and the pink line the last 25. They smooth out the noise. Averages always lag behind the price, so they can’t predict the next move." },
-        { "tiers": ["builder"], "target": ".chart-tool[data-tool=\"rsi\"]", "title": "RSI", "body": "RSI scores the recent ups and downs from 0 to 100. Above 70 people call it overbought, below 30 oversold. It can’t tell you what a coin is worth, and a price can stay high or low for a long time." },
+        { "tiers": ["trader", "builder"], "target": ".chart-tool[data-tool=\"sma\"]", "art": "sma", "title": "Moving averages (SMA)", "body": "The solid blue line (SMA 7) averages the last 7 candles, and the dashed pink line (SMA 25) the last 25. Each one appears once the chart has that many candles. They smooth out the noise, but averages always lag behind the price, so they can’t predict the next move." },
+        { "optional": true, "target": ".chart-tool[data-tool=\"rsi\"]", "art": "rsi", "title": "RSI", "body": { "explorer": "RSI scores the recent ups and downs from 0 to 100. A high score means the price rose a lot lately, and a low score means it fell a lot. The line appears after 15 candles. It can’t tell you what happens next.", "default": "RSI scores the recent ups and downs from 0 to 100. Above 70 people call it overbought, below 30 oversold. The line appears after 15 candles. It can’t tell you what a coin is worth, and a price can stay high or low for a long time." } },
         { "title": "No tool sees the future", "body": "Every tool describes what already happened. Use them to ask better questions, not to guess. And never risk more than you could calmly lose." }
       ]
     },
@@ -32,7 +32,7 @@
       "steps": [
         { "target": ".lab-trade", "title": "The trade panel", "body": "Here you buy or sell the coin on the chart. Everything here is simulated: no real money, ever." },
         { "target": ".trade__field", "wait": "tradePreview", "title": "Choose an amount", "body": "Type how many L$ to spend, for example 100. Then look at the line under the box." },
-        { "target": ".trade__preview", "title": "Price impact", "body": "Your own trade moves the price, because the pool has to rebalance. Bigger trades move it more. A good habit is to keep your impact small." },
+        { "target": ".trade__preview", "title": "Price impact", "body": { "explorer": "Your own trade moves the price: each coin you buy leaves fewer in the pool, so the next one costs a bit more. Bigger trades move it more. A good habit is to keep your impact small.", "default": "Your own trade moves the price, because the pool has to rebalance. Bigger trades move it more. A good habit is to keep your impact small." } },
         { "target": ".trade button[type=\"submit\"]", "wait": "tradeDone", "title": "Make the trade", "body": "Tap the Buy button. The market is paused while Penny coaches you, so take your time." },
         { "target": ".lab-portfolio", "title": "Your portfolio", "body": "Your new coins are here with their profit or loss. The bar shows how your money is split. Keeping some cash is part of a healthy plan." }
       ]
@@ -42,7 +42,7 @@
       "title": "Surviving a whale dump",
       "blurb": "Play the same whale dump twice: panic-sell once, hold once, then compare.",
       "steps": [
-        { "title": "The same whale, twice", "body": "Later today a whale sells a huge pile of VAULT at once. Let’s practise in a copy of today’s market. In both rounds you start by buying L$500 of VAULT." },
+        { "title": "The same whale, twice", "body": "Today’s market has a whale: one big holder who sells a huge pile of VAULT all at once. Let’s practise in a copy of the market. In both rounds you start by buying L$500 of VAULT." },
         { "drill": "whale-panic", "title": "Round 1: the panic sell", "body": "The whale just sold and VAULT dropped fast. Many people sell everything right now. Try it this time." },
         { "drill": "whale-hold", "title": "Round 2: hold on", "body": "Same whale, same drop. This time you keep your VAULT and wait 30 seconds." },
         { "drill": "whale-compare", "title": "Side by side", "body": "Here are both rounds from the same market." }
@@ -54,17 +54,18 @@
       "blurb": "Every knob for your level, the launch, the hype phase and a copycat’s red flags.",
       "needs": "news",
       "steps": [
-        { "target": ".lab-mine", "go": "/create", "next": "Open Create a coin", "title": "Your own coin", "body": "Let’s design a coin together. Every choice changes how buyers react, and Penny explains each one." },
-        { "route": "/create", "target": "[data-coach=\"name\"]", "title": "Name and ticker", "body": "Pick a name and a 3 to 5 letter ticker. Real coins’ names and tickers are blocked, so nobody can pretend to be a real asset." },
-        { "route": "/create", "target": "[data-coach=\"look\"]", "title": "Icon and colour", "body": "Choose any look you like. It doesn’t change the price: a nice look is not value." },
-        { "route": "/create", "target": "[data-coach=\"supply\"]", "title": "Supply", "body": "More coins means each one starts cheaper. A billion coins doesn’t make anyone rich: the money is shared between more coins." },
-        { "route": "/create", "tiers": ["trader", "builder"], "target": "[data-coach=\"split\"]", "title": "Who gets the coins", "body": "Coins you and your team keep can be sold later. Buyers worry when insiders keep a lot, so a fair split earns more trust." },
-        { "route": "/create", "tiers": ["trader", "builder"], "target": "[data-coach=\"hype\"]", "title": "Launch hype", "body": "A loud launch brings a rush of buyers, but hype fades fast and the price often falls back." },
-        { "route": "/create", "tiers": ["builder"], "target": "[data-coach=\"safety\"]", "title": "Pool lock and vesting", "body": "Locking the pool means nobody can pull its money out. Vesting means your own coins unlock slowly. Both are trust signals, and an unlocked pool invites copycats." },
-        { "route": "/create", "target": "[data-coach=\"launch\"]", "wait": "launch", "title": "Launch it", "body": "Check the preview, then tap Launch. Your coin starts on a bonding curve, where every purchase pushes the price up a little." },
+        { "target": ".lab-mine", "go": "/create", "next": "Open Create a coin", "title": "Your own coin", "body": { "explorer": "Let’s design a coin together. Penny explains what each choice does.", "default": "Let’s design a coin together. Some choices change how buyers react and some don’t. Penny explains each one." } },
+        { "route": "/create", "target": "[data-coach=\"name\"]", "interactive": true, "title": "Name and ticker", "body": { "explorer": "Type a name and a 3 to 5 letter ticker, like MOON. Names and tickers of real coins are blocked, so nobody can pretend to be a real coin.", "default": "Type a name and a 3 to 5 letter ticker. Real coins’ names and tickers are blocked, so nobody can pretend to be a real asset." } },
+        { "route": "/create", "target": "[data-coach=\"look\"]", "interactive": true, "title": "Icon and colour", "body": "Choose any look you like. It doesn’t change the price: a nice look is not value." },
+        { "route": "/create", "target": "[data-coach=\"supply\"]", "interactive": true, "title": "Supply", "body": "More coins means each one starts cheaper. A billion coins doesn’t make anyone rich: the money is shared between more coins." },
+        { "route": "/create", "tiers": ["trader", "builder"], "target": "[data-coach=\"split\"]", "interactive": true, "title": "Who gets the coins", "body": "Coins you and your team keep can be sold later. Buyers worry when insiders keep a lot, so a fair split earns more trust." },
+        { "route": "/create", "tiers": ["trader", "builder"], "target": "[data-coach=\"hype\"]", "interactive": true, "title": "Launch hype", "body": "A loud launch brings a rush of buyers, but hype fades fast and the price often falls back." },
+        { "route": "/create", "tiers": ["builder"], "target": "[data-coach=\"safety\"]", "interactive": true, "title": "Pool lock and vesting", "body": "Locking the pool means nobody can pull its money out. Vesting means your own coins unlock slowly. Both are trust signals, and an unlocked pool invites copycats." },
+        { "route": "/create", "target": ".create-preview", "title": "Check the preview", "body": "This is how buyers will see your coin. Check your name and ticker, and read the notes under them." },
+        { "route": "/create", "target": "[data-coach=\"launch\"]", "wait": "launch", "title": "Launch it", "body": { "explorer": "Happy with your coin? Tap Launch. Your coin’s price rises a little with every buyer.", "default": "Happy with your coin? Tap Launch. Your coin starts on a bonding curve, where every purchase pushes the price up a little." } },
         { "route": "/create", "go": "/lab", "next": "Back to the market", "title": "It’s live!", "body": "Your coin is in today’s market. Let’s go and watch how buyers react." },
-        { "target": ".lab-mine", "title": "The hype phase", "body": "Watch your coin’s card. Early buyers push the price up the curve. When the excitement fades, some of them sell." },
-        { "drill": "copycat", "title": "A copycat rug", "body": "In a copy of today’s market, a Builder launched a coin without locking its pool. Watch what happened next." }
+        { "target": ".lab-mine", "live": true, "title": "The hype phase", "body": { "explorer": "The market is running again, so watch your coin’s card. Early buyers push the price up. When the excitement fades, some of them sell.", "default": "The market is running again, so watch your coin’s card. Early buyers push the price up the curve. When the excitement fades, some of them sell." } },
+        { "drill": "copycat", "title": { "explorer": "A copycat coin", "default": "A copycat rug" }, "body": { "explorer": "In a copy of today’s market, someone launched a coin and didn’t lock its pool. Watch what happened next.", "default": "In a copy of today’s market, a Builder launched a coin without locking its pool. Watch what happened next." } }
       ]
     }
   ]

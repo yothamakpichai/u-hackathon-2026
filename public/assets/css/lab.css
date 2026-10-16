@@ -1548,6 +1548,14 @@
   max-height: 46dvh;
 }
 
+/* Short screens (a phone on its side): the card's text comes first, the element shows beside it. */
+@media (max-height: 599px) {
+  .coach__card[data-dock="bottom"],
+  .coach__card[data-dock="top"] {
+    max-height: calc(100dvh - 2 * var(--sp-3) - 4.5rem);
+  }
+}
+
 /* No element to point at (menus, diagrams, drills): use the full height; centre it on wider screens. */
 .coach.is-dim .coach__card,
 .coach-menu.coach__card,
@@ -1596,11 +1604,19 @@
   font-weight: 700;
 }
 
+/* The buttons stay in view when a long card scrolls (the offer on phones, short screens). Sticky
+   insets count from inside the card's padding, so the negative inset puts them on its bottom edge. */
 .coach__actions {
+  position: sticky;
+  bottom: calc(-1 * var(--sp-4));
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--sp-2);
+  margin-block-end: calc(-1 * var(--sp-4));
+  padding-block: var(--sp-2) var(--sp-4);
+  background: var(--surface);
 }
 
 .coach__actions .btn {
@@ -1765,6 +1781,12 @@
 .coach-art__guide { stroke: var(--ink-300); stroke-width: 1.5; stroke-dasharray: 3 3; }
 .coach-art__label { fill: var(--ink-900); font-size: 14px; font-weight: 700; }
 .coach-art__small { fill: var(--ink-500); font-size: 12px; }
+/* Same colours as the chart: the solid blue SMA 7, the dashed pink SMA 25. */
+.coach-art__price { fill: none; stroke: var(--ink-500); stroke-width: 1.5; stroke-linejoin: round; }
+.coach-art__fast { fill: none; stroke: var(--pal-blue); stroke-width: 3; stroke-linejoin: round; }
+.coach-art__slow { fill: none; stroke: var(--pal-magenta); stroke-width: 3; stroke-dasharray: 8 5; }
+.coach-art__band { fill: var(--surface-2); }
+.coach-art__rsi { fill: none; stroke: var(--ink-700); stroke-width: 3; stroke-linejoin: round; }
 
 /* ---- Soulbound badges (BRIEF §15) ------------------------------------------------------------ */
 
