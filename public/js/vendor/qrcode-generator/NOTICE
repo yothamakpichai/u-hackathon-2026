@@ -1,0 +1,3 @@
+qrcode-generator 2.0.4 by Kazuhiko Arase, MIT licence (see LICENSE and the header of qrcode.mjs).
+Source: the npm package qrcode-generator@2.0.4, file dist/qrcode.mjs, unchanged. Retrieved 2026-10-16.
+Used for the parent-link QR code (BRIEF §16, Y14). The word "QR Code" is a registered trademark of DENSO WAVE INCORPORATED.

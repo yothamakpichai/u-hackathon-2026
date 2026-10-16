@@ -3,6 +3,30 @@
 // No email or phone for children: a parent link can reset a forgotten password instead.
 import { h, icon, stateView, animate } from '../ui.js';
 import * as sync from '../sync.js';
+import qrcode from '../../../js/vendor/qrcode-generator/qrcode.mjs';
+
+const SVG = 'http://www.w3.org/2000/svg';
+
+// The parent link as a QR code: one black path on white, with the standard 4-module quiet zone, built with DOM
+// calls (no innerHTML). Black on white on purpose, in dark mode too, so every camera can read it.
+export function qrSvg(text) {
+  const qr = qrcode(0, 'M');
+  qr.addData(text);
+  qr.make();
+  const n = qr.getModuleCount();
+  const pad = 4;
+  let d = '';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c + pad} ${r + pad}h1v1h-1z`;
+  const el = (tag, attrs) => {
+    const node = document.createElementNS(SVG, tag);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, String(v));
+    return node;
+  };
+  const size = n + pad * 2;
+  const svg = el('svg', { class: 'qr', viewBox: `0 0 ${size} ${size}`, role: 'img', 'aria-label': 'QR code of the parent link', 'shape-rendering': 'crispEdges' });
+  svg.append(el('rect', { width: size, height: size, fill: '#FFFFFF' }), el('path', { d, fill: '#000000' }));
+  return svg;
+}
 
 export function mount(root, ctx) {
   const { store, navigate, config } = ctx;
@@ -134,12 +158,12 @@ export function mount(root, ctx) {
     );
   }
 
-  // The parent link with Copy and Share.
+  // The parent link as a QR code, with the link itself, Copy and Share.
   function parentLinkBox(url) {
     const field = h('input', { class: 'arena-input account__link', readonly: true, value: url, 'aria-label': 'Parent link' });
     const copy = h('button', { class: 'btn btn--block', type: 'button', onClick: async () => { try { await navigator.clipboard.writeText(url); copy.textContent = 'Copied'; } catch { field.select(); } } }, 'Copy the link');
     const share = navigator.share ? h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: () => navigator.share({ title: 'Penny parent link', url }).catch(() => {}) }, 'Share with a parent') : null;
-    return h('div', { class: 'account__linkbox' }, [field, share, copy]);
+    return h('div', { class: 'account__linkbox' }, [h('div', { class: 'account__qr' }, [qrSvg(url)]), h('p', { class: 'account__note', text: 'A parent can scan this with their phone camera, or use the link.' }), field, share, copy]);
   }
 
   // Both this device and the account have progress: the player decides which to keep.

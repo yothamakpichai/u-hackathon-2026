@@ -2890,3 +2890,21 @@ svg.is-flipped {
   text-decoration: none;
   white-space: nowrap;
 }
+
+.account__linkbox {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.account__qr {
+  justify-self: center;
+  padding: var(--sp-2);
+  border-radius: var(--r-md);
+  background: #FFFFFF;
+}
+
+.qr {
+  display: block;
+  width: 200px;
+  height: 200px;
+}
