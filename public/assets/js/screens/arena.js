@@ -6,6 +6,7 @@ import { h, icon, stateView, money, price, delta, number } from '../ui.js';
 import { scoreRun } from '../score.js';
 import * as sync from '../sync.js';
 import { walletBar } from './arena/wallet.js';
+import { launchPanel } from './arena/launch.js';
 
 const API = 'api/arena.php';
 const POLL_MS = 1500;
@@ -228,6 +229,16 @@ export function mount(root, ctx) {
     parts = [];
     const part = (p) => (v2 ? (parts.push(p), p.el) : null);
     const walletEl = part(walletBar({ store, api, onCash: (me) => last?.me && render({ ...last, me: { ...last.me, ...me } }) }));
+    const launchEl = part(
+      launchPanel({
+        api,
+        onLaunched: (res) => {
+          const id = typeof res.coin === 'string' ? res.coin : res.coin?.id;
+          if (res.coins) render({ ...last, ...res, coin: id || coin });
+          if (id) pick(id);
+        },
+      }),
+    );
 
     show(
       adultNote,
@@ -243,6 +254,7 @@ export function mount(root, ctx) {
       h('div', { class: 'arena-grid' }, [
         h('div', { class: 'arena-main' }, [h('div', { class: 'card' }, [chartHead, chart, washNote]), tradeForm]),
         h('div', { class: 'arena-side' }, [
+          launchEl,
           h('div', { class: 'card' }, [h('div', { class: 'arena-card-head' }, [h('h2', { class: 'arena-title', text: 'Your portfolio' }), live]), pf]),
           h('div', { class: 'card' }, [h('h2', { class: 'arena-title', text: 'Leaderboard' }), h('p', { class: 'board__note', text: 'Ranked by portfolio value in simulated L$.' }), board]),
           h('div', { class: 'card' }, [h('h2', { class: 'arena-title', text: 'Latest trades' }), h('p', { class: 'board__note', text: 'Players, the whale bot and the momentum bot.' }), feed]),
