@@ -241,7 +241,7 @@
   },
   "copycat_rug": {
     "builder": {
-      "headline": "The copycat coin's pool was pulled",
+      "headline": "The copycat coin’s pool was pulled",
       "narration": "The copycat's creator just pulled its pool. People who bought the copycat cannot sell it for anything close to what they paid. Your own coin keeps trading. Watch for the lesson: a matching price and a trusted-sounding name do not make a coin real.",
       "question": {
         "prompt": "Why can copycat buyers not sell near what they paid?",

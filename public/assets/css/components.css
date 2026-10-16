@@ -3037,3 +3037,12 @@ svg.is-flipped {
     display: block;
   }
 }
+
+/* A disabled button looks it: kids otherwise tap and nothing happens. */
+.btn:disabled,
+.btn[aria-disabled='true'],
+.segmented__btn:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: not-allowed;
+}
