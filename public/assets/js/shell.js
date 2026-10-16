@@ -20,6 +20,14 @@ const townBalance = (store) => {
 };
 
 const fmt = (n) => (n == null || !Number.isFinite(n) ? '–' : wallet.coinText(n));
+// Narrow phones: whole coins, and 10,000 and over as 12.3K, so the header never scrolls sideways. The aria-label keeps
+// the exact balance.
+const narrow = matchMedia('(max-width: 399.98px)');
+const fmtChip = (n) => {
+  if (n == null || !Number.isFinite(n) || !narrow.matches) return fmt(n);
+  const whole = Math.floor(n + 1e-6);
+  return Math.abs(whole) >= 10000 ? new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(whole) : whole.toLocaleString('en-US');
+};
 
 function gearIcon() {
   const svg = document.createElementNS(SVG, 'svg');
@@ -53,7 +61,7 @@ function mountBalance(store, host) {
     const from = shown;
     shown = target;
     if (from == null || target == null || reducedMotion() || from === target) {
-      value.textContent = fmt(target);
+      value.textContent = fmtChip(target);
       return;
     }
     const t0 = performance.now();
@@ -61,7 +69,7 @@ function mountBalance(store, host) {
     const step = (t) => {
       const k = Math.min(1, (t - t0) / dur);
       const e = 1 - (1 - k) ** 3;
-      value.textContent = fmt(k < 1 ? from + (target - from) * e : target);
+      value.textContent = fmtChip(k < 1 ? from + (target - from) * e : target);
       if (k < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
