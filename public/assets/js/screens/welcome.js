@@ -63,7 +63,7 @@ export function mount(root, ctx) {
     h('section', { class: 'card card--quiet partners', 'aria-labelledby': 'partners-title' }, [
       h('h2', { class: 'note__title', id: 'partners-title', text: 'For partners' }),
       h('p', { text: 'We work with licensed exchanges and wallets for graduates aged 20 and over, with schools, and with sponsors. Nobody under 20 ever sees ads or sponsor banners.' }),
-      h('a', { class: 'partners__link', href: config.CONTACT_URL, rel: 'noopener', text: 'Contact the Cenedury team' }),
+      config.PARTNER_EMAIL ? h('a', { class: 'partners__link', href: `mailto:${config.PARTNER_EMAIL}`, text: `Email the ${config.BRAND} team: ${config.PARTNER_EMAIL}` }) : null,
     ]),
     h('p', { class: 'welcome__research' }, [h('a', { href: '#/research', text: 'The research behind Penny' })]),
   ]);

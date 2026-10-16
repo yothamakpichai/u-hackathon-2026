@@ -3,8 +3,9 @@
 export const PRODUCT_NAME = 'Penny';
 export const TAGLINE = 'Money companion for life';
 export const MANIFESTO = 'Raising the generation nobody can fool';
-// Where partners (licensed exchanges and wallets for 20+ graduates, schools, sponsors) can reach the team.
-export const CONTACT_URL = 'https://cenedury.com/';
+// Where partners (licensed exchanges and wallets for 20+ graduates, schools, sponsors) can email the team. The landing
+// shows the mailto: link only once this is set.
+export const PARTNER_EMAIL = '';
 
 export const BRAND = 'Cenedury';
 export const OFFICIAL_COIN = 'EDUU';
