@@ -214,3 +214,92 @@
 .app-footer__credit a:hover {
   color: var(--ink-900);
 }
+
+/* ---------------------------------------------------------------- Nickname field */
+
+.character__nick {
+  border-color: var(--amber-100);
+  background: linear-gradient(135deg, var(--amber-50), var(--surface) 70%);
+}
+
+.nick {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.nick__label {
+  font-family: var(--font-head);
+  font-size: var(--fs-lg);
+  font-weight: 900;
+  color: var(--ink-900);
+}
+
+.nick__row {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.nick__input {
+  flex: 1 1 10rem;
+  min-width: 0;
+  min-height: 48px;
+  padding: var(--sp-2) var(--sp-3);
+  border: 2px solid var(--ink-400);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink-900);
+  font: 600 var(--fs-lg) / 1.2 var(--font-body);
+  transition: border-color var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
+}
+
+.nick__input:focus {
+  outline: none;
+  border-color: var(--focus);
+  box-shadow: 0 0 0 4px rgb(31 99 224 / 0.18);
+}
+
+.nick.is-invalid .nick__input {
+  border-color: var(--loss-600);
+}
+
+.nick__suggest {
+  flex: none;
+  min-height: 48px;
+  padding: var(--sp-2) var(--sp-4);
+  border: 2px solid var(--amber-500);
+  border-radius: var(--r-md);
+  background: var(--amber-50);
+  color: var(--amber-800);
+  font-family: var(--font-head);
+  font-weight: 800;
+  box-shadow: 0 3px 0 var(--amber-600);
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
+}
+
+.nick__suggest:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 var(--amber-600);
+}
+
+.nick__suggest:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--amber-600);
+}
+
+.nick__hint {
+  margin: 0;
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+}
+
+.nick__error {
+  margin: 0;
+  color: var(--loss-600);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.nick__error:empty {
+  display: none;
+}
