@@ -347,3 +347,15 @@ test('the daily seed follows the Bangkok calendar', () => {
   assert.equal(dailySeed(new Date('2026-10-15T17:00:00Z')), dailySeed(new Date('2026-10-16T16:59:59Z')));
   assert.notEqual(dailySeed(new Date('2026-10-16T05:00:00Z')), dailySeed(new Date('2026-10-17T05:00:00Z')));
 });
+
+test('a trade made while paused counts in the risk numbers, even with "Finish now" before the next tick (SRP-4)', () => {
+  const s = createSession({ seed: SEEDS[0], tier: 'trader', ...config() });
+  for (let t = 0; t < 5; t++) s.tick();
+  const ticksBefore = s.getState().portfolio.risk.ticks;
+  assert.ok(s.swap('VAULT', 'buy', 950).ok);
+  s.finish();
+  const r = s.getState().portfolio.risk;
+  assert.ok(r.maxShare > 0.9, `one coin is most of the money (${r.maxShare})`);
+  assert.ok(r.minCashShare < 0.1, `the cash cushion fell below 10% (${r.minCashShare})`);
+  assert.equal(r.ticks, ticksBefore, 'a trade sample is not a market tick');
+});
