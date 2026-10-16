@@ -35,6 +35,44 @@ test('real terms: today’s baht, exactly, in a world with no randomness', () =>
   assert.ok(r.goal.p10 === r.goal.p90, 'no randomness, no spread');
 });
 
+test('new money follows the mix and the plan is rebalanced once a year', () => {
+  const d = data();
+  for (const k of ['cash', 'bonds', 'thaiStocks', 'globalStocks']) Object.assign(d.assets[k], { mean: 0, vol: 0 });
+  d.assets.thaiStocks.mean = 0.1;
+  d.inflation.target.annual = 0;
+  d.inflation.monthlyNoise.annual = 0;
+  d.fx.base.vol = 0;
+  // Half cash (0%), half Thai stocks (10% a year): rebalanced, each year grows 5%, so two years give 1.05².
+  // Without the rebalance, the stocks would take over: 0.5 + 0.5 × 1.1² = 1.105.
+  const r = project(d, { ...base, goalAge: 32, monthlySaving: 0, startBalance: 100000, mix: { cash: 0.5, thaiStocks: 0.5 } });
+  assert.ok(Math.abs(r.goal.p50 - 100000 * 1.05 * 1.05) < 1e-6, `${r.goal.p50}`);
+  // Careful really is careful: its range is much narrower than Bold's on the Explorer default plan.
+  const plan = { ...base, age: 10, goalAge: 60, monthlySaving: 1000 };
+  const spread = (mix) => {
+    const g = project(data(), { ...plan, mix: DATA.mixes[mix] }).goal;
+    return g.p90 / g.p50;
+  };
+  assert.ok(spread('careful') < 0.7 * spread('bold'), `${spread('careful')} vs ${spread('bold')}`);
+  assert.ok(spread('careful') < spread('balanced') && spread('balanced') < spread('bold'));
+});
+
+test('every plan runs on the same market paths, so only the inputs move the result', () => {
+  const plan = { ...base, age: 14, goalAge: 60, monthlySaving: 1000 };
+  const goal = (extra) => project(data(), { ...plan, ...extra }).goal;
+  // Spending after the goal, and how long it runs, never change the values at the goal.
+  assert.deepEqual(goal({ untilAge: 90, spending: { fromAge: 60, monthly: 15000 } }), goal({}));
+  // A shock that starts after the plan ends changes nothing.
+  assert.deepEqual(goal({ shock: '1997', shockInYears: 70 }), goal({}));
+  // Saving more never lowers the result.
+  const more = goal({ monthlySaving: 1100 });
+  const less = goal({});
+  for (const k of ['p10', 'p50', 'p90']) assert.ok(more[k] > less[k], k);
+  // Spending is capped like saving.
+  const huge = project(data(), { ...plan, untilAge: 80, spending: { fromAge: 60, monthly: 99999999 } });
+  const capped = project(data(), { ...plan, untilAge: 80, spending: { fromAge: 60, monthly: DATA.inputs.maxMonthlySaving } });
+  assert.deepEqual(huge.years, capped.years);
+});
+
 test('scenarios move the result the right way', () => {
   const p50 = (plan) => project(data(), { ...base, goalAge: 50, startBalance: 100000, ...plan }).goal.p50;
   assert.ok(p50({ inflation: 'high' }) < p50({ inflation: 'low' }), 'high inflation shrinks real value');

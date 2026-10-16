@@ -6,14 +6,14 @@
   "simulation": {
     "paths": 500,
     "monthsPerYear": 12,
-    "note": "Monthly steps. Returns are drawn from normal log-returns with the means and volatilities below; inflation varies a little around the chosen scenario. Seeded, so the same inputs always give the same fan.",
+    "note": "Monthly steps. Returns are drawn from normal log-returns with the means and volatilities below; inflation varies a little around the chosen scenario. New money goes in by the chosen mix, and the plan is rebalanced to it once a year. One fixed seed, so every plan and scenario runs on the same 500 market paths and the same inputs always give the same fan.",
     "source": "Model choice by the Penny team; not a market assumption."
   },
   "lifeExpectancy": {
     "female": { "value": 80.1, "source": "Institute for Population and Social Research, Mahidol University (2025). Thai Population Gazette 2025. https://ipsr.mahidol.ac.th/wp-content/uploads/2025/01/Gazette2025EN.pdf", "retrieved": "2026-10-16" },
     "male": { "value": 72.0, "source": "Institute for Population and Social Research, Mahidol University (2025). Thai Population Gazette 2025. https://ipsr.mahidol.ac.th/wp-content/uploads/2025/01/Gazette2025EN.pdf", "retrieved": "2026-10-16" },
     "average": { "value": 76.05, "source": "Computed by the Penny team: the mean of the female and male figures above.", "retrieved": "2026-10-16" },
-    "planTo": { "value": 90, "source": "Planning convention used by the Penny team (plan beyond the average, because half of people live longer than it).", "retrieved": "2026-10-16" }
+    "planTo": { "value": 90, "source": "Planning convention used by the Penny team (plan beyond the average, because many people live longer than it).", "retrieved": "2026-10-16" }
   },
   "inflation": {
     "low": { "annual": 0.01, "source": "[unverified] Bank of Thailand headline inflation target range 1–3% (lower bound).", "retrieved": "2026-10-16" },
@@ -39,9 +39,9 @@
     "source": "Illustrative mixes by the Penny team for learning; not advice."
   },
   "shocks": {
-    "1997": { "label": "1997 Asian financial crisis", "thaiStocks": -0.55, "globalStocks": 0.31, "fx": 0.85, "inflation": 0.056, "source": "[unverified] Approximate 1997 changes: SET index about −55%, baht from about 25 to about 47 per US dollar after the July 1997 float, Thai CPI about 5.6%, US stocks about +31%.", "retrieved": "2026-10-16" },
-    "2020": { "label": "2020 pandemic year", "thaiStocks": -0.08, "globalStocks": 0.16, "fx": 0, "inflation": -0.008, "source": "[unverified] Approximate 2020 changes: SET index about −8%, global stocks about +16%, baht roughly unchanged against the US dollar, Thai CPI about −0.8%.", "retrieved": "2026-10-16" },
-    "2022": { "label": "2022 inflation year", "thaiStocks": 0.01, "globalStocks": -0.18, "fx": 0.04, "inflation": 0.061, "source": "[unverified] Approximate 2022 changes: SET index about +1%, global stocks about −18%, baht about 4% weaker against the US dollar, Thai CPI about 6.1%.", "retrieved": "2026-10-16" },
+    "1997": { "label": "1997 Asian financial crisis", "hint": "Thai stocks fell by about half. The baht lost almost half its value against the US dollar, so savings in US dollars were worth more in baht.", "thaiStocks": -0.55, "globalStocks": 0.31, "fx": 0.85, "inflation": 0.056, "source": "[unverified] Approximate 1997 changes: SET index about −55%, baht from about 25 to about 47 per US dollar after the July 1997 float, Thai CPI about 5.6%, US stocks about +31%.", "retrieved": "2026-10-16" },
+    "2020": { "label": "2020 pandemic year", "hint": "Thai stocks fell a little, global stocks rose and prices dipped slightly.", "thaiStocks": -0.08, "globalStocks": 0.16, "fx": 0, "inflation": -0.008, "source": "[unverified] Approximate 2020 changes: SET index about −8%, global stocks about +16%, baht roughly unchanged against the US dollar, Thai CPI about −0.8%.", "retrieved": "2026-10-16" },
+    "2022": { "label": "2022 inflation year", "hint": "Prices rose fast, about 6% in a year, and global stocks fell by about a fifth.", "thaiStocks": 0.01, "globalStocks": -0.18, "fx": 0.04, "inflation": 0.061, "source": "[unverified] Approximate 2022 changes: SET index about +1%, global stocks about −18%, baht about 4% weaker against the US dollar, Thai CPI about 6.1%.", "retrieved": "2026-10-16" },
     "note": "Economic variables only, applied over 12 months starting at the chosen year. Never a statement about parties, politicians or who governs."
   },
   "inputs": {

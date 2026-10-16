@@ -2021,6 +2021,7 @@
 
 .future-screen {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-4);
 }
 
@@ -2038,10 +2039,36 @@
   font-weight: 700;
 }
 
+.future-label svg,
+.future-lasts svg {
+  flex: none;
+}
+
+.future-out > .future-label {
+  margin-top: 0;
+}
+
+/* minmax(0, 1fr): a wide table scrolls inside its card instead of widening the page.
+   "Why this works" sits after .future, so the sticky result can never slide over it. */
+.future-body,
 .future {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-4);
   align-items: start;
+}
+
+/* On phones the result is below a long form: a bar stays under the app header (clear of the keyboard
+   and the Ask Penny button) and jumps to it. Focused fields scroll to below it. */
+.future-peek {
+  position: sticky;
+  top: calc(var(--header-h) + var(--sp-2));
+  z-index: 1;
+  box-shadow: var(--shadow-md);
+}
+
+.future-form :is(input, select) {
+  scroll-margin-top: calc(var(--header-h) + 4.5rem);
 }
 
 @media (min-width: 1024px) {
@@ -2052,12 +2079,25 @@
   .future-why {
     grid-column: 1 / -1;
   }
+
+  /* The result stays in view next to the inputs while you change them. */
+  .future-out {
+    position: sticky;
+    top: calc(var(--header-h) + var(--sp-4));
+    max-height: calc(100vh - var(--header-h) - 2 * var(--sp-4));
+    overflow-y: auto;
+  }
+
+  .future-peek {
+    display: none;
+  }
 }
 
 .future-inputs,
 .future-out,
 .future-form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-4);
 }
 
@@ -2104,6 +2144,16 @@
   color: var(--ink-500);
 }
 
+.future-empty {
+  color: var(--ink-700);
+  font-weight: 700;
+}
+
+.future-shock {
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+}
+
 .future-lasts {
   display: flex;
   align-items: start;
@@ -2111,6 +2161,10 @@
   padding: var(--sp-2) var(--sp-3);
   border-radius: var(--r-sm);
   font-weight: 700;
+}
+
+.future-lasts svg {
+  margin-top: 2px;
 }
 
 .future-lasts.is-good { background: var(--gain-50); color: var(--gain-700); }
@@ -2144,8 +2198,13 @@
 .future-table summary,
 .future-why summary {
   min-height: var(--tap);
+  padding-block: var(--sp-2);
   font-weight: 700;
   cursor: pointer;
+}
+
+.future-numbers-wrap {
+  overflow-x: auto;
 }
 
 .future-numbers {
@@ -2155,20 +2214,39 @@
   font-variant-numeric: tabular-nums;
 }
 
+.future-numbers caption {
+  padding-bottom: var(--sp-1);
+  color: var(--ink-500);
+  font-size: var(--fs-xs);
+  text-align: left;
+}
+
 .future-numbers th,
 .future-numbers td {
-  padding: var(--sp-1) var(--sp-2);
+  padding: var(--sp-1);
   border-bottom: 1px solid var(--line-soft);
   text-align: right;
 }
 
 .future-numbers th:first-child {
+  padding-left: 0;
   text-align: left;
 }
 
+/* Closed, the card hugs its summary; open, lines stay short enough to read. */
 .future-why {
   display: grid;
   gap: var(--sp-2);
+  padding-block: var(--sp-3);
+}
+
+.future-why:not([open]) {
+  gap: 0;
+}
+
+/* 60ch is about 70 characters of this font. */
+.future-why p {
+  max-width: 60ch;
 }
 
 /* ---- Piggy Bank and Farm (BRIEF §16) ---------------------------------------------------------- */
