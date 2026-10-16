@@ -45,6 +45,7 @@ export function coinPanel() {
       if (c.supply) rows.push(['Supply', `${number(c.supply, 0)} coins`]);
       const lv = flags ? level(flags.score) : null;
       el.replaceChildren(
+        ...[
         c.rugged
           ? h('div', { class: 'arena-rugged', role: 'alert' }, [
               h('strong', { text: 'Rugged' }),
@@ -68,6 +69,7 @@ export function coinPanel() {
                 : h('p', { class: 'arena-help', text: 'No warning signs found right now. That is not a promise: check again before you buy.' }),
             ])
           : null,
+        ].filter(Boolean),
       );
       const fill = el.querySelector('.arena-flags__fill');
       if (fill) fill.style.width = `${fill.dataset.w}%`;

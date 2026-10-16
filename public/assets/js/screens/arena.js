@@ -467,16 +467,23 @@ export function mount(root, ctx) {
       poll();
     }
 
+    // In v2 a signed-out player keeps watching the same market as a guest.
+    const afterSignOut = () => {
+      if (!v2) return needAccount();
+      stop();
+      if (alive) market(null, true);
+    };
+
     async function logout() {
       await sync.signOut();
-      needAccount();
+      afterSignOut();
     }
 
     async function removeAccount() {
       if (!confirm('Delete your account? Your Arena coins, leaderboard place, saved progress and parent link are removed for good. Progress on this device stays.')) return;
       try {
         await sync.deleteAccount();
-        needAccount();
+        afterSignOut();
       } catch (err) {
         result.textContent = err.message;
       }

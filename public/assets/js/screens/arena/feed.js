@@ -24,9 +24,9 @@ export function feedView({ botNames = {} } = {}) {
     const kind = t.kind === 'rug' || t.kind === 'launch' ? t.kind : 'trade';
     return h('li', { class: `arena-feed__item is-${kind}${t.bot ? ' is-bot' : ''}${t.persona ? ' is-persona' : ''}${fresh ? ' is-new' : ''}` }, [
       kind !== 'trade' ? h('span', { class: 'arena-feed__badge', text: kind === 'rug' ? 'Rug pull' : 'Launch' }) : null,
-      kind === 'trade'
+      ...(kind === 'trade'
         ? [h('span', { class: 'arena-feed__who', text: who(t) }), h('span', { text: `${t.side === 'buy' ? 'bought' : 'sold'} ${amount(t)}` })]
-        : h('span', { class: 'arena-feed__text', text: line(t) }),
+        : [h('span', { class: 'arena-feed__text', text: line(t) })]),
       kind === 'trade' && t.amountL != null ? h('span', { class: 'arena-feed__l', text: money(t.amountL, 0) }) : null,
     ]);
   }
