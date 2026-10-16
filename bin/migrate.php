@@ -111,6 +111,32 @@ $tables = [
         wash_volume DECIMAL(24,8) NOT NULL DEFAULT 0,
         PRIMARY KEY (coin_id, bucket)
     ) " . ENGINE,
+    // Arena v2 (BRIEF §17): AI or templated headlines, soulbound season medals and burned L$ per day.
+    'arena_news' => "CREATE TABLE IF NOT EXISTS arena_news (
+        id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        at INT UNSIGNED NOT NULL,
+        text VARCHAR(240) NOT NULL,
+        source VARCHAR(8) NOT NULL,
+        KEY ix_arena_news_at (at)
+    ) " . ENGINE,
+    // One row per medal, minted once per day and rank (the primary key), never transferable, history kept.
+    'arena_medals' => "CREATE TABLE IF NOT EXISTS arena_medals (
+        day CHAR(10) NOT NULL,
+        `rank` TINYINT UNSIGNED NOT NULL,
+        user_id INT UNSIGNED NOT NULL,
+        value DECIMAL(24,8) NOT NULL,
+        hash CHAR(64) NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (day, `rank`),
+        KEY ix_arena_medals_user (user_id),
+        CONSTRAINT fk_arena_medals_user FOREIGN KEY (user_id) REFERENCES arena_users (id) ON DELETE CASCADE
+    ) " . ENGINE,
+    'arena_burns' => "CREATE TABLE IF NOT EXISTS arena_burns (
+        day CHAR(10) NOT NULL,
+        kind VARCHAR(12) NOT NULL,
+        amount_l DECIMAL(24,8) NOT NULL DEFAULT 0,
+        PRIMARY KEY (day, kind)
+    ) " . ENGINE,
 ];
 
 // Columns added after a table first shipped go here as [table, column, definition, backfill SQL or null]. Each is
@@ -120,6 +146,34 @@ $columns = [
     ['arena_users', 'approved_at', 'DATETIME NULL', 'UPDATE arena_users SET approved_at = created_at WHERE approved_at IS NULL'],
     // Set once a 13–19-year-old has qualified for the Arena, so polls don't re-read their saved progress.
     ['arena_users', 'arena_ok', 'TINYINT(1) NOT NULL DEFAULT 0', null],
+    // Arena v2 (BRIEF §17). Player-launched coins live in arena_coins next to the four house coins.
+    ['arena_coins', 'launched', 'TINYINT(1) NOT NULL DEFAULT 0', null],
+    ['arena_coins', 'icon', "VARCHAR(16) NOT NULL DEFAULT ''", null],
+    ['arena_coins', 'color', "VARCHAR(16) NOT NULL DEFAULT ''", null],
+    ['arena_coins', 'creator_id', 'INT UNSIGNED NULL', null],
+    ['arena_coins', 'supply', 'DECIMAL(24,8) NOT NULL DEFAULT 0', null],
+    ['arena_coins', 'community', 'DECIMAL(24,8) NOT NULL DEFAULT 0', null],
+    ['arena_coins', 'creator_start', 'DECIMAL(24,8) NOT NULL DEFAULT 0', null],
+    ['arena_coins', 'creator_locked', 'DECIMAL(24,8) NOT NULL DEFAULT 0', null],
+    ['arena_coins', 'creator_sold', 'DECIMAL(24,8) NOT NULL DEFAULT 0', null],
+    ['arena_coins', 'lock_until', 'INT UNSIGNED NOT NULL DEFAULT 0', null],
+    ['arena_coins', 'vest_until', 'INT UNSIGNED NOT NULL DEFAULT 0', null],
+    ['arena_coins', 'created_s', 'INT UNSIGNED NOT NULL DEFAULT 0', null],
+    ['arena_coins', 'created_tick', 'BIGINT UNSIGNED NOT NULL DEFAULT 0', null],
+    ['arena_coins', 'peak', 'DECIMAL(24,8) NOT NULL DEFAULT 0', null],
+    ['arena_coins', 'rugged', 'TINYINT(1) NOT NULL DEFAULT 0', null],
+    ['arena_coins', 'ape', 'DECIMAL(24,8) NOT NULL DEFAULT 0', null],
+    ['arena_users', 'is_demo', 'TINYINT(1) NOT NULL DEFAULT 0', null],
+    ['arena_users', 'demo_expires_at', 'DATETIME NULL', null],
+    ['arena_users', 'pro_until', 'INT UNSIGNED NOT NULL DEFAULT 0', null],
+    ['arena_users', 'stipend_day', 'CHAR(10) NULL', null],
+    // Active = traded or got a stipend in the last 7 days; existing players start from their last trade.
+    ['arena_users', 'last_active_at', 'DATETIME NULL', 'UPDATE arena_users u SET last_active_at = (SELECT MAX(t.created_at) FROM arena_trades t WHERE t.user_id = u.id)'],
+    ['arena_users', 'transfer_day', 'CHAR(10) NULL', null],
+    ['arena_users', 'transfer_today', 'DECIMAL(24,8) NOT NULL DEFAULT 0', null],
+    ['arena_market', 'season_day', 'CHAR(10) NULL', null],
+    ['arena_market', 'news_at', 'INT UNSIGNED NOT NULL DEFAULT 0', null],
+    ['arena_trades', 'kind', "VARCHAR(8) NOT NULL DEFAULT 'trade'", null],
 ];
 
 try {
@@ -148,6 +202,9 @@ try {
     foreach (ARENA_COINS as $id => $c) {
         $coin->execute([$id, $c['name'], $c['liquidity'], $c['liquidity'] / $c['price'], $c['price'], $c['price'], $c['price'], $c['sort']]);
     }
+    // House coins: supply is their pool, peak starts at today's price. Only rows still at 0 are touched.
+    $db->exec('UPDATE arena_coins SET supply = reserve_c WHERE supply = 0 AND launched = 0');
+    $db->exec('UPDATE arena_coins SET peak = reserve_l / reserve_c WHERE peak = 0');
     echo 'seeded  market and ' . count(ARENA_COINS) . ' coins (existing rows kept)' . PHP_EOL;
     echo 'Migration complete.' . PHP_EOL;
 } catch (Throwable $e) {

@@ -5,6 +5,7 @@
 //   GET  ?action=quiz                   -> the 3 safety questions (no answers)
 //   GET  ?action=me                     -> {user, csrf} or {user:null}
 //   POST ?action=signup {username, password, birthYear, quiz:[a,b,c]}   POST ?action=login {username, password}
+//   POST ?action=demo                   -> a 24-hour judge-demo account "Demo-XXXX", signed in like a login (+demo:true)
 //   POST ?action=logout | delete        (X-CSRF-Token)
 //   GET  ?action=state                  -> {state, updatedAt, confirmations}      the saved progress
 //   POST ?action=state {state, updatedAt} (X-CSRF-Token)                          save progress (newest wins)
@@ -18,6 +19,7 @@ declare(strict_types=1);
 require dirname(__DIR__, 2) . '/src/bootstrap.php';
 require REPO_ROOT . '/src/db.php';
 require REPO_ROOT . '/src/accounts.php';
+require REPO_ROOT . '/src/arena.php';
 
 const MAX_STATE_BYTES = 300000;
 
@@ -50,6 +52,19 @@ switch ($action) {
         same_origin();
         rate_limit('login', 60, 900); // per IP; login() also limits each username
         login(read_json());
+    case 'demo':
+        require_method('POST');
+        same_origin();
+        // The Judge demo's Arena account skips the age and parent gates (it is an adult demo account), so it can be
+        // switched off with DEMO_ENABLED=0 once judging is over. The demo profile itself still loads without it.
+        if (env('DEMO_ENABLED', '1') !== '1') {
+            send_error(404, 'DEMO_OFF', 'Demo accounts are switched off. You can make a normal account instead.');
+        }
+        if (!arena_v2_ready()) {
+            send_error(503, 'V2_OFF', 'Demo accounts aren’t available right now. You can make a normal account instead.');
+        }
+        rate_limit('demo', 5, 3600); // per IP
+        demo_signup($db);
     case 'logout':
         require_method('POST');
         require_user($db);
@@ -59,6 +74,10 @@ switch ($action) {
         require_method('POST');
         $user = require_user($db);
         $db->prepare('DELETE FROM arena_trades WHERE user_id = ?')->execute([$user['user_id']]);
+        if (arena_v2_ready()) {
+            // A launched coin outlives its creator, who is no longer named (there is no foreign key to cascade).
+            $db->prepare('UPDATE arena_coins SET creator_id = NULL WHERE creator_id = ?')->execute([$user['user_id']]);
+        }
         $db->prepare('DELETE FROM arena_users WHERE id = ?')->execute([$user['user_id']]);
         set_session_cookie('', -3600);
         send_json(['ok' => true]);

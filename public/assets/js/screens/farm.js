@@ -1,14 +1,14 @@
 // Farm (BRIEF §16; slice J11). A cow you earn and never buy: it is born and grows from real actions
 // (Learning Path steps, Coach chapters, finished markets, Piggy Bank logs and the days that make your
-// streak) and gives milk once a day, sold for farm coins. Each cow has seeded traits and a soulbound
-// birth certificate minted on the simulated chain.
+// streak) and gives milk once a day, sold for L$ in the Town wallet. Each cow has seeded traits and a
+// soulbound birth certificate minted on the simulated chain.
 import { collectMilk, cowsDue, COW_AT, feedFrom, milkReady, MILK_PRICE, STAGES, stageOf } from '../sim/farm.js';
 import { PLOTS, SEEDS, canPlant, harvest, plant, plotState, revealedPreference } from '../sim/orchard.js';
 import { FAIR, askOf, bidOf, buyCard, hypeIndex, makeFair, newRound, newsAt, sellCard, summary } from '../sim/fair.js';
 import { dayKey } from '../sim/piggy.js';
 import { mintBadge } from './badges.js';
-import { balance as walletBalance, coinText, ensureStarter, post } from '../../../js/wallet.js';
-import { announce, celebrate, h, icon, number } from '../ui.js';
+import { balance as walletBalance, claimDaily, ensureStarter, moneyText, post } from '../../../js/wallet.js';
+import { announce, celebrate, delta, h, icon, number } from '../ui.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const COAT = { cream: '#F3E6CF', brown: '#9A6A44', black: '#3A3330', honey: '#D9A85B', grey: '#A9A9A4' };
@@ -32,11 +32,13 @@ export function mount(root, ctx) {
   let fairTimer = 0;
   let fairEls = null;
 
-  // One Town wallet for every building (BRIEF §16.1): a starter grant once, and earlier milk coins moved in.
+  // One Town wallet for every building (BRIEF §16.1, §17): the start once, today's login bonus, and earlier milk
+  // coins moved in, as a grant so the day's payout cap can't cut them.
   ensureStarter(store);
+  claimDaily(store);
   const old = store.get().farm;
   if (old?.coins > 0 && !old.walletMigrated) {
-    post(store, { amount: old.coins, kind: 'milk', note: 'Earlier milk sales' });
+    post(store, { amount: old.coins, kind: 'grant', note: 'Earlier milk sales', ref: 'farm-coins' });
     store.set({ farm: { ...old, walletMigrated: true } });
   }
 
@@ -111,11 +113,12 @@ export function mount(root, ctx) {
       h('div', { class: 'card card--quiet farm-lesson' }, [
         h('h2', { class: 'lesson-mini__title', text: 'A cow pays you. A meme coin doesn’t.' }),
         h('p', { text: 'Your cow is a productive asset: it makes something useful every day, and you get paid for it. A meme coin makes nothing. Its price only goes up if someone else pays more for it later, and it can fall to zero.' }),
-      ]),
-      h('details', { class: 'card card--quiet future-why' }, [
-        h('summary', { text: 'ⓘ Why this works' }),
-        h('p', { text: 'Habits form when you repeat a small action every day, and missing one day does not undo the habit (Lally and others, 2010). The cow makes those daily actions visible.' }),
-        h('p', { class: 'field__hint' }, [h('a', { href: '#/research', text: 'See our sources' })]),
+        // "Why this works" folds into the lesson card, so it isn't a lone card at the end of the page.
+        h('details', { class: 'future-why' }, [
+          h('summary', { text: 'ⓘ Why this works' }),
+          h('p', { text: 'Habits form when you repeat a small action every day, and missing one day does not undo the habit (Lally and others, 2010). The cow makes those daily actions visible.' }),
+          h('p', { class: 'field__hint' }, [h('a', { href: '#/research', text: 'See our sources' })]),
+        ]),
       ]),
     );
     shownDay = dayKey(Date.now());
@@ -138,13 +141,15 @@ export function mount(root, ctx) {
     const coins = walletBalance(store.get());
     const litres = ready.reduce((s, c) => s + c.milk, 0);
     const btn = ready.length
-      ? h('button', { class: 'btn btn--primary', type: 'button' }, `Collect ${litres} litres and sell for ${litres * MILK_PRICE} coins`)
+      ? h('button', { class: 'btn btn--primary', type: 'button' }, `Collect ${litres} litres and sell for ${moneyText(litres * MILK_PRICE)}`)
       : null;
     btn?.addEventListener('click', () => {
       const r = collectMilk(farm, farm.cows, feed.total, Date.now());
+      // The town pays out only so much a day (wallet.js): once that's reached, the milk stays in the cows.
+      const paid = post(store, { amount: r.coins, kind: 'milk', note: `${r.litres} litres of milk` });
+      if (!paid.ok) return refused(btn, paid.error);
       store.set({ farm: r.farm });
-      post(store, { amount: r.coins, kind: 'milk', note: `${r.litres} litres of milk` });
-      announce(`Sold ${r.litres} litres of milk for ${r.coins} coins.`);
+      announce(`Sold ${r.litres} litres of milk for ${moneyText(paid.entry.amount)}.${paid.cut ? ' That’s all the town can pay out today.' : ''}`);
       render();
       // The button is gone after the redraw: keep focus on the Milk card's message.
       view.querySelector('.farm-milk__status')?.focus({ preventScroll: true });
@@ -157,9 +162,9 @@ export function mount(root, ctx) {
         : 'Grown cows give milk once a day. Earn feed around town and your first calf will be born.';
     return h('div', { class: 'card farm-milk' }, [
       h('h2', { class: 'lab-card__title', text: 'Milk' }),
-      h('p', { class: 'farm-coins', text: `${coinText(coins)} coins in your Town wallet` }),
+      h('p', { class: 'farm-coins', text: `${moneyText(coins)} in your Town wallet` }),
       btn || h('p', { class: 'field__hint farm-milk__status', tabindex: '-1', text: status }),
-      h('p', { class: 'field__hint', text: 'Town coins are game coins, not real money.' }),
+      h('p', { class: 'field__hint', text: 'L$ is the town’s game money, not real money.' }),
     ]);
   }
 
@@ -178,7 +183,7 @@ export function mount(root, ctx) {
     if (hadFocus) (fresh.querySelector('button') || fresh.querySelector('.farm-milk__status'))?.focus({ preventScroll: true });
   }
 
-  // ---- Orchard (BRIEF §16.1): seeds bought with coins, growing in real time ---------------------
+  // ---- Orchard (BRIEF §16.1): seeds bought with L$, growing in real time ------------------------
   function renderOrchard(force = false) {
     if (!orchardBox) return;
     const now = Date.now();
@@ -206,20 +211,20 @@ export function mount(root, ctx) {
     const coins = walletBalance(store.get());
     // The wallet is shared: keep the Milk card's balance in step with the orchard.
     const coinsLine = view.querySelector('.farm-coins');
-    if (coinsLine) coinsLine.textContent = `${coinText(coins)} coins in your Town wallet`;
+    if (coinsLine) coinsLine.textContent = `${moneyText(coins)} in your Town wallet`;
     const need = coins < CHEAPEST_SEED && orchard.plots.some((p) => !p);
     const pref = revealedPreference(orchard.choices);
     const plots = orchard.plots.map((p, i) => h('li', { class: 'orchard-plot', tabindex: '-1', dataset: { plot: String(i) } }, p ? plotView(p, i, now) : emptyPlot(i, coins, orchard, now, need)));
     orchardBox.replaceChildren(
       ...[
-        h('div', { class: 'card-head' }, [h('h2', { class: 'lab-card__title', text: 'Orchard' }), h('p', { class: 'chip', text: `${coinText(coins)} coins` })]),
-        h('p', { class: 'field__hint', text: 'Buy seeds with coins and plant them. Some pay a little soon; some pay a lot if you wait.' }),
-        need ? h('p', { class: 'orchard-need', id: 'orchard-need', text: `You need ${CHEAPEST_SEED} coins to plant. Sell milk from a grown cow, sell at the Stall, or harvest a plant to earn coins.` }) : null,
+        h('div', { class: 'card-head' }, [h('h2', { class: 'lab-card__title', text: 'Orchard' }), h('p', { class: 'chip', text: moneyText(coins) })]),
+        h('p', { class: 'field__hint', text: 'Buy seeds with L$ from your Town wallet and plant them. Some pay a little soon; some pay a lot if you wait.' }),
+        need ? h('p', { class: 'orchard-need', id: 'orchard-need', text: `You need ${moneyText(CHEAPEST_SEED)} to plant. Sell milk from a grown cow, sell at the Stall, or harvest a plant to earn L$.` }) : null,
         h('ul', { class: 'orchard-plots' }, plots),
         h('p', { class: 'orchard-pref', text: pref ? `Your choices so far: ${pref.count} planted, ${Math.round(pref.laterShare * 100)}% waited for the big tree.` : 'Nothing planted yet.' }),
         h('div', { class: 'card card--quiet orchard-lesson' }, [
           h('h3', { class: 'lesson-mini__title', text: 'Waiting can pay' }),
-          h('p', { text: `A herb sprout pays a little in 2 minutes, once a day in each plot. A big mango tree costs more and takes a week, but then it pays ${SEEDS.big.harvest} coins and fruits every day for as long as you keep it. Patience turns a small start into a steady income.` }),
+          h('p', { text: `A herb sprout pays a little in 2 minutes, once a day in each plot. A big mango tree costs more and takes a week, but then it pays ${moneyText(SEEDS.big.harvest)} and fruits every day for as long as you keep it. Patience turns a small start into a steady income.` }),
         ]),
       ].filter(Boolean),
     );
@@ -240,13 +245,15 @@ export function mount(root, ctx) {
     const label = { seed: 'Planted', sprout: 'Sprouting', growing: 'Growing', ready: 'Ready to harvest', grown: 'Growing more fruit', done: 'Harvested' }[s.stage];
     const parts = [art, h('p', { class: 'orchard-plot__name', text: seed.label }), h('p', { class: 'orchard-plot__stage', text: label })];
     if (s.stage === 'ready') {
-      const b = h('button', { class: 'btn btn--sm btn--primary orchard-harvest', type: 'button', 'aria-label': `Harvest ${s.harvest} coins from plot ${i + 1}, your ${seed.label.toLowerCase()}` }, `Harvest ${s.harvest} coins`);
+      const b = h('button', { class: 'btn btn--sm btn--primary orchard-harvest', type: 'button', 'aria-label': `Harvest ${moneyText(s.harvest)} from plot ${i + 1}, your ${seed.label.toLowerCase()}` }, `Harvest ${moneyText(s.harvest)}`);
       b.addEventListener('click', () => {
         const r = harvest({ plots: Array(PLOTS).fill(null), ...store.get().orchard }, i, Date.now());
         if (!r.coins) return;
+        // Paid first: when the town has paid out all it can today, the fruit waits on the plant.
+        const paid = post(store, { amount: r.coins, kind: 'harvest', note: seed.label });
+        if (!paid.ok) return refused(b, paid.error);
         store.set({ orchard: { ...store.get().orchard, ...r.orchard } });
-        post(store, { amount: r.coins, kind: 'harvest', note: seed.label });
-        announce(`Harvested ${r.coins} coins from your ${seed.label.toLowerCase()}.`);
+        announce(`Harvested ${moneyText(paid.entry.amount)} from your ${seed.label.toLowerCase()}.${paid.cut ? ' That’s all the town can pay out today.' : ''}`);
         renderOrchard(true);
         focusPlot(i, '.orchard-seed:not([aria-disabled])');
       });
@@ -262,7 +269,7 @@ export function mount(root, ctx) {
       const allowed = canPlant(orchard, i, id, now).ok;
       const short = coins < seed.cost;
       const meta = allowed
-        ? `${seed.cost} coins · ready in ${seed.wait} · harvest ${seed.harvest}${seed.refruit ? `, then ${seed.refruitHarvest} every day` : ''}${seed.daily ? ' · one a day in each plot' : ''}`
+        ? `${moneyText(seed.cost)} · ready in ${seed.wait} · harvest ${moneyText(seed.harvest)}${seed.refruit ? `, then ${moneyText(seed.refruitHarvest)} every day` : ''}${seed.daily ? ' · one a day in each plot' : ''}`
         : 'One a day in each plot. Plant another tomorrow.';
       // aria-disabled rather than disabled: keyboard users can still reach the seed and hear why it can't be planted.
       const b = h('button', { class: 'orchard-seed', type: 'button', dataset: { seed: id }, 'aria-disabled': short || !allowed ? 'true' : null, 'aria-describedby': short && need ? 'orchard-need' : null }, [
@@ -296,9 +303,9 @@ export function mount(root, ctx) {
     fairBox.replaceChildren(
       ...[
         h('div', { class: 'card-head' }, [h('h2', { class: 'lab-card__title', text: 'Cow Fair' }), h('p', { class: 'chip', text: '1 minute' })]),
-        h('p', { text: `Collectors trade cow cards here: pictures of cows, not cows. Prices change fast. You get ${FAIR.tickets} pretend fair tickets each time, and your Town wallet isn’t touched.` }),
+        h('p', { text: `Collectors trade cow cards here: pictures of cows, not cows. Prices change fast. You get ${moneyText(FAIR.tickets)} of practice money each time. It’s pretend, and your Town wallet isn’t touched.` }),
         h('p', { class: 'field__hint', text: own }),
-        saved?.last ? h('p', { class: 'field__hint', text: `Last fair: you ended with ${ticketText(saved.last.end)} tickets from ${FAIR.tickets}.` }) : null,
+        saved?.last ? h('p', { class: 'field__hint', text: `Last fair: you ended with ${moneyText(saved.last.end)} of practice money, from ${moneyText(FAIR.tickets)}.` }) : null,
         h('button', { class: 'btn btn--primary', type: 'button', onClick: startFair }, saved?.played ? 'Go to the fair again' : 'Go to the fair'),
       ].filter(Boolean),
     );
@@ -339,7 +346,7 @@ export function mount(root, ctx) {
     const clock = h('p', { class: 'chip fair__clock' });
     const news = h('p', { class: 'fair__news', role: 'status' });
     const index = h('p', { class: 'fair__index' });
-    // Time left, tickets and news: on a phone this block stays in view while the cards scroll.
+    // Time left, practice money and news: on a phone this block stays in view while the cards scroll.
     const status = h('div', { class: 'fair__status' }, [h('div', { class: 'fair__bar' }, [tickets, clock]), news]);
     fairEls = { T, rows, tickets, clock, news, index, status };
     fairBox.replaceChildren(
@@ -356,7 +363,7 @@ export function mount(root, ctx) {
     const { T } = fairEls;
     const held = Object.keys(round.owned).reduce((v, i) => v + (bidOf(fair, Number(i), s) ?? 0), 0);
     fairEls.clock.textContent = `${Math.ceil(((FAIR.steps - s) * FAIR.stepMs) / 1000)} s left`;
-    fairEls.tickets.textContent = `${ticketText(round.tickets)} tickets${Object.keys(round.owned).length ? ` · your cards would sell for ${ticketText(Math.round(held * 10) / 10)}` : ''}`;
+    fairEls.tickets.textContent = `Practice money: ${moneyText(round.tickets)}${Object.keys(round.owned).length ? ` · your cards would sell for ${moneyText(Math.round(held * 10) / 10)}` : ''}`;
     const line = newsAt(fair, s);
     if (line) fairEls.news.textContent = line;
     const hi = hypeIndex(fair, s);
@@ -369,20 +376,20 @@ export function mount(root, ctx) {
       const ch = fair.prices[i][s] / fair.prices[i][0] - 1;
       const own = round.owned[i];
       const name = `${fair.cards[i].name}’s card`;
-      r.price.textContent = `${number(fair.prices[i][s], 1)} tickets`;
-      r.change.textContent = `${ch >= 0 ? '↑' : '↓'} ${Math.round(Math.abs(ch) * 100)}%`;
-      r.change.className = `fair-card__change ${ch >= 0 ? 'is-up' : 'is-down'}`;
+      r.price.textContent = moneyText(fair.prices[i][s]);
+      // Arrow, sign and colour from ui.js: "↑ +12%", "↓ −8%", and "→ 0%" when nothing has moved.
+      r.change.replaceChildren(delta(ch * 100, 0));
       r.owned.hidden = !own;
       r.hype.hidden = !(fair.cards[i].hyped && s >= 3 && s < 34);
       r.hype.textContent = `${T}: ${s < 20 ? 'in demand' : s < 25 ? 'sellers lining up' : s < 31 ? 'crashing' : 'crashed'}`;
       // The accessible names start with the visible text and add the card and the unit.
-      r.buy.textContent = `Buy for ${number(ask, 1)}`;
-      r.buy.setAttribute('aria-label', `Buy for ${number(ask, 1)} tickets, ${name}`);
+      r.buy.textContent = `Buy for ${moneyText(ask)}`;
+      r.buy.setAttribute('aria-label', `Buy for ${moneyText(ask)} of practice money, ${name}`);
       r.buy.hidden = Boolean(own);
       usable(r.buy, ask <= round.tickets);
       r.sell.hidden = !own;
-      r.sell.textContent = bid == null ? 'No buyers right now' : `Sell for ${number(bid, 1)}`;
-      r.sell.setAttribute('aria-label', bid == null ? `No buyers right now for ${name}` : `Sell for ${number(bid, 1)} tickets, ${name}`);
+      r.sell.textContent = bid == null ? 'No buyers right now' : `Sell for ${moneyText(bid)}`;
+      r.sell.setAttribute('aria-label', bid == null ? `No buyers right now for ${name}` : `Sell for ${moneyText(bid)} of practice money, ${name}`);
       usable(r.sell, bid != null);
     });
     // The status block grows when its lines wrap; lab.css uses its height to keep focused cards clear of it on phones.
@@ -419,10 +426,10 @@ export function mount(root, ctx) {
     const T = capital(t);
     const cards = (n) => `${n} ${t} ${n === 1 ? 'card' : 'cards'}`;
     const verdict = s.end > s.start
-      ? `You ended with ${ticketText(s.end)} tickets from ${s.start}: a gain.`
+      ? `You ended with ${moneyText(s.end)} of practice money, from ${moneyText(s.start)}: a gain.`
       : s.end < s.start
-        ? `You ended with ${ticketText(s.end)} tickets from ${s.start}: a loss.`
-        : `You ended with the ${s.start} tickets you started with.`;
+        ? `You ended with ${moneyText(s.end)} of practice money, from ${moneyText(s.start)}: a loss.`
+        : `You ended with the ${moneyText(s.start)} of practice money you started with.`;
     const how = [];
     if (s.early) how.push(`You bought ${cards(s.early)} early, before the crowd.`);
     if (s.late) how.push(`You bought ${s.early ? `${s.late} more` : s.late} ${t} ${s.late === 1 ? 'card' : 'cards'} after the crowd arrived, near the top.`);
@@ -443,7 +450,7 @@ export function mount(root, ctx) {
         h('p', { text: 'Early buyers can win, but only because later buyers paid more. Nobody tells you when the price has reached the top.' }),
         h('p', { text: cow ? `${cow.name} gives ${cow.milk} litres of milk a day, whatever the fair does.` : 'A cow you earn gives milk every day, whatever the fair does.' }),
         h('p', { class: 'field__hint' }, [
-          'Real collectibles on blockchains have drawn crowds like this: CryptoKitties got so popular in 2017 that it clogged its blockchain, and Axie Infinity prices collapsed in 2022 (sources not yet checked). ',
+          'Real collectibles on blockchains have drawn crowds like this. News reports say CryptoKitties got so popular in 2017 that it clogged its blockchain, and that Axie Infinity prices collapsed in 2022. We’re still checking those reports. ',
           h('a', { href: '#/research', text: 'See our sources' }),
         ]),
       ]),
@@ -472,11 +479,19 @@ function usable(btn, ok) {
   else btn.setAttribute('aria-disabled', 'true');
 }
 
+// A payout the town refuses (wallet.js: its daily cap) leaves the button in place, so the reason shows next to it
+// as well as being read out.
+function refused(btn, message) {
+  announce(message);
+  const note = h('p', { class: 'field__hint farm-refused', text: message });
+  const old = btn.parentElement?.querySelector('.farm-refused');
+  if (old) old.replaceWith(note);
+  else btn.after(note);
+}
+
 const capital = (s) => s[0].toUpperCase() + s.slice(1);
 // Names in a sentence: "Mali", "Mali and Loli", "Mali, Loli and Surin".
 const listText = (names) => (names.length > 2 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names.join(' and '));
-// Fair tickets keep one decimal, and whole numbers show none: 18.9, 100.
-const ticketText = (n) => number(n, Number.isInteger(n) ? 0 : 1);
 
 function countdown(ms) {
   if (ms <= 0) return 'Ready now';

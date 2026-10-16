@@ -7,9 +7,9 @@
       "title": "Reading a candle",
       "blurb": "Open, close, high, low, wicks, and what green and red really mean.",
       "steps": [
-        { "target": ".lab-chart__canvas", "title": "This is the price chart", "body": "Each little bar is a candle. One candle shows 6 hours of trading, and today’s market runs for 30 days." },
+        { "target": ".lab-chart__canvas", "title": "This is the price chart", "body": "Each little bar is a candle. One candle shows 6 hours of trading. Today’s market runs for 30 days, so the chart starts almost empty and fills up as the days go by." },
         { "art": "candle", "title": "Inside a candle", "body": "The thick body runs from the open price, where those 6 hours started, to the close price, where they ended. The thin wicks reach the highest and lowest prices in between." },
-        { "art": "colors", "title": "Green or red?", "body": "A green candle closed higher than it opened: the price went up. A red candle closed lower: the price went down. Long wicks mean the price swung a lot before it settled." },
+        { "art": "colors", "title": "Green or red?", "body": "A green candle closed higher than it opened: the price went up. A red candle closed lower: the price went down. Up candles are hollow and down candles are filled, so you can tell them apart without the colours. Long wicks mean the price swung a lot before it settled." },
         { "target": ".lab-chart__price", "title": "The price right now", "body": "This is the latest price. The arrow and the sign show the change over the last market day. Always read the arrow and the sign, not just the colour." }
       ]
     },
@@ -30,11 +30,11 @@
       "title": "Your first trade",
       "blurb": "Buy a coin step by step and see how your trade moves the price.",
       "steps": [
-        { "target": ".lab-trade", "title": "The trade panel", "body": "Here you buy or sell the coin on the chart. Everything here is simulated: no real money, ever." },
-        { "target": ".trade__field", "wait": "tradePreview", "title": "Choose an amount", "body": "Type how many L$ to spend, for example 100. Then look at the line under the box." },
+        { "target": ".lab-trade", "title": "The trade panel", "body": "Here you buy or sell the coin on the chart with your Practice L$. Everything here is simulated: no real money, ever." },
+        { "target": ".trade__field", "also": ".lab-trade .trade__quick, .lab-trade .trade__preview", "wait": "tradePreview", "title": "Choose an amount", "body": "Type how many Practice L$ to spend, for example 100. Then look at the line under the box." },
         { "target": ".trade__preview", "title": "Price impact", "body": { "explorer": "Your own trade moves the price: each coin you buy leaves fewer in the pool, so the next one costs a bit more. Bigger trades move it more. A good habit is to keep your impact small.", "default": "Your own trade moves the price, because the pool has to rebalance. Bigger trades move it more. A good habit is to keep your impact small." } },
         { "target": ".trade button[type=\"submit\"]", "wait": "tradeDone", "title": "Make the trade", "body": "Tap the Buy button. The market is paused while Penny coaches you, so take your time." },
-        { "target": ".lab-portfolio", "title": "Your portfolio", "body": "Your new coins are here with their profit or loss. The bar shows how your money is split. Keeping some cash is part of a healthy plan." }
+        { "target": ".lab-portfolio", "title": "Your portfolio", "body": "Your new coins are here with their profit or loss. The bar shows how your Practice L$ are split between cash and coins. Keeping some cash is part of a healthy plan." }
       ]
     },
     {

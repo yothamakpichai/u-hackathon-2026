@@ -8,6 +8,8 @@ import { XP, logAction } from '../progress.js';
 import { animate, announce, h, icon, number } from '../ui.js';
 
 const DAY = 86_400_000;
+// The largest amount one goal or one entry can be: anything bigger is almost surely a typo.
+const MAX_THB = 100_000_000;
 const thb = (n) => `THB ${number(Math.round(n), 0)}`;
 // '2026-10-16' -> '16 Oct'. The keys are Bangkok dates already, so they are formatted as UTC.
 const DATE = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
@@ -190,6 +192,7 @@ export function mount(root, ctx) {
       const t = Number(target.value);
       if (!n) return showErr(err, 'Give your goal a name, like “New bike”.');
       if (!Number.isInteger(t) || t < 1) return showErr(err, 'Set a whole amount, like 500.');
+      if (t > MAX_THB) return showErr(err, `Set an amount up to ${thb(MAX_THB)}.`);
       const id = uid();
       const r = act({ ...get(), goals: [...get().goals, { id, name: n, target: t, icon: goalIcon, at: Date.now() }] }, 'plan', `Goal added: ${n}.`);
       logPlan(`piggy-plan:goal:${id}`, r.points);
@@ -244,6 +247,7 @@ export function mount(root, ctx) {
       const back = document.activeElement === amount ? 'log-amount' : 'log';
       const a = Number(amount.value);
       if (!Number.isInteger(a) || a < 1) return showErr(err, 'Enter a whole amount, like 20.');
+      if (a > MAX_THB) return showErr(err, `Enter an amount up to ${thb(MAX_THB)}.`);
       const p = get();
       const goalId = goal.value || null;
       // Money taken out has to come out of savings that were written down: never below zero.

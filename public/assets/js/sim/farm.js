@@ -1,6 +1,6 @@
 // Farm rules (BRIEF §16; slice J11). Pure, no DOM. A cow is earned, never bought: it is born and
 // grows from real actions (Learning Path steps, Coach chapters, finished Lab runs, Piggy Bank actions
-// and the days that make your streak) and gives milk once a day, sold for farm coins. A productive
+// and the days that make your streak) and gives milk once a day, sold for L$ (Town money). A productive
 // asset pays you; a meme coin does not.
 import { hashString, mulberry32 } from './prng.js';
 import { dayKey, totalPoints } from './piggy.js';
@@ -11,7 +11,7 @@ export const STAGES = [
   { id: 'young', label: 'Young cow', from: 15 },
   { id: 'adult', label: 'Grown cow', from: 35 },
 ];
-export const MILK_PRICE = 5; // farm coins per litre
+export const MILK_PRICE = 5; // L$ per litre
 
 // Feed comes only from things the app can see the player do: 5 for each finished Learning Path step
 // or Coach chapter, 3 for each Bangkok day with a finished market (per level), and 2 for each day with
@@ -97,6 +97,6 @@ export function collectMilk(farm, cows, feed, now) {
   const litres = ready.reduce((s, c) => s + c.milk, 0);
   const milked = { ...farm.milked };
   for (const c of ready) milked[c.id] = dayKey(now);
-  // Coins go to the Town wallet (public/js/wallet.js); the farm keeps only what it produced.
+  // The L$ (`coins`) go to the Town wallet (public/js/wallet.js); the farm keeps only what it produced.
   return { farm: { ...farm, milked, milkLog: [...(farm.milkLog || []), { at: now, litres }] }, litres, coins: litres * MILK_PRICE };
 }

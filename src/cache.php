@@ -18,8 +18,8 @@ function cache_put(string $key, array $value): void
     @file_put_contents($file, json_encode($value, JSON_UNESCAPED_UNICODE), LOCK_EX);
 }
 
-// Adds one to today's counter unless it has reached $cap. Returns false when the cap is reached.
-function daily_take(string $name, int $cap): bool
+// Adds $amount (one by default) to today's counter unless that would pass $cap. Returns false when the cap is reached.
+function daily_take(string $name, int $cap, int $amount = 1): bool
 {
     $day = (new DateTimeImmutable('now', new DateTimeZone('Asia/Bangkok')))->format('Y-m-d');
     $fh = @fopen(private_path('cache') . "/$name-$day.count", 'c+');
@@ -28,11 +28,11 @@ function daily_take(string $name, int $cap): bool
     }
     flock($fh, LOCK_EX);
     $count = (int) stream_get_contents($fh);
-    $ok = $count < $cap;
+    $ok = $count + $amount <= $cap;
     if ($ok) {
         ftruncate($fh, 0);
         rewind($fh);
-        fwrite($fh, (string) ($count + 1));
+        fwrite($fh, (string) ($count + $amount));
         fflush($fh);
     }
     flock($fh, LOCK_UN);

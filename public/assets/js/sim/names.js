@@ -1,30 +1,45 @@
 // Name and ticker rules for player-made coins (BRIEF §10). Shared by the engine and the Create screen.
 // Pure: no DOM. Each check returns null when fine, or { code, message } with a friendly reason.
 
-// Real tickers and brands: a player coin must never look like a real asset or our own coin.
+// Real tickers and brands: a player coin must never look like a real asset or our own coin. Big
+// companies' stocks and brands count too (US and Thai), so nobody launches "TSLA" or "Apple Coin".
 const BLOCKED_TICKERS = new Set([
   'BTC', 'ETH', 'USDT', 'USDC', 'BNB', 'SOL', 'XRP', 'DOGE', 'SHIB', 'PEPE', 'AVAX', 'TON', 'ADA', 'TRX', 'LINK',
   'DOT', 'MATIC', 'LTC', 'BCH', 'XLM', 'UTOPIA', 'EDUU',
+  'AAPL', 'TSLA', 'MSFT', 'GOOG', 'GOOGL', 'AMZN', 'NVDA', 'META', 'NFLX', 'DIS', 'NKE', 'SBUX', 'MCD', 'AMD', 'INTC',
+  'IBM', 'UBER', 'PYPL', 'BABA', 'SONY', 'TSM', 'PTT', 'AOT', 'CPALL', 'KBANK', 'SCB', 'BBL',
 ]);
 const BLOCKED_BRANDS = [
   'bitcoin', 'ethereum', 'ether', 'tether', 'binance', 'solana', 'ripple', 'dogecoin', 'doge', 'shiba', 'shib', 'pepe',
   'avalanche', 'toncoin', 'tron', 'cardano', 'chainlink', 'polkadot', 'polygon', 'litecoin', 'stellar', 'utopia', 'eduu',
   'cenedury',
+  'tesla', 'google', 'microsoft', 'nvidia', 'netflix', 'disney', 'nike', 'adidas', 'samsung', 'facebook', 'instagram',
+  'tiktok', 'youtube', 'roblox', 'minecraft', 'pokemon', 'nintendo', 'lego', 'pepsi', 'cocacola', 'mcdonalds',
+  'starbucks', 'coinbase', 'paypal', 'spacex',
 ];
 // Made-up coin words: a name that spells one inside a word, or from the start of a word, is a real coin too
 // (Bitcoins, Mega Bit Coin). One that only ends a word, as in Rabbit Coin or Elite Coin, is fine.
-const BRAND_STEMS = ['bitcoin', 'ethereum', 'litecoin', 'dogecoin', 'solana', 'binance', 'cardano', 'chainlink', 'polkadot', 'toncoin'];
+const BRAND_STEMS = [
+  'bitcoin', 'ethereum', 'litecoin', 'dogecoin', 'solana', 'binance', 'cardano', 'chainlink', 'polkadot', 'toncoin',
+  'tesla', 'google', 'nvidia', 'netflix', 'coinbase',
+];
 // Words that only dress a name up as a coin, so "Doge Army" and "BNB Coin" still read as the real one.
 const FILLER = new Set(['coin', 'coins', 'token', 'tokens', 'cash', 'army', 'inu']);
-// Tickers that are everyday words too: fine in a name ("Golden Link"), blocked as a coin ("Link Coin").
-const EVERYDAY = new Set(['ada', 'dot', 'link', 'sol', 'ton']);
+// Tickers and brands that are everyday words too: fine in a name ("Golden Link", "Apple Pie"), blocked as
+// a coin ("Link Coin", "Apple Coin").
+const EVERYDAY = new Set(['ada', 'dot', 'link', 'sol', 'ton', 'apple', 'amazon', 'meta', 'dis', 'baba']);
 
-// A small profanity list, stored ROT13 so the words don't sit in the source as plain text.
+// A small list of rude, hateful and sexual words, stored ROT13 so the words don't sit in the source as plain text.
 const rot13 = (s) => s.replace(/[a-z]/g, (ch) => String.fromCharCode(((ch.charCodeAt(0) - 97 + 13) % 26) + 97));
 const PROFANITY = [
   'shpx', 'fuvg', 'cvff', 'phag', 'pbpx', 'qvpx', 'ovgpu', 'onfgneq', 'fyhg', 'juber', 'jnax', 'gjng', 'cevpx', 'nefr',
   'nff', 'penc', 'gvgf', 'obbof', 'chffl', 'snt', 'avttre', 'ergneq', 'qvyqb', 'pyvg', 'phz', 'encr',
+  'anmv', 'uvgyre', 'urvy', 'fjnfgvxn', 'xxx', 'encvfg', 'cbea', 'frk', 'frkl', 'kkk', 'ahqr', 'ahqvr', 'ubeal', 'ubbxre',
+  'anmvf', 'cbeab', 'cbeaf', 'cbeauho',
 ].map(rot13);
+// Blocked words that also start real names match whole words only, so Thai names such as Pornchai and
+// Pornthip (Porn is a Thai name part meaning a blessing), and names like Nazir and Nazim, stay fine.
+const WHOLE_ONLY = new Set(['cbea', 'cbeaf', 'anmv'].map(rot13));
 // Everyday words that start with a blocked word, so a cockatoo or a fire retardant isn't called rude.
 const ALLOW = new Set([
   'arsenal', 'arsenic', 'cockatiel', 'cockatiels', 'cockatoo', 'cockatoos', 'cockerel', 'cockerels', 'cockle', 'cockles',
@@ -36,7 +51,7 @@ const words = (s) => s.toLowerCase().split(/[^a-z]+/).filter(Boolean);
 
 // A blocked word matches a whole word, or (4+ letters) the start of one, so "grape" and "class" stay fine.
 function rude(text) {
-  return words(text).some((t) => !ALLOW.has(t) && PROFANITY.some((w) => t === w || (w.length >= 4 && t.startsWith(w))));
+  return words(text).some((t) => !ALLOW.has(t) && PROFANITY.some((w) => t === w || (w.length >= 4 && !WHOLE_ONLY.has(w) && t.startsWith(w))));
 }
 
 // A name reads as a real coin when a word, or the whole name without its filler words, is a real ticker or brand.
@@ -62,7 +77,7 @@ export function checkName(name) {
 export function checkTicker(ticker) {
   const t = String(ticker ?? '').trim().toUpperCase();
   if (!/^[A-Z]{3,5}$/.test(t)) return { code: 'BAD_TICKER', message: 'Use 3 to 5 letters (A to Z) for the ticker.' };
-  if (BLOCKED_TICKERS.has(t)) return { code: 'BLOCKED_TICKER', message: `${t} is a real coin’s ticker. Make up your own.` };
+  if (BLOCKED_TICKERS.has(t)) return { code: 'BLOCKED_TICKER', message: `${t} belongs to a real coin or company. Make up your own.` };
   if (rude(t)) return { code: 'BLOCKED_TICKER', message: 'Let’s keep it friendly. Try different letters.' };
   return null;
 }

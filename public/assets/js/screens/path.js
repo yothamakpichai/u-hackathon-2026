@@ -44,6 +44,24 @@ export function missionPassed(check, metrics) {
   });
 }
 
+// Learning partners shelf (BRIEF §16 "Partners"): schools and learning organisations only, never investing. No ads,
+// no sponsor banners, no names or logos: one empty card and a mailto: button (cenedury.com until PARTNER_EMAIL is set).
+function partnersShelf(email) {
+  const hint = 'path-partners-hint';
+  return h('section', { class: 'card path-partners', 'aria-labelledby': 'path-partners-title' }, [
+    h('p', { class: 'screen-eyebrow', text: 'School' }),
+    h('h2', { class: 'path-unit__title', id: 'path-partners-title', text: 'Learning partners' }),
+    h('p', { class: 'path-unit__intro', text: 'Schools and learning organisations that teach money skills. Education only: no investing, no ads.' }),
+    h('ul', { class: 'path-partners__shelf' }, [
+      h('li', { class: 'path-partners__slot' }, [icon('book', { size: 28 }), h('span', { text: 'Your school or learning organisation could be here' })]),
+    ]),
+    email
+      ? h('a', { class: 'btn btn--block', href: `mailto:${email}?subject=${encodeURIComponent('Learning partner')}` }, 'Become a learning partner')
+      : h('a', { class: 'btn btn--block', href: 'https://cenedury.com', target: '_blank', rel: 'noopener', 'aria-describedby': hint }, 'Become a learning partner'),
+    email ? null : h('p', { class: 'path-partners__hint', id: hint, text: 'Opens cenedury.com, where you can reach the team.' }),
+  ]);
+}
+
 export function mount(root, ctx) {
   const { tier, store, audio, navigate, config } = ctx;
   const tierInfo = config.getTier(tier);
@@ -147,6 +165,7 @@ export function mount(root, ctx) {
       stats,
       ...unitCards,
       coachCard(),
+      partnersShelf(config.PARTNER_EMAIL),
     );
   }
 

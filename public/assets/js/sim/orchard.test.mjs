@@ -66,7 +66,7 @@ test('the wallet is an append-only ledger with a credit score', () => {
   assert.equal(ensureStarter(store, T0), true);
   assert.equal(ensureStarter(store, T0), false, 'the starter grant comes once');
   assert.equal(balance(store.get()), STARTER_GRANT);
-  assert.equal(post(store, { amount: -60, kind: 'seed' }, T0).ok, false, 'cannot go below zero');
+  assert.equal(post(store, { amount: -(STARTER_GRANT + 10), kind: 'seed' }, T0).ok, false, 'cannot go below zero');
   assert.ok(post(store, { amount: -20, kind: 'seed' }, T0).ok);
   assert.ok(post(store, { amount: 6, kind: 'harvest' }, T0).ok);
   assert.equal(balance(store.get()), STARTER_GRANT - 20 + 6);

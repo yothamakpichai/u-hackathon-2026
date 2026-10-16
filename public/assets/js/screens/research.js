@@ -28,12 +28,14 @@ const SECTIONS = [
     lines: [
       'Money habits form early, so short daily practice with a streak and a daily goal fits children well.',
       'Financial education raises knowledge and good habits, but the effect fades without practice, so the path keeps people practising.',
+      'Testing yourself helps you remember for longer than reading again, so every lesson ends with a quiz.',
     ],
     refs: [
       'Whitebread, D. & Bingham, S. (2013). Habit formation and learning in young children. Money Advice Service / University of Cambridge.',
       'Kaiser, T., Lusardi, A., Menkhoff, L. & Urban, C. (2022). Financial education affects financial knowledge and downstream behaviors. Journal of Financial Economics 145(2), 255–272.',
       'Fernandes, D., Lynch, J. G. & Netemeyer, R. G. (2014). Financial literacy, financial education, and downstream financial behaviors. Management Science 60(8), 1861–1883.',
       'CFPB (2016). Building blocks to help youth achieve financial capability.',
+      'Roediger, H. L. & Karpicke, J. D. (2006). Test-enhanced learning: taking memory tests improves long-term retention. Psychological Science 17(3), 249–255.',
     ],
   },
   {
@@ -49,11 +51,13 @@ const SECTIONS = [
     title: 'Future You',
     lines: [
       'Seeing an aged picture of yourself made people save more in experiments.',
+      'Talking with an AI-generated future self made people feel more connected to their future self and less anxious.',
       'Deciding now to save more later is easier than saving more today.',
       'The 4% rule comes from US data, so Penny never presents it as valid for Thailand.',
     ],
     refs: [
       'Hershfield, H. E. et al. (2011). Increasing saving behavior through age-progressed renderings of the future self. Journal of Marketing Research 48(SPL), S23–S37.',
+      'Pataranutaporn, P., Winson, K., Yin, P., Lapapirojn, A., Ouppaphan, P., Lertsutthiwong, M., Maes, P. & Hershfield, H. (2024). Future You: a conversation with an AI-generated future self reduces anxiety, negative emotions, and increases future self-continuity. arXiv:2405.12514.',
       'Thaler, R. H. & Benartzi, S. (2004). Save More Tomorrow. Journal of Political Economy 112(S1), S164–S187.',
       'Institute for Population and Social Research, Mahidol University (2025). Thai Population Gazette 2025: life expectancy at birth male 72.0, female 80.1; about 22% aged 60+.',
       'Bengen, W. P. (1994). Determining withdrawal rates using historical data. Journal of Financial Planning 7(4), 171–180.',

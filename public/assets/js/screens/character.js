@@ -2,6 +2,7 @@
 // glasses }, drawn by public/js/avatar.js. "Surprise me" picks every part at random. Saved in store.profile.
 import { h, icon, animate } from '../ui.js';
 import { OPTIONS, LABELS, dataUri } from '../../../js/avatar.js';
+import { nicknameField } from '../nickname.js';
 
 const PARTS = [
   ['skin', 'Skin tone'],
@@ -22,6 +23,7 @@ export function mount(root, ctx) {
 
   const preview = h('img', { class: 'character__img', alt: 'Your character', width: 180, height: 180 });
   const groups = h('div', { class: 'character__parts' });
+  const nick = nicknameField({ id: 'character-nickname', value: s.profile?.nickname || '' });
 
   function draw() {
     preview.src = dataUri(character, age);
@@ -54,8 +56,14 @@ export function mount(root, ctx) {
   }
 
   function save() {
-    store.set((st) => ({ profile: { ...st.profile, character, birthYear: st.birthYear, createdAt: st.profile?.createdAt || Date.now() } }));
-    navigate('/money-check');
+    if (!nick.validate()) {
+      nick.input.focus();
+      return;
+    }
+    const nickname = nick.value();
+    store.set((st) => ({ profile: { ...st.profile, character, nickname, birthYear: st.birthYear, createdAt: st.profile?.createdAt || Date.now() } }));
+    // Opened from Settings (#/character?next=settings): go back there instead of on to the Money Check.
+    navigate(new URLSearchParams(location.hash.split('?')[1] || '').get('next') === 'settings' ? '/settings' : '/money-check');
   }
 
   const view = h('section', { class: 'screen character' }, [
@@ -68,6 +76,7 @@ export function mount(root, ctx) {
       preview,
       h('button', { class: 'btn btn--sm', type: 'button', onClick: surprise }, 'Surprise me'),
     ]),
+    h('div', { class: 'card character__nick' }, [nick.el]),
     groups,
     h('button', { class: 'btn btn--primary btn--lg btn--block', type: 'button', onClick: save }, ['Next: Money Check', icon('arrow-right', { size: 22 })]),
   ]);

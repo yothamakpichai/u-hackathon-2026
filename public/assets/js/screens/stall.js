@@ -1,13 +1,12 @@
 // Daily Stall (BRIEF §16.1; slice J12). Each Bangkok date brings different goods at different prices,
 // the same for everyone. Prices move every 10 minutes; some goods spoil. Buy, hold and sell with Town
-// coins (or the Town Card), and learn why borrowing to speculate is dangerous.
+// L$ (or the Town Card), and learn why borrowing to speculate is dangerous.
 import { GOODS, dateKeyOf, dayGoods, dayPath, minuteOf, priceAt, sellPrice, spoilState } from '../sim/stall.js';
 import { addDays, loanState } from '../sim/bank.js';
-import { balance as walletBalance, coinsText, ensureStarter, post } from '../../../js/wallet.js';
-import { announce, delta, h, icon, number } from '../ui.js';
+import { balance as walletBalance, claimDaily, moneyText, ensureStarter, post } from '../../../js/wallet.js';
+import { announce, delta, h, icon } from '../ui.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const coins = (n) => `${number(n, 2)} coins`;
 const round = (n) => Math.round(n * 100) / 100;
 const uid = () => `s${Date.now().toString(36)}${Math.floor(performance.now() * 1000).toString(36)}`;
 const units = (qty, unit) => `${qty} ${unit}${qty > 1 ? 's' : ''}`;
@@ -24,6 +23,7 @@ export function mount(root, ctx) {
   const view = h('section', { class: 'screen stall-screen' });
   root.append(view);
   ensureStarter(store);
+  claimDaily(store);
   let timer = 0;
   let shownStep = -1;
   let shownDay = '';
@@ -45,6 +45,8 @@ export function mount(root, ctx) {
     const wallet = walletBalance(store.get());
     const borrowed = bank.loans.some((l) => !loanState(l, today).paid);
     const card = bank.card;
+    const onCard = card && card.balance > 0; // what the Town Card paid for is borrowed too
+    const owe = borrowed && onCard ? 'the loan, the Town Card and their interest' : borrowed ? 'the loan and its interest' : 'what you spent with the Town Card';
     const parts = [
       h('div', { class: 'screen-head' }, [
         h('p', { class: 'screen-eyebrow', text: 'Daily Stall' }),
@@ -52,16 +54,16 @@ export function mount(root, ctx) {
         h('p', { class: 'screen-sub', text: 'Every day brings different goods. Prices change every 10 minutes, and some goods spoil if you hold them too long.' }),
       ]),
       h('div', { class: 'stall-bar' }, [
-        h('p', { class: 'chip', text: `${coinsText(wallet)} in your Town wallet` }),
-        card ? h('p', { class: 'chip', text: card.balance < card.limit ? `Town Card: ${coinsText(card.limit - card.balance)} left to spend` : 'Town Card: nothing left to spend' }) : null,
+        h('p', { class: 'chip', text: `${moneyText(wallet)} in your Town wallet` }),
+        card ? h('p', { class: 'chip', text: card.balance < card.limit ? `Town Card: ${moneyText(card.limit - card.balance)} left to spend` : 'Town Card: nothing left to spend' }) : null,
         h('p', { class: 'field__hint', text: `Prices for ${dayText(today)}, updated every 10 minutes. The stall buys back 10% below its selling price.` }),
       ]),
-      borrowed
+      borrowed || onCard
         ? h('div', { class: 'card stall-warn', role: 'note' }, [
             icon('alert', { size: 20 }),
             h('p', { text: young
-              ? 'You’re trading with borrowed coins. If prices fall or your goods spoil, you still owe the loan and its interest.'
-              : 'You’re trading with borrowed coins. If prices fall or your goods spoil, you still owe the loan and its interest. Borrowing to speculate can turn a small loss into a big one.' }),
+              ? `You’re trading with borrowed money. If prices fall or your goods spoil, you still owe ${owe}.`
+              : `You’re trading with borrowed money. If prices fall or your goods spoil, you still owe ${owe}. Borrowing to speculate can turn a small loss into a big one.` }),
           ])
         : null,
       h('ul', { class: 'stall-goods' }, dayGoods(today).map((g) => goodCard(g, today, minute, card, wallet))),
@@ -70,7 +72,7 @@ export function mount(root, ctx) {
         lesson('Buy low, sell high', 'It sounds easy, but nobody knows when the price is at its lowest or highest. Traders who wait for the perfect moment often miss it.'),
         lesson('Holding costs money', 'Fish must be sold on the day you buy it, and mangoes by the next night. Whatever you can’t sell in time is worth nothing, so holding has a cost even when the price looks good.'),
         young
-          ? lesson('Borrowing to bet on prices', 'Buying with borrowed coins makes wins bigger and losses bigger. When prices fall, you still have to pay back the loan and its interest.')
+          ? lesson('Borrowing to bet on prices', 'Buying with borrowed money makes wins bigger and losses bigger. When prices fall, you still have to pay back the loan and its interest.')
           : lesson('Borrowing to speculate', 'Buying with a loan makes wins bigger and losses bigger. The loan and its interest are still there when the trade goes wrong.'),
       ]),
     ];
@@ -114,7 +116,7 @@ export function mount(root, ctx) {
       const cost = round(ask * qty);
       const short = round(cost - wallet);
       const cardPays = card && cost <= round(card.limit - card.balance) + 1e-9;
-      total.textContent = short > 0 ? `Total: ${coins(cost)}. You have ${coinsText(wallet)}, so you need ${number(short, 2)} more coins${cardPays ? ', or pay with the Town Card' : ''}.` : `Total: ${coins(cost)}`;
+      total.textContent = short > 0 ? `Total: ${moneyText(cost)}. You have ${moneyText(wallet)}, so you need ${moneyText(short)} more${cardPays ? ', or pay with the Town Card' : ''}.` : `Total: ${moneyText(cost)}`;
     };
     showTotal();
     const step = (d) => {
@@ -131,7 +133,7 @@ export function mount(root, ctx) {
       const day = dateKeyOf(nowMs);
       const live = day === today ? priceAt(good, day, minuteOf(nowMs)) : null;
       if (live == null) return refuse(key, 'A new day has started at the stall, with new goods and prices.', focusKey);
-      if (live !== ask) return refuse(key, `The price just changed to ${coins(live)}. Check it, then tap Buy again.`, focusKey);
+      if (live !== ask) return refuse(key, `The price just changed to ${moneyText(live)}. Check it, then tap Buy again.`, focusKey);
       const cost = round(ask * qty);
       const what = `${units(qty, g.unit)} of ${name}`;
       if (withCard) {
@@ -139,15 +141,15 @@ export function mount(root, ctx) {
         if (!bank.card) return refuse(key, 'Open a Town Card at the Bank first.', focusKey);
         const room = round(Math.max(0, bank.card.limit - bank.card.balance));
         if (!(room > 0)) return refuse(key, 'Your Town Card has nothing left to spend. Pay some of it off at the Bank first.', focusKey);
-        if (cost > room + 1e-9) return refuse(key, `That’s ${coins(round(cost - room))} over your Town Card limit: you have ${coins(room)} left on it. Try buying fewer.`, focusKey);
+        if (cost > room + 1e-9) return refuse(key, `That’s ${moneyText(round(cost - room))} over your Town Card limit: you have ${moneyText(room)} left on it. Try buying fewer.`, focusKey);
         store.set({ bank: { ...bank, card: { ...bank.card, balance: round(bank.card.balance + cost), spent: (bank.card.spent || 0) + cost } } });
       } else {
         const paid = post(store, { amount: -cost, kind: 'stall-buy', note: what });
-        if (!paid.ok) return refuse(key, `${paid.error} You need ${number(paid.short, 2)} more coins. Try buying fewer.`, focusKey);
+        if (!paid.ok) return refuse(key, `${paid.error} You need ${moneyText(paid.short)} more. Try buying fewer.`, focusKey);
       }
       const stall = stallOf();
       store.set({ stall: { ...stall, holdings: [...stall.holdings, { id: uid(), good, qty, price: ask, boughtDate: today, card: withCard }], trades: [...stall.trades, { at: Date.now(), good, qty, side: 'buy', price: ask }] } });
-      announce(`Bought ${what} for ${coins(cost)}.`);
+      announce(`Bought ${what} for ${moneyText(cost)}.`);
       qtys.delete(good);
       render([focusKey]);
     };
@@ -158,10 +160,10 @@ export function mount(root, ctx) {
         h('h2', { class: 'stall-good__name', text: g.label, dataset: { key: `name:${good}` } }),
         h('p', { class: 'chip', text: keepsText(g.spoilDays, today) }),
       ]),
-      h('p', { class: 'stall-price' }, [h('span', { class: 'stall-price__value', dataset: { ask: good }, text: coins(ask) }), ` per ${g.unit} `, h('span', {}, [delta(change), ' today'])]),
+      h('p', { class: 'stall-price' }, [h('span', { class: 'stall-price__value', dataset: { ask: good }, text: moneyText(ask) }), ` per ${g.unit} `, h('span', {}, [delta(change), ' today'])]),
       spark(path),
-      h('p', { class: 'field__hint', text: path.length < 2 ? 'Prices start moving at 00:10.' : `Today so far: low ${coins(lo)}, high ${coins(hi)}.` }),
-      h('p', { class: 'field__hint', text: `The stall buys back at ${coins(sellPrice(good, today, minute))}.` }),
+      h('p', { class: 'field__hint', text: path.length < 2 ? 'Prices start moving at 00:10.' : `Today so far: low ${moneyText(lo)}, high ${moneyText(hi)}.` }),
+      h('p', { class: 'field__hint', text: `The stall buys back at ${moneyText(sellPrice(good, today, minute))}.` }),
       h('div', { class: 'stall-qty', role: 'group', 'aria-label': `How many ${g.unit}s` }, [
         h('button', { class: 'btn btn--sm', type: 'button', dataset: { key: `less:${good}` }, onClick: () => step(-1), 'aria-label': `One fewer ${g.unit} of ${name}` }, '−'),
         qtyOut,
@@ -192,21 +194,21 @@ export function mount(root, ctx) {
         const s2 = spoilState(hld, day);
         const bid2 = sellPrice(hld.good, day, minuteOf(nowMs));
         if (s2.spoiled !== s.spoiled) return refuse(key, 'It just spoiled, so it’s worth nothing now.', `${key}:sell`);
-        if (!s.spoiled && bid2 !== bid) return refuse(key, `The price just changed: it’s worth ${coins(round(bid2 * hld.qty))} now. Tap Sell again to sell at the new price.`, `${key}:sell`);
+        if (!s.spoiled && bid2 !== bid) return refuse(key, `The price just changed: it’s worth ${moneyText(round(bid2 * hld.qty))} now. Tap Sell again to sell at the new price.`, `${key}:sell`);
         const st = stallOf();
         if (value > 0) post(store, { amount: value, kind: 'stall-sell', note: what });
         store.set({ stall: { ...st, holdings: st.holdings.filter((x) => x.id !== hld.id), trades: [...st.trades, { at: Date.now(), good: hld.good, qty: hld.qty, side: s.spoiled ? 'spoiled' : 'sell', price: s.spoiled ? 0 : bid }] } });
-        announce(s.spoiled ? `Threw away spoiled ${g.label.toLowerCase()}.` : `Sold ${what} for ${coins(value)}.`);
+        announce(s.spoiled ? `Threw away spoiled ${g.label.toLowerCase()}.` : `Sold ${what} for ${moneyText(value)}.`);
         render(['holdings']);
       };
       return h('li', { class: 'stall-holding' }, [
         h('p', { class: 'stall-holding__name', text: what }),
-        h('p', { class: 'field__hint', text: `Bought at ${coins(hld.price)} on ${dayText(hld.boughtDate)}${hld.card ? ' with the Town Card' : ''}` }),
+        h('p', { class: 'field__hint', text: `Bought at ${moneyText(hld.price)} on ${dayText(hld.boughtDate)}${hld.card ? ' with the Town Card' : ''}` }),
         s.spoiled
           ? h('p', { class: 'chip chip--loss', text: 'Spoiled: worth nothing now' })
-          : h('p', { class: 'stall-holding__pl' }, [`Worth ${coins(value)} now `, delta(((value / cost) - 1) * 100), s.daysLeft != null ? h('span', { class: 'chip chip--warn', text: sellByText(s.daysLeft, today) }) : null]),
+          : h('p', { class: 'stall-holding__pl' }, [`Worth ${moneyText(value)} now `, delta(((value / cost) - 1) * 100), s.daysLeft != null ? h('span', { class: 'chip chip--warn', text: sellByText(s.daysLeft, today) }) : null]),
         note(key),
-        h('button', { class: `btn btn--sm${s.spoiled ? '' : ' btn--primary'}`, type: 'button', dataset: { key: `${key}:sell` }, 'aria-label': `${s.spoiled ? 'Throw away' : `Sell for ${coins(value)}:`} ${what} bought at ${coins(hld.price)}`, onClick: sell }, s.spoiled ? 'Throw away' : `Sell for ${coins(value)}`),
+        h('button', { class: `btn btn--sm${s.spoiled ? '' : ' btn--primary'}`, type: 'button', dataset: { key: `${key}:sell` }, 'aria-label': `${s.spoiled ? 'Throw away' : `Sell for ${moneyText(value)}:`} ${what} bought at ${moneyText(hld.price)}`, onClick: sell }, s.spoiled ? 'Throw away' : `Sell for ${moneyText(value)}`),
       ]);
     });
     return h('div', { class: 'card stall-holdings' }, [
