@@ -391,8 +391,8 @@ function runDrill(kind, box, next) {
       act.remove();
       chartBox.replaceChildren(spark(run.prices, run, strategy === 'panic' ? [{ t: run.dumpAt, label: 'Whale sells' }, { t: run.sold.t, label: 'You sold' }] : [{ t: run.dumpAt, label: 'Whale sells' }]));
       result.textContent = strategy === 'panic'
-        ? `You sold all your VAULT for ${money(run.sold.got)}. Thirty seconds later your money is worth ${money(run.finalValue)} in total.`
-        : `You kept your VAULT. Thirty seconds later your money is worth ${money(run.finalValue)} in total.`;
+        ? `You sold all your VAULT for ${money(run.sold.got)}. Thirty seconds later your Practice L$ add up to ${money(run.finalValue)} in total.`
+        : `You kept your VAULT. Thirty seconds later your Practice L$ and VAULT are worth ${money(run.finalValue)} in total.`;
       next.disabled = false;
       next.focus();
     });

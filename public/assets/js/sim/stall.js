@@ -1,6 +1,7 @@
 // Daily Stall rules (BRIEF §16.1; slice J12). Pure, no DOM. Each Bangkok date brings a seeded line-up
 // of goods (the same for everyone), prices move every 10 minutes through the day, and some goods
 // spoil after a few days: holding has a cost. The stall buys back below its selling price.
+import { ECONOMY } from '../config.js';
 import { hashString, mulberry32 } from './prng.js';
 
 export const GOODS = Object.freeze({
@@ -12,7 +13,7 @@ export const GOODS = Object.freeze({
   pots: { label: 'Clay pots', unit: 'pot', base: 15, vol: 0.03, spoilDays: null },
   kites: { label: 'Kites', unit: 'kite', base: 8, vol: 0.05, spoilDays: null },
 });
-export const SPREAD = 0.1; // the stall buys back at 10% under its selling price
+export const SPREAD = ECONOMY.storeSpread; // the stall buys back at 10% under its selling price (BRIEF §17)
 export const STEP_MINUTES = 10;
 const STEPS = (24 * 60) / STEP_MINUTES;
 const BKK = 7 * 3600 * 1000;

@@ -239,7 +239,7 @@ export function mount(root, ctx) {
       for (const key of NUMBER_KEYS) check(key);
     }
 
-    function choice(key, label, options, hint) {
+    function choice(key, label, options, hint, cls = '') {
       const hintId = `future-${key}-hint`;
       const hintEl = hint ? h('p', { class: 'field__hint', id: hintId }) : null;
       const btns = options.map(([value, text]) => h('button', { class: 'segmented__btn', type: 'button', onClick: () => pick(key, value) }, text));
@@ -247,7 +247,7 @@ export function mount(root, ctx) {
       syncChoice(key);
       return h('div', { class: 'field' }, [
         h('p', { class: 'field__label', text: label }),
-        h('div', { class: 'segmented', role: 'group', 'aria-label': label, 'aria-describedby': hintEl ? hintId : null }, btns),
+        h('div', { class: `segmented ${cls}`.trim(), role: 'group', 'aria-label': label, 'aria-describedby': hintEl ? hintId : null }, btns),
         hintEl,
       ]);
     }
@@ -381,7 +381,8 @@ export function mount(root, ctx) {
         parts.push(
           mixSliders(),
           choice('fx', 'The baht and US-dollar assets', [['base', 'Steady'], ['weakBaht', 'Weak baht']], () => 'Weak baht: the baht loses 2% a year against the US dollar, so savings in US dollars are worth more in baht.'),
-          choice('shock', 'What if a year like this happened?', [['', 'None'], ['1997', '1997'], ['2020', '2020'], ['2022', '2022']], shockHint),
+          // Each year is named with its label from the data ('1997 Asian financial crisis'), two to a row.
+          choice('shock', 'What if a year like this happened?', [['', 'None'], ...Object.keys(data.shocks).filter((y) => data.shocks[y]?.label).map((y) => [y, data.shocks[y].label])], shockHint, 'future-shocks'),
           numberField('shockInYears', 'Starting how many years from now'),
           numberField('spending', 'Spend each month after your goal age (THB)', 'Leave at 0 to only grow your savings, or add an amount to see how long it lasts.'),
           lifeChoice(),
@@ -517,7 +518,14 @@ export function mount(root, ctx) {
         const change = Math.round(((g.p50 - calm.goal.p50) / calm.goal.p50) * 100);
         const when = plan.shockInYears === 0 ? 'starting now' : `starting in ${usedText('shockInYears', plan.shockInYears)}`;
         const how = Math.abs(change) < 1 ? 'about the same as' : `${Math.abs(change)}% ${change > 0 ? 'higher' : 'lower'} than`;
-        parts.push(h('p', { class: 'future-shock', text: `With a year like ${plan.shock} ${when}, the middle projection is ${how} with no shock. ${data.shocks[plan.shock].hint}` }));
+        // A hard year can still lift a plan: global stocks are priced in US dollars and rose in baht
+        // in 1997 and 2020. Say so, and how to see the same year without them. Not as the only reason:
+        // prices dipped in 2020 too, so a Careful plan still comes out a little higher with none.
+        const shock = data.shocks[plan.shock];
+        const lift = change >= 1 && plan.mix.globalStocks > 0 && (1 + shock.globalStocks) * (1 + shock.fx) > 1
+          ? ' Part of your plan is in global stocks, and they rose in baht that year. Set Global stocks to 0% to see the year without them.'
+          : '';
+        parts.push(h('p', { class: 'future-shock', text: `With a year like ${plan.shock} ${when}, the middle projection is ${how} with no shock. ${shock.hint}${lift}` }));
       }
       if (spending && r.untilAge <= r.goalAge) {
         const next = life < L.planTo.value && r.goalAge < L.planTo.value ? `Turn on Plan to ${L.planTo.value} to test them.` : 'Pick an earlier goal age to test them.';
@@ -527,6 +535,13 @@ export function mount(root, ctx) {
         parts.push(note(tenths >= 8 ? 'is-good' : 'is-risk', tenths >= 8 ? 'check' : 'alert',
           `Spending ${thb(spending.monthly)} a month from ${r.goalAge}, the money lasts to ${r.untilAge} in ${tenths} of 10 projections.`));
       }
+      // Penny talks the plan through (BRIEF §17): the projection's inputs and outputs, and the voice picked for future you.
+      const context = {
+        inputs: plan,
+        outputs: { goalAge: r.goalAge, paths: r.paths, contributed: r.contributed, goal: r.goal, untilAge: r.untilAge, lastsShare: r.lastsShare },
+        futureVoice: store.get().profile?.futureVoice || 'neutral',
+      };
+      parts.push(h('button', { class: 'btn btn--block', type: 'button', onClick: () => window.dispatchEvent(new CustomEvent('penny:open', { detail: { mode: 'future', context } })) }, 'Ask Penny about this plan'));
       summary.replaceChildren(...parts);
       peek.textContent = `At ${r.goalAge}, about ${about(g.p50)}`;
       peek.setAttribute('aria-label', `See the result: at ${r.goalAge}, about ${about(g.p50)}`);

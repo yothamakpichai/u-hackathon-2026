@@ -1,4 +1,4 @@
-// Orchard rules (BRIEF §16.1; slice J11). Pure, no DOM. Seeds cost coins; growth runs in real time,
+// Orchard rules (BRIEF §16.1; slice J11). Pure, no DOM. Seeds cost L$; growth runs in real time,
 // and the menu trades waiting for yield. Each planting is recorded as a revealed choice between
 // "now" and "later" (time preference), which the Money Type screen can compare with the quiz.
 // Per day of waiting the patient choice pays most: a herb sprout grows once a day in each plot
@@ -37,7 +37,7 @@ export function plotState(plot, now) {
 }
 
 // Whether a seed can go in a plot now. A herb sprout grows once a day in each plot, so quick sprouts
-// can't be replanted all day for coins.
+// can't be replanted all day for L$.
 export function canPlant(orchard, index, seedId, now) {
   if (orchard.plots?.[index]) return { ok: false, error: 'Something is already growing in this plot.' };
   if (SEEDS[seedId].daily && orchard.sproutDay?.[index] === dayKey(now)) {
@@ -78,7 +78,7 @@ export function revealedPreference(choices = []) {
   return { count: choices.length, laterShare, nowShare, lean: laterShare > nowShare ? 'Later' : nowShare > laterShare ? 'Now' : 'Mixed' };
 }
 
-// Coins per day of waiting, so the menu can show what patience is worth. A once-a-day seed pays at most
+// L$ per day of waiting, so the menu can show what patience is worth. A once-a-day seed pays at most
 // one harvest a day.
 export const perDay = (id) => {
   const s = SEEDS[id];

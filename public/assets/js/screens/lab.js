@@ -122,6 +122,9 @@ function costBasis(trades) {
   return pos;
 }
 const signedMoney = (n) => `${n > 0 ? '+' : ''}${money(n)}`;
+// The player's own Lab money is "Practice L$" (the money contract), kept apart from the Town wallet and the Arena.
+// Prices, order amounts and chart axes keep the short L$ prefix.
+const practice = (n) => `${number(n)} Practice L$`;
 
 // Motion (BRIEF §10): a short tinted pulse when a number moves a lot, so big moves catch the eye.
 // ui.animate already skips under prefers-reduced-motion.
@@ -244,6 +247,7 @@ export function mount(root, ctx) {
   const tierInfo = config.getTier(tier);
   const cleanup = [];
   let alive = true;
+  let coachAsked = new URLSearchParams(location.hash.split('?')[1] || '').get('coach') === '1';
 
   const view = h('section', { class: 'lab-screen' });
   root.append(view);
@@ -316,6 +320,18 @@ export function mount(root, ctx) {
       icon('arrow-right', { size: 22 }),
     ]);
   const replayButton = () => h('button', { class: 'btn btn--block', type: 'button', onClick: replay }, 'Replay today’s market');
+  // Penny reviews the run (BRIEF §17): the shell's Penny opens on 'penny:open'. The context is the run's summary
+  // as saved for the report card, without the long tick and trade lists.
+  const pennyButton = () =>
+    h('button', {
+      class: 'btn btn--block',
+      type: 'button',
+      onClick: () => {
+        const run = store.get().lab?.[tier];
+        const context = run && { tier, date: run.date, startValue: run.startValue, value: run.value, cash: run.cash, holdings: run.holdings, finishedEarly: run.finishedEarly, trades: run.trades?.length ?? 0, metrics: run.metrics };
+        window.dispatchEvent(new CustomEvent('penny:open', { detail: { mode: 'review_run', context } }));
+      },
+    }, 'Ask Penny about my run');
 
   function closedPanel(final) {
     const p = final.portfolio;
@@ -326,8 +342,8 @@ export function mount(root, ctx) {
     return resultPanel({
       mood: 'celebrating',
       title: 'The market has closed',
-      text: `You finished with ${money(p.value)}, ${signedPct(change)} from your ${money(p.startValue)} start.${ordersNote} Your report card scores how wisely you traded, not just the money.`,
-      actions: [reportButton(), replayButton()],
+      text: `You finished with ${practice(p.value)}, ${signedPct(change)} from the ${number(p.startValue)} you started with.${ordersNote} Your report card scores how wisely you traded, not just the money.`,
+      actions: [reportButton(), pennyButton(), replayButton()],
     });
   }
 
@@ -572,12 +588,15 @@ export function mount(root, ctx) {
       },
       handleScroll: { vertTouchDrag: false },
     });
+    // Up candles are hollow and down candles filled, so the two differ by shape as well as colour (ML-16).
     const candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: up,
+      upColor: 'rgba(0, 0, 0, 0)',
       downColor: down,
+      borderVisible: true,
+      borderUpColor: up,
+      borderDownColor: down,
       wickUpColor: up,
       wickDownColor: down,
-      borderVisible: false,
       priceFormat: { type: 'custom', formatter: axisPrice, minMove: 1e-10 },
     });
     const volumeSeries = chart.addSeries(HistogramSeries, {
@@ -594,6 +613,7 @@ export function mount(root, ctx) {
     let chartCoin = null;
     let chartCount = 0;
     let chartLabelFor = null;
+    let priceLineColor = '';
     const priceMark = { coin: null, price: 0 };
     const sessionCandles = scenario.ticks / scenario.candleTicks;
 
@@ -721,6 +741,11 @@ export function mount(root, ctx) {
         toolsFresh = false;
         if (ks.length !== chartCount || reframe) keepInView(ks.length);
       }
+      // A hollow up candle has no fill for the price line and its axis label to borrow (they would turn black), so
+      // they take the last candle's colour from here: green after a rise, red after a fall (ML-16).
+      const lastCandle = ks[ks.length - 1];
+      const lineColor = lastCandle && lastCandle.close < lastCandle.open ? down : up;
+      if (lineColor !== priceLineColor) candleSeries.applyOptions({ priceLineColor: (priceLineColor = lineColor) });
       const change = dayChange(c, st);
       if (chartCount !== ks.length || chartLabelFor !== c.id) {
         chartLabelFor = c.id;
@@ -869,6 +894,8 @@ export function mount(root, ctx) {
       : null;
     const tradeCard = h('div', { class: 'card lab-trade' }, [
       h('div', { class: 'card-head' }, [tradeTitle, infoButton('price impact', tierInfo.rank === 0 ? INFO.impactExplorer : INFO.impact, impactInfo)]),
+      // BRIEF §17: the disclaimer left the nav, so every trade panel carries it.
+      h('p', { class: 'lab-trade__sim', text: 'Simulation · No real money' }),
       impactInfo.el,
       form,
       ordersList,
@@ -1071,7 +1098,7 @@ export function mount(root, ctx) {
       } else if (mode === 'limit' && !buying && trig <= c.price) {
         text = `Pick a price above today’s ${price(c.price)}.`;
       } else if (!buying && amt > held * (1 + 1e-9)) {
-        text = `You own ${coinAmount(held)} ${c.ticker}. Try a smaller amount.`;
+        text = held > 0 ? `You own ${coinAmount(held)} ${c.ticker}. Try a smaller amount.` : `You don’t own any ${c.ticker} to sell.`;
       } else if (buying && amt > st.portfolio.cash + 1e-9) {
         text = st.portfolio.cash >= 0.005 ? `You have ${money(st.portfolio.cash)} to spend. Try a smaller amount.` : 'You’ve spent all your L$. Sell a coin to get cash back.';
       } else {
@@ -1218,7 +1245,12 @@ export function mount(root, ctx) {
     const pfTotal = h('span', { class: 'lab-portfolio__total' }); // kept between ticks so its pulse can finish
     let pfDelta = h('span');
     const pfNote = h('span', { class: 'lab-portfolio__note' });
-    const pfValue = h('p', { class: 'lab-portfolio__value' }, [pfTotal, pfDelta, pfNote]);
+    // Said once, where the player first sees their Lab money: it never leaves the Lab.
+    const pfPractice = h('span', {
+      class: 'lab-portfolio__note',
+      text: 'These are Practice L$. They stay in the Lab: every market starts fresh, and they never reach your Town wallet or the Arena.',
+    });
+    const pfValue = h('p', { class: 'lab-portfolio__value' }, [pfTotal, pfDelta, pfNote, pfPractice]);
     let totalMark = null;
     const pfRows = h('ul', { class: 'lab-portfolio__rows' });
     const allocInfo = explainer('alloc-info');
@@ -1282,7 +1314,7 @@ export function mount(root, ctx) {
         totalMark = p.value;
       }
       pfDelta = setDelta(pfDelta, (p.value / p.startValue - 1) * 100);
-      setText(pfNote, `Started with ${money(p.startValue)} · profit or loss ${signedMoney(p.value - p.startValue)}`);
+      setText(pfNote, `Started with ${practice(p.startValue)} · profit or loss ${signedMoney(p.value - p.startValue)}`);
       const held = Object.keys(p.holdings).filter((id) => st.coins[id]);
       if (held.join('|') !== pfKey) {
         pfKey = held.join('|');
@@ -1729,7 +1761,10 @@ export function mount(root, ctx) {
       session.recordMint(id);
       return true;
     });
-    if (!store.get().coach?.[tier]?.offered && !isCoaching()) openCoachMenu(coachEnv, { offer: true });
+    // The Path's "Open the Coach in the Market Lab" links to #/lab?coach=1 (SRP-8): the menu opens, offered or not.
+    if (coachAsked && !isCoaching()) openCoachMenu(coachEnv);
+    else if (!store.get().coach?.[tier]?.offered && !isCoaching()) openCoachMenu(coachEnv, { offer: true });
+    coachAsked = false;
 
     render();
     renderNews();

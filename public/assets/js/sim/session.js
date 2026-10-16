@@ -304,6 +304,8 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
     return v;
   }
 
+  // `t` is the tick that just ended. With no `t` (right after a trade, or at "Finish now") only the
+  // extremes update, so a trade made while paused still counts before the next tick (SRP-4).
   function trackRisk(t) {
     const v = portfolioValue();
     if (!(v > 0)) return;
@@ -316,9 +318,10 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
       if (val > max) max = val;
     }
     const r = pf.risk;
-    r.ticks++;
     r.maxShare = Math.max(r.maxShare, max / v);
     r.minCashShare = Math.min(r.minCashShare, pf.cash / v);
+    if (t == null) return;
+    r.ticks++;
     if (max / v > scenario.risk.maxShare) r.overExposedTicks++;
     if (safe / v < scenario.risk.minSafeShare) r.lowSafeTicks++;
     if (t % C === 0) pf.history.push({ t, value: v, maxShare: max / v, safeShare: safe / v });
@@ -577,6 +580,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
       holdingBefore: held,
       holdingAfter: pf.holdings[coinId] ?? 0,
     });
+    trackRisk();
     return { ok: true, filledCoins: r.coins, filledL$: r.L, priceImpactPct, error: null };
   }
 
@@ -754,6 +758,7 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
   // "Finish now": close the market early.
   function finish() {
     if (closed) return;
+    trackRisk();
     closed = true;
     expireOrders();
     emit('close', getState());
