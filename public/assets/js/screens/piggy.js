@@ -3,7 +3,7 @@
 // what the app can see (logging, planning, reflecting, streaks), are capped per day, and feed the cow
 // on the Farm. No leaderboards and no comparison with anyone else.
 import { GLYPHS, coinBadge } from './coinkit.js';
-import { CHALLENGE_DAYS, REWARDS, balance, birthdayAmount, calendarAmount, challengeDay, dayKey, emergencyTarget, emptyPiggy, goalProgress, reward, streakDays, week52Amount } from '../sim/piggy.js';
+import { CHALLENGE_DAYS, REWARDS, balance, birthdayAmount, calendarAmount, challengeDay, dayKey, emergencyTarget, emptyPiggy, goalProgress, reward, runEntries, streakDays, week52Amount } from '../sim/piggy.js';
 import { XP, logAction } from '../progress.js';
 import { animate, announce, h, icon, number } from '../ui.js';
 
@@ -15,6 +15,8 @@ const shortDate = (key) => {
   const t = Date.parse(`${key}T00:00:00Z`);
   return Number.isNaN(t) ? String(key) : DATE.format(t);
 };
+// A timestamp -> '14:05', Bangkok time like the date keys.
+const clock = (at) => new Date(at + 7 * 3600_000).toISOString().slice(11, 16);
 const PROMPTS = [
   'What did you buy this week that you’re glad about?',
   'What’s one thing you chose not to buy, and why?',
@@ -40,10 +42,12 @@ export function mount(root, ctx) {
   const get = () => ({ ...emptyPiggy(), ...store.get().piggy });
   const save = (piggy) => store.set({ piggy });
   const age = store.get().birthYear ? new Date().getFullYear() - Number(store.get().birthYear) : null;
-  // The log card's choices stay as picked across redraws. A result line or an Undo shows once, in the
-  // card that was used, on the next redraw.
+  // Choices stay as picked across redraws: the log card's, the new goal's symbol, and start dates not
+  // sent yet. A result line or an Undo shows once, in the card that was used, on the next redraw.
   let logKind = 'in';
   let logGoal = '';
+  let goalIcon = GOAL_ICONS[0];
+  const startDrafts = {};
   let pending = { notice: null, undo: null };
 
   // Award feed for an action and say what happened, without ever mentioning the amount.
@@ -94,7 +98,7 @@ export function mount(root, ctx) {
         h('p', { class: 'screen-sub', text: 'Write down the real money you put in or take out. Penny never touches it: your money stays with you, and Penny helps you plan.' }),
       ]),
       h('div', { class: 'piggy-stats' }, [
-        stat('Saved so far', thb(Math.max(0, balance(piggy))), 'Your own record'),
+        stat('Saved so far', statAmount(Math.max(0, balance(piggy))), 'Your own record'),
         stat('Feed today', `${today} of ${REWARDS.capPerDay}`, 'For logging, planning and thinking'),
         stat('Streak', `${streak} ${streak === 1 ? 'day' : 'days'}`, doneToday ? 'Keep it going tomorrow' : streak ? 'Log something today to keep it going' : 'Log something today to start'),
       ]),
@@ -115,7 +119,13 @@ export function mount(root, ctx) {
     if (focus) view.querySelector(`[data-focus="${focus}"]`)?.focus({ preventScroll: true });
   }
 
-  const stat = (label, value, hint) => h('div', { class: 'card piggy-stat' }, [h('p', { class: 'piggy-stat__label', text: label }), h('p', { class: 'piggy-stat__value', text: value }), h('p', { class: 'field__hint', text: hint })]);
+  const stat = (label, value, hint) => h('div', { class: 'card piggy-stat' }, [h('p', { class: 'piggy-stat__label', text: label }), h('p', { class: 'piggy-stat__value' }, value), h('p', { class: 'field__hint', text: hint })]);
+  // 'THB 1,234,567': the number moves to a line of its own as a whole, and one too long even for that
+  // wraps only after a comma, never inside a group of digits.
+  const statAmount = (n) => {
+    const groups = number(Math.round(n), 0).split(',');
+    return ['THB ', h('span', { class: 'piggy-stat__num' }, groups.flatMap((g, i) => (i < groups.length - 1 ? [`${g},`, h('wbr')] : [g])))];
+  };
   const noticeIn = (once, card) => (once.notice?.card === card ? h('p', { class: 'trade__done piggy-notice', text: once.notice.text }) : null);
   function undoIn(once, card) {
     const u = once.undo;
@@ -162,14 +172,13 @@ export function mount(root, ctx) {
       : h('p', { class: 'piggy-empty', text: reached.length ? 'What would you like to save for next?' : 'No goals yet. A goal with a name and a symbol makes saving easier to stick with.' });
     const name = h('input', { id: 'goal-name', class: 'field__input', type: 'text', maxlength: 30, autocomplete: 'off' });
     const target = h('input', { id: 'goal-target', class: 'field__input', type: 'number', min: 1, step: 1, inputmode: 'numeric' });
-    let iconChoice = GOAL_ICONS[0];
     const icons = GOAL_ICONS.map((id) => {
-      const b = h('button', { class: 'piggy-icon', type: 'button', 'aria-pressed': String(id === iconChoice), title: GLYPHS[id][0] }, [
+      const b = h('button', { class: 'piggy-icon', type: 'button', 'aria-pressed': String(id === goalIcon), title: GLYPHS[id][0] }, [
         coinBadge({ iconId: id, colorId: 0 }, config.COIN_COLORS),
         h('span', { class: 'visually-hidden', text: GLYPHS[id][0] }),
       ]);
       b.addEventListener('click', () => {
-        iconChoice = id;
+        goalIcon = id;
         for (const x of icons) x.setAttribute('aria-pressed', String(x === b));
       });
       return b;
@@ -182,9 +191,10 @@ export function mount(root, ctx) {
       if (!n) return showErr(err, 'Give your goal a name, like “New bike”.');
       if (!Number.isInteger(t) || t < 1) return showErr(err, 'Set a whole amount, like 500.');
       const id = uid();
-      const r = act({ ...get(), goals: [...get().goals, { id, name: n, target: t, icon: iconChoice, at: Date.now() }] }, 'plan', `Goal added: ${n}.`);
+      const r = act({ ...get(), goals: [...get().goals, { id, name: n, target: t, icon: goalIcon, at: Date.now() }] }, 'plan', `Goal added: ${n}.`);
       logPlan(`piggy-plan:goal:${id}`, r.points);
       notify('goals', r.note);
+      goalIcon = GOAL_ICONS[0];
       render(`goal:${id}`, ['goal-name', 'goal-target']);
     };
     return h('div', { class: 'card piggy-card' }, [
@@ -267,8 +277,10 @@ export function mount(root, ctx) {
     const now = Date.now();
     const today = dayKey(now);
     const ch = piggy.challenges || {};
-    const doneToday = (id) => piggy.entries.some((e) => e.challenge === id && e.date === today);
-    const doneWeek = (id, week) => piggy.entries.some((e) => e.challenge === id && e.week === week);
+    // A dated challenge counts only what was saved in its current run, so one started again begins fresh.
+    const entriesOf = (id) => (ch[id] ? runEntries(piggy, id) : piggy.entries.filter((e) => e.challenge === id));
+    const doneToday = (id) => entriesOf(id).some((e) => e.date === today);
+    const doneWeek = (id, week) => entriesOf(id).some((e) => e.week === week);
 
     function log(id, amount, extra = {}) {
       const p = get();
@@ -282,6 +294,7 @@ export function mount(root, ctx) {
       const start = input.value;
       if (!start || start < input.min || start > input.max) return showErr(err, 'Pick a start date within a year of today.');
       const p = { ...get(), challenges: { ...get().challenges, [id]: { start } } };
+      delete startDrafts[id];
       if (isNew) {
         const r = act(p, 'plan', challengeDay(start, now) < 0 ? `${CHALLENGES[id]} starts on ${shortDate(start)}.` : `${CHALLENGES[id]} started.`);
         logPlan(`piggy-plan:${id}:${start}`, r.points);
@@ -297,12 +310,15 @@ export function mount(root, ctx) {
       const was = p.challenges[id];
       const rest = { ...p.challenges };
       delete rest[id];
+      delete startDrafts[id];
       save({ ...p, challenges: rest });
       remember(`ch:${id}`, `${CHALLENGES[id]} stopped. What you saved stays written down.`, (q) => ({ ...q, challenges: { ...q.challenges, [id]: was } }), `ch:${id}`);
     }
-    // Dates from a year back (so a birthday that has passed still fits) to a year ahead.
+    // Dates from a year back (so a birthday that has passed still fits) to a year ahead. A date picked
+    // but not sent yet stays when another card redraws the screen.
     const startForm = (id, value, label, isNew) => {
-      const input = h('input', { id: `start-${id}`, class: 'field__input', type: 'date', value, min: dayKey(now - (CHALLENGE_DAYS[id] - 1) * DAY), max: dayKey(now + 365 * DAY) });
+      const input = h('input', { id: `start-${id}`, class: 'field__input', type: 'date', value: startDrafts[id] ?? value, min: dayKey(now - (CHALLENGE_DAYS[id] - 1) * DAY), max: dayKey(now + 365 * DAY) });
+      input.addEventListener('input', () => { startDrafts[id] = input.value; });
       const err = h('p', { class: 'field__error', role: 'alert', hidden: true });
       return h('form', { class: 'piggy-form', novalidate: true, onSubmit: (e) => { e.preventDefault(); setStart(id, input, err, isNew); } }, [
         h('label', { class: 'field__label', for: `start-${id}` }, named('Start date', CHALLENGES[id])),
@@ -343,10 +359,10 @@ export function mount(root, ctx) {
         body = [status(id, `Starts on ${shortDate(state.start)}: ${-d} ${d === -1 ? 'day' : 'days'} to go.`), startForm(id, state.start, 'Change date', false), stopBtn];
       } else if (id === 'birthday') {
         const n = birthdayAmount(state.start, now);
-        body = doneToday(id) ? [done(id, `Day ${n} done`), stopBtn] : [status(id, `Day ${n}: save ${thb(n)}.`), saveBtn(id, n), stopBtn];
+        body = doneToday(id) ? [done(id, `Day ${n} done`), stopBtn] : [status(id, `Day ${n}: save ${thb(n)}.`), saveBtn(id, n, { run: state.start }), stopBtn];
       } else {
         const w = week52Amount(state.start, now);
-        body = doneWeek(id, w.week) ? [done(id, `Week ${w.week} done`), stopBtn] : [status(id, `Week ${w.week}: save ${thb(w.amount)}.`), saveBtn(id, w.amount, { week: w.week }), stopBtn];
+        body = doneWeek(id, w.week) ? [done(id, `Week ${w.week} done`), stopBtn] : [status(id, `Week ${w.week}: save ${thb(w.amount)}.`), saveBtn(id, w.amount, { week: w.week, run: state.start }), stopBtn];
       }
       items.push(h('li', { class: 'piggy-challenge' }, [h('p', { class: 'piggy-challenge__title', text: CHALLENGES[id] }), h('p', { class: 'field__hint', text: rule }), ...body, undoIn(once, `ch:${id}`), noticeIn(once, `ch:${id}`)]));
     }
@@ -412,28 +428,40 @@ export function mount(root, ctx) {
 
   function historyCard(piggy, once) {
     const goalName = Object.fromEntries(piggy.goals.map((g) => [g.id, g.name]));
-    const recent = piggy.entries.slice(-8).reverse();
+    const rows = piggy.entries.slice(-8).reverse().map((e) => {
+      const what = `${e.kind === 'in' ? 'Saved' : 'Took out'} ${thb(e.amount)}${e.challenge ? ` · ${CHALLENGES[e.challenge] || 'Challenge'}` : ''}${goalName[e.goalId] ? ` · for ${goalName[e.goalId]}` : ''}`;
+      return { e, what, name: `${what}, ${shortDate(e.date)}${Number.isFinite(e.at) ? `, ${clock(e.at)}` : ''}` };
+    });
+    // Rows that would still sound the same get their place in the list too.
+    const nameOf = (row, i) => (rows.filter((r) => r.name === row.name).length > 1 ? `${row.name}, row ${i + 1}` : row.name);
     // A mistake can be taken out of the record. Feed already earned stays: it never depended on the amount.
-    const remove = (e, what) => {
-      const entries = get().entries;
-      const at = entries.findIndex((x) => x.id === e.id);
+    // A saving that money taken out came from stays until that is removed, so savings never go below zero.
+    const remove = (e, what, err) => {
+      const p = get();
+      const at = p.entries.findIndex((x) => x.id === e.id);
       if (at < 0) return;
-      save({ ...get(), entries: entries.filter((x) => x.id !== e.id) });
-      remember('history', `Removed: ${what}.`, (p) => ({ ...p, entries: insertAt(p.entries, at, e) }), `entry:${e.id}`);
+      const next = { ...p, entries: p.entries.filter((x) => x.id !== e.id) };
+      if (e.kind === 'in' && (balance(next) < 0 || (e.goalId && goalProgress(next, e.goalId).saved < 0))) {
+        return showErr(err, 'Remove what you took out first, so your savings don’t go below THB 0.');
+      }
+      save(next);
+      remember('history', `Removed: ${what}.`, (q) => ({ ...q, entries: insertAt(q.entries, at, e) }), `entry:${e.id}`);
     };
     return h('div', { class: 'card piggy-card' }, [
       h('h2', { class: 'lab-card__title', text: 'Recent' }),
       undoIn(once, 'history'),
-      recent.length
-        ? h('ul', { class: 'piggy-history' }, recent.map((e) => {
-            const what = `${e.kind === 'in' ? 'Saved' : 'Took out'} ${thb(e.amount)}${e.challenge ? ` · ${CHALLENGES[e.challenge] || 'Challenge'}` : ''}${goalName[e.goalId] ? ` · for ${goalName[e.goalId]}` : ''}`;
+      rows.length
+        ? h('ul', { class: 'piggy-history' }, rows.map((row, i) => {
+            const { e, what } = row;
+            const err = e.verified || !e.id ? null : h('p', { class: 'field__error', role: 'alert', hidden: true });
             return h('li', { class: 'piggy-entry' }, [
               h('span', { class: `piggy-entry__kind ${e.kind === 'in' ? 'is-gain' : 'is-loss'}`, 'aria-hidden': 'true', text: e.kind === 'in' ? '↑' : '↓' }),
               h('span', { text: what }),
               h('time', { class: 'field__hint', datetime: e.date, text: shortDate(e.date) }),
               e.verified
                 ? h('span', { class: 'chip chip--ok' }, [icon('check', { size: 14 }), 'Verified by a parent'])
-                : e.id ? h('button', { class: 'btn btn--sm btn--ghost', type: 'button', 'data-focus': `entry:${e.id}`, onClick: () => remove(e, what) }, named('Remove', `${what}, ${shortDate(e.date)}`)) : null,
+                : e.id ? h('button', { class: 'btn btn--sm btn--ghost', type: 'button', 'data-focus': `entry:${e.id}`, onClick: () => remove(e, what, err) }, named('Remove', nameOf(row, i))) : null,
+              err,
             ]);
           }))
         : h('p', { class: 'piggy-empty', text: 'Nothing written down yet.' }),

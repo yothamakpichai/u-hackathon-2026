@@ -1,7 +1,7 @@
 // Unit checks for the Piggy Bank and Farm rules. Run: node public/assets/js/sim/piggy.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CHALLENGE_DAYS, REWARDS, birthdayAmount, calendarAmount, challengeDay, emergencyTarget, emptyPiggy, goalProgress, reward, streakDays, totalPoints, week52Amount } from './piggy.js';
+import { CHALLENGE_DAYS, REWARDS, birthdayAmount, calendarAmount, challengeDay, emergencyTarget, emptyPiggy, goalProgress, reward, runEntries, streakDays, totalPoints, week52Amount } from './piggy.js';
 import { COW_AT, collectMilk, cowTraits, cowsDue, feedFrom, milkReady, stageOf } from './farm.js';
 
 const day = (iso) => Date.parse(`${iso}T05:00:00Z`); // noon in Bangkok
@@ -54,6 +54,19 @@ test('challenge dates: a countdown before the start, and an end after the last d
   assert.equal(birthdayAmount('2026-10-16', start + (CHALLENGE_DAYS.birthday - 1) * 86_400_000), 365, 'the last day');
   assert.deepEqual(week52Amount('2026-10-16', start + (CHALLENGE_DAYS.week52 - 1) * 86_400_000), { week: 52, amount: 520 }, 'the last day of week 52');
   assert.equal(week52Amount('2026-10-16', start + CHALLENGE_DAYS.week52 * 86_400_000), null, 'over');
+});
+
+test('a challenge started again begins with nothing done', () => {
+  const p = { ...emptyPiggy(), challenges: { week52: { start: '2026-10-16' }, birthday: { start: '2026-10-06' } }, entries: [
+    { challenge: 'week52', week: 1, date: '2025-10-10', run: '2025-10-10' }, // the run before
+    { challenge: 'week52', week: 2, date: '2025-10-17' }, // the run before, saved before runs were kept
+    { challenge: 'birthday', date: '2026-10-16', run: '2026-10-01' },
+    { challenge: 'week52', week: 1, date: '2026-10-16', run: '2026-10-16' },
+  ] };
+  assert.deepEqual(runEntries(p, 'week52').map((e) => `${e.week} ${e.date}`), ['1 2026-10-16'], 'only this run’s week 1');
+  assert.deepEqual(runEntries({ ...p, challenges: {} }, 'week52'), [], 'a stopped challenge has no run');
+  assert.deepEqual(runEntries(p, 'birthday'), [], 'saved today, but in a run that was stopped');
+  assert.equal(runEntries({ ...p, challenges: { week52: { start: '2025-10-10' } } }, 'week52').length, 2, 'Undo brings the old run back');
 });
 
 test('goal progress and the emergency fund', () => {

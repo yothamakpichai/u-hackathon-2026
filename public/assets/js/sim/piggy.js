@@ -80,6 +80,14 @@ export function week52Amount(startKey, now, unit = 10) {
   return days >= 0 && week <= 52 ? { week, amount: week * unit } : null;
 }
 
+// The entries saved in the current run of a dated challenge, so one started again begins with nothing
+// done. Each entry keeps its run's start date; older entries without one count from the start date on.
+export function runEntries(piggy, id) {
+  const start = piggy.challenges?.[id]?.start;
+  if (!start) return [];
+  return piggy.entries.filter((e) => e.challenge === id && (e.run ? e.run === start : e.date >= start));
+}
+
 // ---- goals and money -----------------------------------------------------------------------
 
 export function goalProgress(piggy, goalId) {

@@ -2339,6 +2339,11 @@
   font-weight: 800;
 }
 
+/* The number wraps as a whole, after THB. */
+.piggy-stat__num {
+  display: inline-block;
+}
+
 /* Phones: three small stats in a row, so the goals and the log start on the first screen. */
 @media (max-width: 599px) {
   .piggy-stats {
@@ -2350,8 +2355,10 @@
     padding: var(--sp-2);
   }
 
+  /* Scales with the card, so seven digits still fit on a line at 360px. A longer number wraps only
+     after a comma (the screen puts a <wbr> there). */
   .piggy-stat__value {
-    font-size: var(--fs-lg);
+    font-size: min(var(--fs-lg), 4.6vw);
   }
 
   .piggy-stat .field__hint {
@@ -2360,7 +2367,6 @@
 }
 
 /* Names and answers are typed by the user: a long word wraps inside its card. */
-.piggy-stat__value,
 .piggy-goal__name,
 .piggy-prompt,
 .piggy-answer,
@@ -2537,6 +2543,10 @@
 
 .piggy-entry .btn {
   margin-inline-start: auto;
+}
+
+.piggy-entry .field__error {
+  flex-basis: 100%;
 }
 
 .piggy-research a {
