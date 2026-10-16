@@ -590,8 +590,8 @@ export function createSession({ seed, tier, coinsConfig, agentsConfig, scenario 
       throw new SimError('BAD_SUPPLY', `Total supply must be between ${uc.minSupply.toLocaleString('en-US')} and ${uc.maxSupply.toLocaleString('en-US')}.`);
     }
 
-    // Knobs a tier cannot see keep their defaults (BRIEF §2).
-    let alloc = { ...uc.defaultAllocation };
+    // Knobs a tier cannot see keep their defaults (BRIEF §2). Explorer coins have no team, so no team sells.
+    let alloc = { ...(tier === 'explorer' && uc.explorerAllocation ? uc.explorerAllocation : uc.defaultAllocation) };
     let hype = uc.defaultHype;
     let lpLocked = true;
     let vesting = true;

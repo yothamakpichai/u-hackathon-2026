@@ -63,6 +63,7 @@
     "maxSupply": 1000000000000,
     "minPublic": 20,
     "defaultAllocation": { "you": 10, "team": 10, "public": 80 },
+    "explorerAllocation": { "you": 10, "team": 0, "public": 90 },
     "defaultHype": 0.4,
     "virtualL": 3000,
     "graduateAtL": 9000,

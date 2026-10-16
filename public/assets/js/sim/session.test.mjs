@@ -179,6 +179,22 @@ test('after the rug, BLOOP can be sold but not bought', () => {
   assert.ok(sold.ok && sold.filledL$ < 1, `the bag is worth almost nothing (${sold.filledL$})`);
 });
 
+test('Explorer coins launch 10/0/90 with no team to sell; Trader keeps the 10/10/80 default', () => {
+  const e = createSession({ seed: SEEDS[3], tier: 'explorer', ...config() });
+  for (let i = 0; i < 400; i++) e.tick();
+  e.createCoin({ name: 'Kid Coin', ticker: 'KIDC', iconId: 1, colorId: 2, supply: 1_000_000, allocation: { you: 60, team: 20, public: 20 } });
+  const k = e.getState().coins.KIDC;
+  assert.deepEqual(k.launch.allocation, { you: 10, team: 0, public: 90 }, 'Explorer cannot set the split');
+  assert.equal(k.launch.factors.length, 0);
+  assert.equal(e.getState().portfolio.created[0].coins, 100_000);
+  for (let i = 0; i < 900; i++) e.tick();
+  assert.ok(!e.getTransactions().some((x) => x.coin === 'KIDC' && x.who === 'insider'), 'no team insider trades');
+  const t = createSession({ seed: SEEDS[3], tier: 'trader', ...config() });
+  for (let i = 0; i < 400; i++) t.tick();
+  t.createCoin({ name: 'Teen Coin', ticker: 'TEEN', iconId: 1, colorId: 2, supply: 1_000_000 });
+  assert.deepEqual(t.getState().coins.TEEN.launch.allocation, { you: 10, team: 10, public: 80 });
+});
+
 test('createCoin launches an honest coin on the bonding curve', () => {
   const s = createSession({ seed: SEEDS[3], tier: 'builder', ...config() });
   for (let i = 0; i < 400; i++) s.tick();

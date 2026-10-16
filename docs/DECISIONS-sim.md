@@ -99,7 +99,7 @@ The sim records raw data; it does not compute the score.
   | Trader and up | You/team split as sliders (buyers keep at least 20%), and launch hype: Quiet, Some buzz or Loud (0.2, 0.5, 0.9) |
   | Builder | Pool lock and vesting of your own coins |
 
-  Explorer coins use the default 10/10/80 split.
+  Explorer coins launch 10/0/90 (`userCoin.explorerAllocation`): you keep 10%, buyers get 90%, and there is no team, so no NPC team sells. The Explorer design note says exactly that. Trader and Builder sliders start at 10/10/80.
 - **Names and tickers.** `sim/names.js` is shared by the engine and the form. It checks the format, blocks the real tickers and brands from §10, and blocks a small profanity list stored ROT13. A blocked word matches a whole word or the start of a word, so "Grape" and "Class" pass.
 - **Glyphs.** `public/assets/svg/glyphs/` doesn't exist yet, so `lab.js` draws the 24 coin glyphs inline (`GLYPHS`; `iconId` is the index, and 0–6 are the roster's). If an SVG set ships, only `coinBadge()` changes; the ids stay the same.
 - **Copycat** (Builder, pool unlocked, §3.5):

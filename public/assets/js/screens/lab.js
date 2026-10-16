@@ -98,7 +98,9 @@ function glyph(iconId) {
 // tone: 'good' | 'risk' | 'info'. Only knobs the tier can see are explained.
 export function designNotes({ supply, price0, allocation, hype, lpLocked, vesting, bigInsiders }, tier) {
   const notes = [{ tone: 'info', text: `${coinAmount(supply)} coins, so each starts at ${price(price0)}. Make more and each one is worth less.` }];
-  if (tier !== 'explorer') {
+  if (tier === 'explorer') {
+    notes.push({ tone: 'good', text: `You keep ${allocation.you}% and buyers get ${allocation.public}%. There’s no team, so nobody sells a big pile of your coin.` });
+  } else {
     const insiders = allocation.you + allocation.team;
     notes.push(
       bigInsiders

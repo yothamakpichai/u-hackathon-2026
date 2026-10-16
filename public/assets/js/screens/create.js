@@ -235,7 +235,7 @@ export function mount(root, ctx) {
   ]);
 
   function allocation() {
-    if (!canSplit) return { ...uc.defaultAllocation };
+    if (!canSplit) return { ...(uc.explorerAllocation || uc.defaultAllocation) };
     return { you: design.you, team: design.team, public: 100 - design.you - design.team };
   }
 
