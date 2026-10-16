@@ -102,7 +102,8 @@ export function badgeArt(info, { size = 88, locked = false } = {}) {
   return svg;
 }
 
-// A small "badge minted" note for the end of a Coach chapter.
+// A small "badge minted" note for the end of a Coach chapter, with a link to the explorer's gallery
+// (the Lab has no explorer button at the Explorer level).
 export function mintedNote(promise) {
   const text = h('p', { class: 'badge-note__text', text: 'Minting your badge…' });
   const box = h('div', { class: 'badge-note', role: 'status' }, [text]);
@@ -114,7 +115,8 @@ export function mintedNote(promise) {
     }
     box.replaceChildren(badgeArt(info, { size: 56 }), h('div', {}, [
       h('p', { class: 'badge-note__title', text: `Badge minted: ${info.title}` }),
-      h('p', { class: 'badge-note__text', text: 'Soulbound: it’s yours to keep and can’t be sold or traded. See it in the block explorer.' }),
+      h('p', { class: 'badge-note__text', text: 'Soulbound: it’s yours to keep and can’t be sold or traded.' }),
+      h('a', { class: 'badge-note__link', href: '#/explorer', text: 'See it in the block explorer' }),
     ]));
   });
   return box;
@@ -123,5 +125,5 @@ export function mintedNote(promise) {
 export const NFT_LESSON = [
   'An NFT is a record on a blockchain that says one digital item belongs to one wallet. The record can be real even when the item itself is just a picture.',
   'Your badges are soulbound: they’re minted to you and can’t be sold, traded or transferred. They have no price, because they show what you learned, not what you paid.',
-  'Many NFTs are sold with price tags. Their price depends only on someone wanting to pay more later, so it can drop to nothing, and the picture behind them can often be copied for free.',
+  'Many NFTs are sold with price tags. Their price may depend only on someone wanting to pay more later, so it can drop to nothing, and the picture behind them can often be copied for free.',
 ];

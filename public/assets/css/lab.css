@@ -1272,8 +1272,13 @@
   gap: var(--sp-4);
 }
 
-.explorer-screen > .btn {
+.explorer-screen > .btn,
+.explorer__back {
   justify-self: start;
+}
+
+.explorer__back {
+  margin-top: var(--sp-2);
 }
 
 .explorer__summary {
@@ -1287,7 +1292,8 @@
   align-items: start;
 }
 
-.explorer__side {
+.explorer__side,
+.explorer__lessons {
   display: grid;
   gap: var(--sp-3);
 }
@@ -1297,9 +1303,15 @@
     grid-template-columns: 20rem minmax(0, 1fr);
   }
 
+  /* Clears the sticky app header, and scrolls on its own when taller than the screen. The inline
+     padding leaves room for the demo's shake inside the scroll box. */
   .explorer__side {
     position: sticky;
-    top: var(--sp-4);
+    top: calc(var(--header-h) + var(--sp-4));
+    max-height: calc(100vh - var(--header-h) - 2 * var(--sp-4));
+    overflow-y: auto;
+    margin-inline: -6px;
+    padding-inline: 6px;
   }
 }
 
@@ -1308,6 +1320,11 @@
   gap: var(--sp-3);
   border-color: var(--amber-400);
   background: var(--amber-50);
+}
+
+.tamper,
+.block {
+  scroll-margin-top: calc(var(--header-h) + var(--sp-4));
 }
 
 .tamper__title {
@@ -1439,6 +1456,12 @@
   background: var(--loss-50);
   color: var(--loss-700);
   font-weight: 700;
+}
+
+.tx__changed {
+  margin-inline-start: var(--sp-2);
+  border: 1px solid var(--loss-600);
+  background: var(--surface);
 }
 
 .tx--more {
@@ -1900,6 +1923,29 @@
   overflow-wrap: anywhere;
 }
 
+.badge-card .chip {
+  max-width: 100%;
+  white-space: normal;
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* Phones: two smaller cards side by side (9rem fits twice in a 360 px phone's 328 px column). */
+@media (max-width: 599px) {
+  .badge-grid {
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  }
+
+  .badge-card {
+    padding: var(--sp-3) var(--sp-2);
+  }
+
+  .badge-card .badge-art {
+    width: 64px;
+    height: 64px;
+  }
+}
+
 .badge-art__medal { fill: var(--coin, var(--pal-mint)); }
 .badge-art__inner { fill: rgb(255 255 255 / 0.18); stroke: rgb(255 255 255 / 0.55); stroke-width: 2; }
 .badge-art__ribbon { fill: var(--coin, var(--pal-mint)); opacity: 0.75; }
@@ -1926,6 +1972,14 @@
 .badge-note__text {
   color: var(--ink-700);
   font-size: var(--fs-sm);
+}
+
+.badge-note__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  font-size: var(--fs-sm);
+  font-weight: 700;
 }
 
 .tx.is-mint {
