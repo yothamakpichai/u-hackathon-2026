@@ -1,0 +1,437 @@
+/* v4 Town (BRIEF §17 "Town groups"): the five group buildings, Money Town and the School's learning partners.
+   Each group has an ink (text, 5.6:1 or more on its tint and white text 6.3:1 or more on it), a tint (the tile)
+   and a main colour (the drawing). Motion runs only when the device allows it. */
+
+:root {
+  --g-school-ink: #1D4E9E;
+  --g-school-tint: #EAF2FD;
+  --g-school-main: #3C7BE0;
+  --g-school-roof: #E0563A;
+  --g-market-ink: #076B4D;
+  --g-market-tint: #E5F6EF;
+  --g-market-main: #19A97C;
+  --g-market-roof: #0B7A58;
+  --g-money-ink: #8A4B00;
+  --g-money-tint: #FFF3D9;
+  --g-money-main: #F2A93B;
+  --g-money-roof: #C46A12;
+  --g-future-ink: #5B2BA8;
+  --g-future-tint: #F1EAFC;
+  --g-future-main: #8A5AD8;
+  --g-future-roof: #4A2391;
+  --g-research-ink: #8C2F1B;
+  --g-research-tint: #FCEDE8;
+  --g-research-main: #C9876F;
+  --g-research-roof: #8C2F1B;
+
+  --p-piggy-ink: #A3214F;
+  --p-piggy-tint: #FDECF2;
+  --p-piggy-main: #E7658F;
+  --p-farm-ink: #9E3519;
+  --p-farm-tint: #FDEFE9;
+  --p-farm-main: #D9502F;
+  --p-stall-ink: #8F4600;
+  --p-stall-tint: #FFF1E0;
+  --p-stall-main: #E58A1F;
+  --p-store-ink: #086B6B;
+  --p-store-tint: #E3F5F5;
+  --p-store-main: #17A3A3;
+  --p-bank-ink: #2F43A8;
+  --p-bank-tint: #ECEFFC;
+  --p-bank-main: #5A6FD6;
+  --p-arena-ink: #5B2BA8;
+  --p-arena-tint: #F1EAFC;
+  --p-arena-main: #8A5AD8;
+
+  --t-glow: #FFD873;
+  --t-door: #3B2A20;
+}
+
+/* ------------------------------------------------------------------ Town grid */
+
+.tg-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "school school"
+    "market money"
+    "future future"
+    "research research";
+  gap: var(--sp-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 900px) {
+  .tg-grid {
+    grid-template-columns: 1.4fr 1fr 1fr;
+    grid-template-areas:
+      "school market money"
+      "school future research";
+    gap: var(--sp-4);
+  }
+}
+
+.tg {
+  --tg-ink: var(--g-school-ink);
+  --tg-tint: var(--g-school-tint);
+  --tg-main: var(--g-school-main);
+  --tg-roof: var(--g-school-roof);
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--sp-2);
+  min-width: 0;
+  padding: var(--sp-2);
+  border: 2px solid color-mix(in srgb, var(--tg-ink) 22%, transparent);
+  border-radius: var(--r-lg);
+  background: var(--tg-tint);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--tg-ink) 30%, transparent);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.tg--school { grid-area: school; }
+.tg--market { grid-area: market; --tg-ink: var(--g-market-ink); --tg-tint: var(--g-market-tint); --tg-main: var(--g-market-main); --tg-roof: var(--g-market-roof); }
+.tg--money { grid-area: money; --tg-ink: var(--g-money-ink); --tg-tint: var(--g-money-tint); --tg-main: var(--g-money-main); --tg-roof: var(--g-money-roof); }
+.tg--future { grid-area: future; --tg-ink: var(--g-future-ink); --tg-tint: var(--g-future-tint); --tg-main: var(--g-future-main); --tg-roof: var(--g-future-roof); }
+.tg--research { grid-area: research; --tg-ink: var(--g-research-ink); --tg-tint: var(--g-research-tint); --tg-main: var(--g-research-main); --tg-roof: var(--g-research-roof); }
+
+/* School and Future You are wide on phones: art and words side by side, mirrored for Future You. */
+.tg__main {
+  display: grid;
+  justify-items: center;
+  align-items: center;
+  gap: var(--sp-1);
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--sp-2) var(--sp-1);
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--ink-900);
+  text-align: center;
+  cursor: pointer;
+}
+
+.tg__main:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.tg--school .tg__main,
+.tg--future .tg__main,
+.tg--research .tg__main {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  justify-items: start;
+  text-align: left;
+}
+
+.tg--future .tg__main {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+}
+
+.tg--future .tg__art {
+  order: 2;
+}
+
+.tg--research .tg__main {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+}
+
+@media (min-width: 900px) {
+  .tg--school .tg__main {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .tg--future .tg__main,
+  .tg--research .tg__main {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .tg--future .tg__art {
+    order: 0;
+  }
+
+  .tg--school .tg__art {
+    max-width: 26rem;
+  }
+}
+
+.tg__art {
+  display: block;
+  width: 100%;
+  max-width: 15rem;
+}
+
+.tg__text {
+  display: grid;
+  gap: 2px;
+  justify-items: inherit;
+  min-width: 0;
+  padding-right: var(--sp-5); /* clear of the ⓘ button */
+}
+
+.tg__name {
+  color: var(--tg-ink);
+  font-family: var(--font-head);
+  font-size: var(--fs-lg);
+  font-weight: 900;
+  line-height: var(--lh-tight);
+}
+
+.tg--school .tg__name {
+  font-size: var(--fs-xl);
+}
+
+@media (min-width: 900px) {
+  .tg--school .tg__name {
+    font-size: var(--fs-2xl);
+  }
+}
+
+.tg__blurb {
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
+}
+
+.tg__start {
+  margin-top: var(--sp-1);
+  background: var(--tg-ink);
+  color: #FFFFFF;
+}
+
+.tg__closed {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-top: var(--sp-1);
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-pill);
+  background: repeating-linear-gradient(-45deg, #FFE7A8 0 8px, #FFF6DB 8px 16px);
+  color: var(--amber-800);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+}
+
+.tg__why {
+  position: absolute;
+  top: var(--sp-1);
+  right: var(--sp-1);
+  color: var(--tg-ink);
+}
+
+.tg__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-1);
+}
+
+.tg__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--sp-3);
+  border: 2px solid color-mix(in srgb, var(--tg-ink) 25%, transparent);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--tg-ink);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+
+.tg__link:hover {
+  background: var(--tg-ink);
+  color: #FFFFFF;
+}
+
+.tg.is-start {
+  border-color: var(--tg-ink);
+  box-shadow: 0 4px 0 var(--tg-ink);
+}
+
+/* ------------------------------------------------------------------ Drawings */
+
+.ta {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.ta__ground { fill: color-mix(in srgb, var(--tg-main) 30%, #FFFFFF); }
+.ta__wall { fill: var(--tg-main); }
+.ta__roof { fill: var(--tg-roof); }
+.ta__trim { fill: #FFC24D; }
+.ta__glass { fill: #FFFFFF; stroke: color-mix(in srgb, var(--tg-ink) 40%, transparent); stroke-width: 1.5; }
+.ta__line { fill: none; stroke: var(--tg-ink); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.ta__pole { stroke: var(--ink-700); stroke-width: 3; fill: var(--ink-700); }
+.ta__flag { fill: var(--g-school-roof); transform-box: fill-box; transform-origin: left center; }
+.ta__glow { fill: var(--t-glow); }
+.ta__door { fill: var(--t-door); stroke: color-mix(in srgb, var(--t-door) 70%, #FFFFFF); stroke-width: 1; transform-box: fill-box; transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1); }
+.ta__door--l { transform-origin: left center; }
+.ta__door--r { transform-origin: right center; }
+.ta__sign { fill: #FFFFFF; stroke: var(--tg-ink); stroke-width: 2.5; }
+.ta__wick { stroke: var(--ink-700); stroke-width: 2; }
+.ta__candle--up { fill: var(--gain-500); }
+.ta__candle--down { fill: var(--loss-500); }
+.ta__stripe { fill: #FFFFFF; opacity: 0.85; }
+.ta__b1 { fill: var(--p-farm-main); }
+.ta__b1roof { fill: var(--p-farm-ink); }
+.ta__b2 { fill: var(--p-bank-main); }
+.ta__b2roof { fill: var(--p-bank-ink); }
+.ta__coin circle { fill: #F5B82E; stroke: #B07400; stroke-width: 2.5; }
+.ta__coin .ta__coin-ring { fill: none; stroke: #FFE7A0; stroke-width: 2; }
+.ta__coin { transform-box: fill-box; transform-origin: center; }
+.ta__star { fill: var(--tg-roof); }
+.ta__wing { fill: color-mix(in srgb, var(--tg-main) 70%, #FFFFFF); }
+.ta__hand { stroke: var(--tg-ink); stroke-width: 2.5; stroke-linecap: round; }
+.ta__hand--long { transform-origin: 100px 70px; }
+.ta__plank { stroke: #D98A0B; stroke-width: 5; stroke-linecap: round; }
+.ta__scaffold { fill: none; stroke: var(--amber-600); stroke-width: 2.5; }
+.ta__crane-mast { stroke: var(--amber-600); stroke-width: 4; }
+.ta__crane line { stroke: var(--amber-600); stroke-width: 3; }
+.ta__crane .ta__crane-load { fill: var(--tg-ink); }
+.ta__crane { transform-origin: 182px 12px; }
+.ta__cone { fill: var(--amber-500); }
+
+/* Opening: the doors swing apart and the building leans in; a closed one rattles its planks. */
+.tg.is-opening .ta__door--l { transform: scaleX(0.08); }
+.tg.is-opening .ta__door--r { transform: scaleX(0.08); }
+.tg.is-opening .ta__glow { fill: #FFF1B8; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .tg:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 color-mix(in srgb, var(--tg-ink) 30%, transparent);
+  }
+
+  .tg:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 color-mix(in srgb, var(--tg-ink) 30%, transparent);
+  }
+
+  .tg__link:hover {
+    transform: translateY(-1px);
+  }
+
+  .tg-grid > .tg {
+    animation: tg-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+
+  .tg .ta {
+    transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform-origin: 50% 90%;
+  }
+
+  .tg.is-opening .ta {
+    transform: scale(1.12);
+  }
+
+  .tg.is-knocking .ta {
+    animation: tg-knock 400ms ease-in-out;
+  }
+
+  .ta__flag { animation: ta-flag 2.4s ease-in-out infinite; }
+  .ta__coin { animation: ta-bob 2.2s ease-in-out infinite; }
+  .ta__pop--a { animation: ta-bob 1.8s ease-in-out infinite; }
+  .ta__pop--b { animation: ta-bob 2.6s ease-in-out infinite 0.4s; }
+  .ta__star { animation: ta-twinkle 2.4s ease-in-out infinite; }
+  .ta__star:nth-of-type(2n) { animation-delay: 1.2s; }
+  .ta__hand--long { animation: ta-spin 8s linear infinite; }
+  .ta__crane { animation: ta-swing 4s ease-in-out infinite; }
+  .ta__chart { stroke-dasharray: 80; animation: ta-draw 3.2s ease-in-out infinite; }
+  .ta__candle--down { animation: ta-bob 2s ease-in-out infinite; transform-box: fill-box; }
+
+  .tg:hover .ta__door--l,
+  .tg__main:focus-visible .ta__door--l { transform: scaleX(0.75); }
+  .tg:hover .ta__door--r,
+  .tg__main:focus-visible .ta__door--r { transform: scaleX(0.75); }
+  .tg.is-construction:hover .ta__door { transform: none; }
+  .tg.is-opening .ta__door--l,
+  .tg.is-opening .ta__door--r { transform: scaleX(0.08); }
+
+  .town-sky__cloud { animation: ta-drift 38s linear infinite; }
+  .town-sky__cloud--b { animation-duration: 52s; animation-delay: -20s; }
+}
+
+@keyframes tg-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes tg-knock {
+  0%, 100% { transform: none; }
+  20% { transform: rotate(-2deg); }
+  40% { transform: rotate(2deg); }
+  60% { transform: rotate(-1.5deg); }
+  80% { transform: rotate(1deg); }
+}
+
+@keyframes ta-flag {
+  0%, 100% { transform: skewY(0deg) scaleX(1); }
+  50% { transform: skewY(-6deg) scaleX(0.9); }
+}
+
+@keyframes ta-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes ta-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+@keyframes ta-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ta-swing {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes ta-draw {
+  0% { stroke-dashoffset: 80; }
+  60%, 100% { stroke-dashoffset: 0; }
+}
+
+@keyframes ta-drift {
+  from { transform: translateX(-80px); }
+  to { transform: translateX(110vw); }
+}
+
+/* The sky gets two clouds. */
+.town-sky__cloud {
+  position: absolute;
+  left: 0;
+  width: 60px;
+  height: 24px;
+  fill: #FFFFFF;
+  opacity: 0.9;
+}
+
+.town-sky__cloud--a { top: 10px; }
+.town-sky__cloud--b { top: 30px; left: 40%; width: 44px; height: 18px; }
+
+@media (min-width: 900px) {
+  .tg--school {
+    align-content: center;
+  }
+}
+
+.tg--market .tg__text,
+.tg--money .tg__text {
+  justify-items: center;
+  padding-right: 0;
+  text-align: center;
+}
