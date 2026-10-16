@@ -2993,5 +2993,47 @@ svg.is-flipped {
 }
 
 .path-stat .meter {
-  background: var(--line);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--ink-400);
+}
+
+/* Ask Penny: in the sticky header under 1024 px (always in reach, never over a control), floating on desktop. */
+.ask-head {
+  order: 1;
+  border: 2px solid var(--primary-600);
+  background: var(--surface);
+}
+
+.ask-head__penny {
+  width: 30px;
+  height: 30px;
+}
+
+@media (min-width: 1024px) {
+  .ask-head {
+    display: none;
+  }
+}
+
+@media (max-width: 1023.98px) {
+  .ask-fab {
+    display: none;
+  }
+
+  body.has-ask .app-footer {
+    padding-bottom: max(var(--sp-5), env(safe-area-inset-bottom));
+  }
+}
+
+/* Narrow phones: the badge keeps its exact words on two lines, so Penny fits in the header too. */
+@media (max-width: 419.98px) {
+  .sim-badge {
+    padding: 4px 10px;
+    border-radius: var(--r-md);
+    line-height: 1.2;
+  }
+
+  .sim-badge__line {
+    display: block;
+  }
 }

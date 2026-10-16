@@ -1,6 +1,7 @@
-// The floating "Ask Penny" button (BRIEF §9, §16). Small, inside the safe areas, and it never covers a control:
-// it slides away while a dialog, the Coach or any modal panel is open, while a text field has focus (the on-screen
-// keyboard), and whenever a button, link or field sits under it. It comes back as soon as the spot is clear.
+// "Ask Penny" (BRIEF §9, §16), never over a control. On phones and tablets (under 1024 px) it is a small button in
+// the sticky header: always in reach, inside the safe areas, and it can't cover anything. On desktop it floats in
+// the bottom-right corner, where the page margin usually leaves it clear; it slides away while a dialog, the Coach
+// or any modal panel is open, while a text field has focus, and whenever a button, link or field sits under it.
 import { h, penny } from './ui.js';
 
 const OPEN_PANEL = 'dialog[open], [aria-modal="true"], .coach';
@@ -11,16 +12,22 @@ export function mountAskFab({ store, onOpen }) {
     penny('happy', { size: 36, className: 'ask-fab__penny' }),
     h('span', { class: 'visually-hidden', text: 'Ask Penny' }),
   ]);
+  const inHeader = h('button', { class: 'icon-btn ask-head', type: 'button', title: 'Ask Penny', onClick: onOpen }, [
+    penny('happy', { size: 30, className: 'ask-head__penny' }),
+    h('span', { class: 'visually-hidden', text: 'Ask Penny' }),
+  ]);
   button.hidden = true;
+  inHeader.hidden = true;
   document.body.append(button);
+  document.querySelector('.app-header__actions')?.append(inHeader);
   let frame = 0;
 
-  // Is any control under the button's home spot? Sample a 3 × 3 grid of points. The home spot comes from the CSS
-  // offsets, not the live box, because the box moves while the button is away.
+  // Is any control under the floating button's home spot? Sample a 3 × 3 grid of points. The home spot comes from
+  // the CSS offsets, not the live box, because the box moves while the button is away.
   function coversControl() {
     const width = button.offsetWidth;
     const height = button.offsetHeight;
-    if (!width) return false;
+    if (!width) return false; // not shown at this width (the header button is used instead)
     const cs = getComputedStyle(button);
     const view = document.documentElement;
     const r = { left: view.clientWidth - parseFloat(cs.right) - width, top: view.clientHeight - parseFloat(cs.bottom) - height, width, height };
@@ -41,7 +48,9 @@ export function mountAskFab({ store, onOpen }) {
   function update() {
     frame = 0;
     const show = Boolean(store.get().tier);
-    if (button.hidden === show) button.hidden = !show; // write only on change: the observer watches 'hidden'
+    // write only on change: the observer below watches 'hidden'
+    if (button.hidden === show) button.hidden = !show;
+    if (inHeader.hidden === show) inHeader.hidden = !show;
     document.body.classList.toggle('has-ask', show);
     if (!show) return;
     const typing = document.activeElement?.matches?.('input:not([type="button"]):not([type="radio"]):not([type="checkbox"]), textarea, select');
