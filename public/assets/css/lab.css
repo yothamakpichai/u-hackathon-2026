@@ -2302,6 +2302,18 @@
   }
 }
 
+/* Columns that a long word can't widen. */
+.piggy-screen,
+.piggy-card {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 899px) {
+  .piggy {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .piggy-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
@@ -2311,6 +2323,7 @@
 .piggy-stat {
   display: grid;
   gap: 2px;
+  min-width: 0;
   padding: var(--sp-3) var(--sp-4);
 }
 
@@ -2324,6 +2337,42 @@
   font-size: var(--fs-xl);
   font-variant-numeric: tabular-nums;
   font-weight: 800;
+}
+
+/* Phones: three small stats in a row, so the goals and the log start on the first screen. */
+@media (max-width: 599px) {
+  .piggy-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--sp-2);
+  }
+
+  .piggy-stat {
+    padding: var(--sp-2);
+  }
+
+  .piggy-stat__value {
+    font-size: var(--fs-lg);
+  }
+
+  .piggy-stat .field__hint {
+    display: none;
+  }
+}
+
+/* Names and answers are typed by the user: a long word wraps inside its card. */
+.piggy-stat__value,
+.piggy-goal__name,
+.piggy-prompt,
+.piggy-answer,
+.piggy-entry,
+.piggy-undo,
+.piggy-notice {
+  overflow-wrap: anywhere;
+}
+
+.piggy-form {
+  display: grid;
+  gap: var(--sp-3);
 }
 
 .piggy-goals,
@@ -2352,6 +2401,30 @@
 .piggy-goal__name,
 .piggy-challenge__title {
   font-weight: 800;
+}
+
+.piggy-goal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.piggy-reached {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.piggy-reached__title {
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.piggy-undo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
 }
 
 .piggy-bar {
@@ -2389,6 +2462,14 @@
   gap: var(--sp-2);
 }
 
+/* Phones: an even three by two, not five and one. */
+@media (max-width: 599px) {
+  .piggy-icons {
+    display: grid;
+    grid-template-columns: repeat(3, var(--tap));
+  }
+}
+
 .piggy-icon {
   display: grid;
   place-items: center;
@@ -2414,6 +2495,10 @@
 
 .piggy-challenge .btn {
   justify-self: start;
+}
+
+.piggy-challenge .piggy-form {
+  gap: var(--sp-1);
 }
 
 .piggy-done {
@@ -2448,6 +2533,17 @@
 
 .piggy-entry__kind {
   font-weight: 900;
+}
+
+.piggy-entry .btn {
+  margin-inline-start: auto;
+}
+
+.piggy-research a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  font-weight: 700;
 }
 
 .piggy-entry__kind.is-gain { color: var(--gain-600); }

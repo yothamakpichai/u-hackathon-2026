@@ -59,16 +59,23 @@ export function streakDays(piggy, now) {
 // Calendar: save the number of today's date (on the 16th, save 16).
 export const calendarAmount = (now) => Number(dayKey(now).slice(8, 10));
 
+// How long each dated challenge runs: 365 days, or 52 weeks of 7 days.
+export const CHALLENGE_DAYS = Object.freeze({ birthday: 365, week52: 52 * 7 });
+
+// Whole Bangkok days from a challenge's start date to today: 0 on the start day, negative while a
+// start the user picked in the future is still to come, NaN for a date that can't be read.
+export const challengeDay = (startKey, now) => Math.round((Date.parse(`${dayKey(now)}T00:00:00Z`) - Date.parse(`${startKey}T00:00:00Z`)) / 86_400_000);
+
 // Birthday year: save 1 on the first day, 2 on the second, up to 365, counting from a start date the
 // user picks (their birthday, or any day). Returns null outside the 365 days.
 export function birthdayAmount(startKey, now) {
-  const days = Math.round((Date.parse(`${dayKey(now)}T00:00:00Z`) - Date.parse(`${startKey}T00:00:00Z`)) / 86_400_000) + 1;
-  return days >= 1 && days <= 365 ? days : null;
+  const days = challengeDay(startKey, now) + 1;
+  return days >= 1 && days <= CHALLENGE_DAYS.birthday ? days : null;
 }
 
 // 52 weeks: in week N, save N times the unit (10 baht by default).
 export function week52Amount(startKey, now, unit = 10) {
-  const days = Math.round((Date.parse(`${dayKey(now)}T00:00:00Z`) - Date.parse(`${startKey}T00:00:00Z`)) / 86_400_000);
+  const days = challengeDay(startKey, now);
   const week = Math.floor(days / 7) + 1;
   return days >= 0 && week <= 52 ? { week, amount: week * unit } : null;
 }

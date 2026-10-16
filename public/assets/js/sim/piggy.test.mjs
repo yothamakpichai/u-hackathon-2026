@@ -1,7 +1,7 @@
 // Unit checks for the Piggy Bank and Farm rules. Run: node public/assets/js/sim/piggy.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { REWARDS, birthdayAmount, calendarAmount, emergencyTarget, emptyPiggy, goalProgress, reward, streakDays, totalPoints, week52Amount } from './piggy.js';
+import { CHALLENGE_DAYS, REWARDS, birthdayAmount, calendarAmount, challengeDay, emergencyTarget, emptyPiggy, goalProgress, reward, streakDays, totalPoints, week52Amount } from './piggy.js';
 import { COW_AT, collectMilk, cowTraits, cowsDue, feedFrom, milkReady, stageOf } from './farm.js';
 
 const day = (iso) => Date.parse(`${iso}T05:00:00Z`); // noon in Bangkok
@@ -42,6 +42,18 @@ test('challenge amounts', () => {
   assert.deepEqual(week52Amount('2026-10-16', day('2026-10-22')), { week: 1, amount: 10 });
   assert.deepEqual(week52Amount('2026-10-16', day('2026-10-23')), { week: 2, amount: 20 });
   assert.equal(week52Amount('2026-10-16', day('2027-10-16')), null);
+});
+
+test('challenge dates: a countdown before the start, and an end after the last day', () => {
+  const start = day('2026-10-16');
+  assert.equal(challengeDay('2026-11-05', start), -20, 'a start in the future counts down');
+  assert.equal(challengeDay('2026-10-16', start), 0);
+  assert.equal(challengeDay('2026-10-15', Date.parse('2026-10-15T18:00:00Z')), 1, 'Bangkok date, not UTC');
+  assert.ok(Number.isNaN(challengeDay('', start)), 'an empty date');
+  assert.equal(birthdayAmount('2026-11-05', start), null, 'not started yet');
+  assert.equal(birthdayAmount('2026-10-16', start + (CHALLENGE_DAYS.birthday - 1) * 86_400_000), 365, 'the last day');
+  assert.deepEqual(week52Amount('2026-10-16', start + (CHALLENGE_DAYS.week52 - 1) * 86_400_000), { week: 52, amount: 520 }, 'the last day of week 52');
+  assert.equal(week52Amount('2026-10-16', start + CHALLENGE_DAYS.week52 * 86_400_000), null, 'over');
 });
 
 test('goal progress and the emergency fund', () => {
