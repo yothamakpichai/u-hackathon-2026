@@ -1619,6 +1619,11 @@
   background: var(--surface);
 }
 
+/* More text under the buttons: a soft shadow above them shows the card scrolls (coach.js moreBelow). */
+.coach__card.has-more .coach__actions {
+  box-shadow: 0 -14px 12px -12px rgb(15 28 23 / 0.3);
+}
+
 .coach__actions .btn {
   flex: 1 1 auto;
 }

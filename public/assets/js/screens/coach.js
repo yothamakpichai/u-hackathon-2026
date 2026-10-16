@@ -14,6 +14,7 @@ const WAIT_POLL_MS = 250;
 const IDLE_MS = 2000; // a typed amount counts once the typing stops for this long
 const EDGE = 12; // docked cards sit var(--sp-3) from the edge
 const TRY_IT = 'Try it now. The next step starts as soon as you do.';
+const NAME_FIRST = 'First give your coin a name and a ticker in Name it.';
 
 let content = null; // promise of coach.json
 let active = null; // { chapter, steps, index, tier, trades0, drill }
@@ -21,9 +22,12 @@ let env = null; // the mounted screen's hooks
 let layer = null;
 let spacer = null; // room at the end of the page, so the last element can scroll above a docked card
 let mark = null; // the element the current step explains
+let also = null; // a selector for what the element opens (a tool's ⓘ text), lit with it while it shows
+let litHeight = 0; // the lit area's height at the last reveal()
 let docked = false; // the card docks to an edge (phones, short screens, or no room to float)
 let opener = null; // where focus was when the coach opened
 let backdrop = null; // what a tap on the dimmed page does (menus only)
+let dismiss = null; // what Escape does
 let lastInput = 0;
 let frame = 0;
 let resizeTimer = 0;
@@ -138,6 +142,7 @@ function showLoadError(screenEnv) {
   ]);
   mark = null;
   showCard(card, { dim: true, onBackdrop: closeMenu });
+  screenEnv.pause?.(); // like the menu: nothing moves behind the dimmed page
 }
 
 // Close the menu or the completion card. A chapter in progress comes back if its step is on this
@@ -195,9 +200,10 @@ function showStep() {
   const waiting = Boolean(step.wait);
   const interactive = waiting || Boolean(step.interactive);
   // The launch step points at Name it first while the coin has no valid name or ticker yet.
-  let unnamed = step.wait === 'launch' && env.nameReady?.() === false;
+  let unnamed = step.wait === 'launch' && nameMissing();
   const target = unnamed ? '[data-coach="name"]' : step.target;
   mark = target ? document.querySelector(target) : null;
+  also = step.also || null;
   const total = active.steps.length;
   const last = active.index === total - 1;
   // Back only to a step on this screen that neither navigates nor waits (a finished "Try it" would
@@ -213,7 +219,7 @@ function showStep() {
   ]);
   const extra = h('div', { class: 'coach__extra' });
   const hint = waiting
-    ? h('p', { class: 'coach__hint', role: 'status', text: unnamed ? 'First give your coin a name and a ticker in Name it.' : TRY_IT })
+    ? h('p', { class: 'coach__hint', role: 'status', text: unnamed ? NAME_FIRST : TRY_IT })
     : null;
   const card = h('section', {
     class: 'coach__card',
@@ -238,12 +244,15 @@ function showStep() {
   ]);
   if (step.art) extra.append(art(step.art));
   if (step.drill) runDrill(step.drill, extra, next);
-  showCard(card, { dim: !mark, interactive });
+  showCard(card, { dim: !mark, interactive, onEscape: exitChapter });
   reveal();
   waitTimer = setInterval(() => {
     if (!active || active.steps[active.index] !== step) return clearWait();
+    moreBelow(card);
     // The running market, or a tap on the page, can move things under the ring.
     if (step.live || interactive) schedule();
+    // Something the element opened (a tool's ⓘ text) changes the lit area: bring all of it into view.
+    if (also && mark?.isConnected && Math.abs(markRect().height - litHeight) > 1) reveal();
     // A later "Try it" done early (Launch tapped during "Name and ticker", Buy during "Choose an
     // amount") skips ahead to the step after it.
     const ahead = doneAhead();
@@ -254,10 +263,12 @@ function showStep() {
       return;
     }
     if (!waiting) return;
-    if (unnamed && env?.nameReady?.() && Date.now() - lastInput >= IDLE_MS) {
-      unnamed = false;
-      mark = document.querySelector(step.target);
-      if (hint) hint.textContent = 'Great! Now tap Launch.';
+    // Once the typing stops, the ring follows the name: to Name it while it isn't ready (a Launch
+    // tap on an empty form), back to Launch when it is.
+    if (step.wait === 'launch' && nameMissing() !== unnamed && Date.now() - lastInput >= IDLE_MS) {
+      unnamed = !unnamed;
+      mark = document.querySelector(unnamed ? '[data-coach="name"]' : step.target);
+      if (hint) hint.textContent = unnamed ? NAME_FIRST : 'Great! Now tap Launch.';
       reveal();
     }
     if (!satisfied(step.wait)) return;
@@ -273,6 +284,14 @@ function satisfied(wait) {
   if (wait === 'tradeDone') return (env?.tradesCount?.() ?? 0) > active.trades0;
   if (wait === 'launch') return Boolean(env?.hasCoin?.());
   return true;
+}
+
+// The coin still needs a valid name or ticker: env.nameReady() when the screen has it, or else the
+// fields the designer marks invalid (after a Launch tap on an empty form).
+function nameMissing() {
+  const ready = env?.nameReady?.();
+  if (typeof ready === 'boolean') return !ready;
+  return Boolean(document.querySelector('[data-coach="name"] [aria-invalid="true"]'));
 }
 
 // The index of a later step whose action has already happened, or -1.
@@ -539,7 +558,7 @@ function art(kind) {
 
 // ---- overlay and placement -------------------------------------------------------------------
 
-function showCard(card, { dim = false, interactive = false, onBackdrop = null } = {}) {
+function showCard(card, { dim = false, interactive = false, onBackdrop = null, onEscape = closeMenu } = {}) {
   if (!layer) {
     const from = document.activeElement;
     opener = from && from !== document.body && from.id !== 'main' ? from : null;
@@ -552,15 +571,19 @@ function showCard(card, { dim = false, interactive = false, onBackdrop = null } 
     document.addEventListener('input', noteInput, true);
   }
   backdrop = onBackdrop;
+  dismiss = onEscape;
   layer.classList.toggle('is-dim', dim);
   layer.classList.toggle('is-interactive', interactive);
   layer.querySelector('.coach__card')?.remove();
   layer.append(card);
+  card.addEventListener('scroll', () => moreBelow(card), { passive: true });
   place();
   animate(card, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 200 });
-  // Someone typing in the page keeps the field (and the phone keyboard); the card is read out instead.
+  // Someone typing in the page keeps the field (and the phone keyboard), so the card can't be modal
+  // and is read out instead.
   const title = card.querySelector('.coach__title');
   if (typing()) {
+    card.removeAttribute('aria-modal');
     const head = title?.textContent || '';
     announce(`${/[.!?]$/.test(head) ? head : `${head}.`} ${card.querySelector('.coach__body')?.textContent || ''}`.trim());
   } else {
@@ -585,8 +608,10 @@ function teardownLayer({ restoreFocus = true } = {}) {
   layer = null;
   spacer = null;
   mark = null;
+  also = null;
   docked = false;
   backdrop = null;
+  dismiss = null;
   const back = opener;
   opener = null;
   if (restoreFocus && lost) focusBack(back);
@@ -620,17 +645,19 @@ function onKey(e) {
     trapTab(e);
     return;
   }
-  if (e.key !== 'Escape') return;
-  if (active && !layer.querySelector('.coach-menu')) exitChapter();
-  else closeMenu();
+  if (e.key === 'Escape') (dismiss || closeMenu)(); // a step's x, or a menu's Close
 }
 
 // Tab stays in the card. On "Try it" steps the element the step points at comes first, so it's
-// one Tab away from the card's title.
-const TABBABLE = 'a[href], button, input, select, textarea, [tabindex]';
+// one Tab away from the card's title. Those steps leave the page usable, so Tab from a field outside
+// the element (say, one the page focused to show a problem) moves on through the page as usual.
+const TABBABLE = 'a[href], button, input, select, textarea, summary, [tabindex], [contenteditable]:not([contenteditable="false"])';
 function trapTab(e) {
   const card = layer.querySelector('.coach__card');
-  const stops = [...(layer.classList.contains('is-interactive') ? tabbables(mark) : []), ...tabbables(card)];
+  const open = layer.classList.contains('is-interactive');
+  const from = document.activeElement;
+  if (open && from && from !== document.body && from.id !== 'main' && !layer.contains(from) && !mark?.contains(from)) return;
+  const stops = [...(open ? tabbables(mark) : []), ...tabbables(card)];
   if (!stops.length) return;
   e.preventDefault();
   const n = stops.length;
@@ -642,6 +669,8 @@ function tabbables(root) {
   if (!root?.isConnected) return [];
   return [root, ...root.querySelectorAll(TABBABLE)].filter((el) => {
     if (!el.matches(TABBABLE) || el.disabled || el.tabIndex < 0 || !el.getClientRects().length) return false;
+    // Laid out but not focusable: Tab would stall on it.
+    if (el.closest('[inert]') || getComputedStyle(el).visibility === 'hidden') return false;
     if (el.type !== 'radio' || !el.name) return true;
     // A radio group is one Tab stop: its checked option, or the first one.
     const group = [...root.querySelectorAll(`input[type="radio"][name="${CSS.escape(el.name)}"]`)];
@@ -675,15 +704,39 @@ function reveal() {
   if (!mark || !card) return;
   docked = isNarrow();
   if (!docked) {
-    const r = mark.getBoundingClientRect();
-    if (r.top < headerBottom() || r.bottom > innerHeight) mark.scrollIntoView({ block: 'center', behavior: 'auto' });
+    const r = markRect();
+    if (r.top < headerBottom() || r.bottom > innerHeight) {
+      // With an opened explanation, centre the element and the explanation together.
+      if (r.height > mark.getBoundingClientRect().height + 1) scrollBy({ top: r.top + r.height / 2 - (headerBottom() + innerHeight) / 2, behavior: 'auto' });
+      else mark.scrollIntoView({ block: 'center', behavior: 'auto' });
+    }
     card.dataset.dock = 'float';
     card.style.maxHeight = '';
-    docked = !floatSpot(mark.getBoundingClientRect(), card);
+    docked = !floatSpot(markRect(), card);
   }
   if (docked) dockBeside(card);
+  litHeight = markRect().height;
   place();
 }
+
+// The element, plus what it has opened (a tool's ⓘ text) while that shows.
+function markRect() {
+  const r = mark.getBoundingClientRect();
+  if (!also) return r;
+  let { left, top, right, bottom } = r;
+  for (const el of document.querySelectorAll(also)) {
+    if (!el.getClientRects().length) continue; // hidden
+    const e = el.getBoundingClientRect();
+    left = Math.min(left, e.left);
+    top = Math.min(top, e.top);
+    right = Math.max(right, e.right);
+    bottom = Math.max(bottom, e.bottom);
+  }
+  return { left, top, right, bottom, width: right - left, height: bottom - top };
+}
+
+// A card whose text runs on under its buttons gets a shadow above them, so it's clear it scrolls.
+const moreBelow = (card) => card.classList.toggle('has-more', card.scrollHeight - card.scrollTop - card.clientHeight > 2);
 
 // Dock the card to the bottom or the top edge, whichever covers the element less (usually not at
 // all), and scroll the element into the space the card leaves free.
@@ -693,7 +746,7 @@ function dockBeside(card) {
   card.style.top = '';
   card.style.maxHeight = '';
   const vh = innerHeight;
-  const r = mark.getBoundingClientRect();
+  const r = markRect();
   // Beside a small element the card can grow past its usual height, so its text and pictures show.
   const room = vh - r.height - headerBottom() - 32;
   card.style.maxHeight = `${Math.max(parseFloat(getComputedStyle(card).maxHeight) || 0, room)}px`;
@@ -740,7 +793,7 @@ function place() {
   const card = layer.querySelector('.coach__card');
   const ring = layer.querySelector('.coach__ring');
   if (!card) return;
-  const r = mark && mark.isConnected ? mark.getBoundingClientRect() : null;
+  const r = mark && mark.isConnected ? markRect() : null;
   if (r) {
     const pad = 6;
     ring.hidden = false;
@@ -765,6 +818,7 @@ function place() {
   const root = document.documentElement.style;
   root.scrollPaddingTop = `${room && card.dataset.dock === 'top' ? room : headerBottom() + 8}px`;
   root.scrollPaddingBottom = room && card.dataset.dock === 'bottom' ? `${room}px` : '';
+  moreBelow(card);
 }
 
 export const isCoaching = () => Boolean(active);
