@@ -1017,6 +1017,20 @@
   gap: var(--sp-2);
 }
 
+/* Even rows once there's room: 2 rows of 6 colours, 3 rows of 8 icons. */
+@media (min-width: 600px) {
+  .pick--colors .pick__grid,
+  .pick--icons .pick__grid {
+    display: grid;
+    grid-template-columns: repeat(6, auto);
+    justify-content: start;
+  }
+
+  .pick--icons .pick__grid {
+    grid-template-columns: repeat(8, auto);
+  }
+}
+
 .pick__option {
   position: relative;
   display: inline-grid;
@@ -1074,6 +1088,19 @@
 
 .split__label {
   font-weight: 600;
+}
+
+/* Phones: the label and value on one line, the slider full width below it. */
+@media (max-width: 599px) {
+  .split .split__row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 0;
+  }
+
+  .split__range {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 }
 
 .split__bar {
@@ -1207,14 +1234,25 @@
   gap: var(--sp-3);
 }
 
+/* Launch waits for a fair split: the preview above says why. */
+.create-screen .btn:disabled {
+  background: var(--surface-2);
+  border-color: var(--line);
+  color: var(--ink-500);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
 @media (min-width: 900px) {
   .create {
     grid-template-columns: minmax(0, 1fr) 20rem;
   }
 
+  /* Sticks just below the sticky app header, so the coin's name stays in view. */
   .create-side {
     position: sticky;
-    top: var(--sp-4);
+    top: calc(var(--header-h) + var(--sp-5));
   }
 }
 

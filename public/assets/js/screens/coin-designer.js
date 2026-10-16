@@ -3,10 +3,10 @@
 // adds the pool lock and vesting.
 // The coin launches on a bonding curve in today's market, and the Lab explains what happens next.
 // The player's coin is always honest: its risk comes from the design, never from cheating.
-import { GLYPHS, coinBadge, currentMarket, designNotes, notesList } from './coinkit.js';
+import { GLYPHS, blockedReason, coinBadge, currentMarket, designNotes, notesList } from './coinkit.js';
 import { attachCoach } from './coach.js';
 import { checkName, checkTicker } from '../sim/names.js';
-import { animate, celebrate, h, icon, number, price, resultPanel, stateView } from '../ui.js';
+import { animate, announce, celebrate, h, icon, money, price, resultPanel, stateView } from '../ui.js';
 
 const SUPPLIES = [
   { value: 1_000, label: '1 thousand' },
@@ -38,16 +38,15 @@ export function mount(root, ctx) {
     view.replaceChildren(head, stateView({ kind: 'empty', title, body, actions: [toMarket(market ? 'Back to the market' : 'Open today’s market')] }));
     return done;
   }
-  if (!market) return blocked('Open today’s market first', 'Coins launch into today’s market. Open it, wait for Penny’s first news, then come back here.');
-  if (market.closed) return blocked('Today’s market has closed', 'Coins can only launch while the market is open. Replay today’s market to try again.');
-  const existing = Object.values(market.session.getState().coins).find((c) => c.user);
-  if (existing) return blocked(`You already launched ${existing.ticker}`, 'One coin per market. Go back and see how buyers are reacting to it.');
-  if (!market.news.length) return blocked('Not open yet', 'Create a coin opens after Penny’s first market news. Keep watching the market, then come back.');
+  // create.js checks this before loading the designer; check again in case the market moved on meanwhile.
+  const stop = blockedReason(market);
+  if (stop) return blocked(stop.title, stop.body);
 
   const uc = market.data.scenario.userCoin;
   const canSplit = tier !== 'explorer';
   const isBuilder = tier === 'builder';
-  const design = {
+  // The draft lives on the market, so a quick trip back to the market keeps it. Launching clears it.
+  market.draft ??= {
     name: '',
     ticker: '',
     iconId: 7,
@@ -59,40 +58,80 @@ export function mount(root, ctx) {
     lpLocked: true,
     vesting: true,
   };
+  const design = market.draft;
 
   // ---- fields ------------------------------------------------------------------------------
-  function textField({ id, label, hint, maxLength, upper, onInput }) {
+  // Each field checks itself when the child leaves it, and again while its error shows. Launch checks both.
+  function textField({ id, label, hint, maxLength, upper, value, onInput, problem }) {
     const input = h('input', {
       id,
       class: 'field__input',
       type: 'text',
       autocomplete: 'off',
       spellcheck: 'false',
+      autocapitalize: upper ? 'characters' : null,
+      autocorrect: upper ? 'off' : null,
       maxlength: maxLength,
       'aria-describedby': `${id}-hint ${id}-error`,
     });
+    input.value = value;
     const error = h('p', { class: 'field__error', id: `${id}-error`, hidden: true });
+    const field = { input, error };
+    const check = () => setError(field, problem());
     input.addEventListener('input', () => {
-      if (upper) input.value = input.value.toUpperCase().replace(/[^A-Z]/g, '');
+      if (upper) {
+        // Capitals only, with the caret kept just after the typed letter.
+        const raw = input.value;
+        const clean = raw.toUpperCase().replace(/[^A-Z]/g, '');
+        if (clean !== raw) {
+          const caret = raw.slice(0, input.selectionStart ?? raw.length).toUpperCase().replace(/[^A-Z]/g, '').length;
+          input.value = clean;
+          input.setSelectionRange(caret, caret);
+        }
+      }
       onInput(input.value);
-      if (!error.hidden) validate(false);
+      if (!error.hidden) check();
       renderPreview();
     });
-    input.addEventListener('blur', () => input.value && validate(false));
-    const el = h('div', { class: 'field' }, [
+    input.addEventListener('blur', () => input.value && check());
+    field.el = h('div', { class: 'field' }, [
       h('label', { class: 'field__label', for: id, text: label }),
       h('p', { class: 'field__hint', id: `${id}-hint`, text: hint }),
       input,
       error,
     ]);
-    return { el, input, error };
+    return field;
+  }
+
+  // Every coin in the market takes its ticker, even the ones this level can't see (the engine checks them all).
+  const roster = new Set(market.data.coinsConfig.coins.map((c) => c.id));
+  function checkCoinTicker(ticker) {
+    const t = ticker.toUpperCase();
+    const problem = checkTicker(t);
+    if (problem) return problem;
+    if (market.session.getState().coins[t]) return { code: 'TICKER_TAKEN', message: `${t} is already in this market. Pick another ticker.` };
+    if (roster.has(t)) return { code: 'TICKER_TAKEN', message: `${t} is taken. Pick another ticker.` };
+    return null;
   }
 
   const nameField = textField({
-    id: 'coin-name', label: 'Coin name', hint: '3 to 16 letters or spaces', maxLength: 16, onInput: (v) => (design.name = v),
+    id: 'coin-name',
+    label: 'Coin name',
+    hint: '3 to 16 letters or spaces',
+    maxLength: 16,
+    value: design.name,
+    onInput: (v) => (design.name = v),
+    problem: () => checkName(design.name),
   });
   const tickerField = textField({
-    id: 'coin-ticker', label: 'Ticker', hint: '3 to 5 letters, like MOON', maxLength: 5, upper: true, onInput: (v) => (design.ticker = v),
+    id: 'coin-ticker',
+    label: 'Ticker',
+    hint: tier === 'explorer' ? 'A short code for your coin: 3 to 5 letters, like MOON' : '3 to 5 letters, like MOON',
+    maxLength: 5,
+    upper: true,
+    value: design.ticker,
+    onInput: (v) => (design.ticker = v),
+    problem: () => checkCoinTicker(design.ticker),
   });
 
   function setError(field, problem) {
@@ -104,10 +143,7 @@ export function mount(root, ctx) {
 
   function validate(focus) {
     const nameProblem = checkName(design.name);
-    let tickerProblem = checkTicker(design.ticker);
-    if (!tickerProblem && market.session.getState().coins[design.ticker.toUpperCase()]) {
-      tickerProblem = { message: `${design.ticker.toUpperCase()} is already in this market. Pick another ticker.` };
-    }
+    const tickerProblem = checkCoinTicker(design.ticker);
     setError(nameField, nameProblem);
     setError(tickerField, tickerProblem);
     if (focus) (nameProblem ? nameField : tickerProblem ? tickerField : null)?.input.focus();
@@ -170,9 +206,11 @@ export function mount(root, ctx) {
     h('span', { class: 'split__team' }),
     h('span', { class: 'split__public-bar' }),
   ]);
-  const splitError = h('p', { class: 'field__error', role: 'alert', hidden: true });
+  const splitError = h('p', { class: 'field__error', id: 'create-split-error', role: 'alert', hidden: true });
+  const sliders = [];
   function slider(id, label, value, max, out, onChange) {
     const input = h('input', { id, type: 'range', min: 0, max, step: 5, value, class: 'range split__range' });
+    sliders.push({ input, max });
     input.addEventListener('input', () => {
       onChange(Number(input.value));
       renderPreview();
@@ -229,9 +267,10 @@ export function mount(root, ctx) {
   const previewNotes = h('div', { class: 'create-preview__notes' });
   const formError = h('p', { class: 'field__error create__error', role: 'alert', hidden: true });
   const launchBtn = h('button', { class: 'btn btn--primary btn--lg btn--block', type: 'submit', form: 'create-form', 'data-coach': 'launch' });
-  const preview = h('aside', { class: 'card create-preview', 'aria-label': 'Preview' }, [
+  // The heading comes first, so heading navigation lands on the coin's name and price.
+  const preview = h('aside', { class: 'card create-preview', 'aria-labelledby': 'create-preview-title' }, [
+    h('h2', { class: 'create-preview__title', id: 'create-preview-title', text: 'How buyers will see it' }),
     h('div', { class: 'create-preview__head' }, [previewBadge, h('div', {}, [previewName, previewPrice])]),
-    h('h2', { class: 'create-preview__title', text: 'How buyers will see it' }),
     previewNotes,
   ]);
 
@@ -241,7 +280,10 @@ export function mount(root, ctx) {
   }
 
   let lastLook = null;
+  let lastSupply = null;
+  let lastInsiders = null;
   function renderPreview() {
+    formError.hidden = true; // any edit clears a launch error
     const alloc = allocation();
     const ticker = design.ticker || 'COIN';
     previewBadge.replaceChildren(coinBadge(design, config.COIN_COLORS));
@@ -249,23 +291,35 @@ export function mount(root, ctx) {
     if (lastLook && look !== lastLook) animate(previewBadge.firstChild, [{ transform: 'scale(0.8)' }, { transform: 'scale(1.08)', offset: 0.7 }, { transform: 'scale(1)' }], { duration: 240 });
     lastLook = look;
     previewName.textContent = `${design.name.trim() || 'Your coin'} (${ticker})`;
-    const price0 = alloc.public > 0 ? uc.virtualL / ((design.supply * alloc.public) / 100) : 0;
-    previewPrice.textContent = `Starts at ${price(price0)} each`;
+    // Too little for buyers: the design can't launch, so it has no starting price yet.
+    const short = alloc.public < uc.minPublic;
+    const price0 = short ? null : uc.virtualL / ((design.supply * alloc.public) / 100);
+    previewPrice.textContent = short ? `No starting price yet: buyers need at least ${uc.minPublic}%` : `Starts at ${price(price0)} each`;
+    if (lastSupply != null && design.supply !== lastSupply) announce(previewPrice.textContent);
+    lastSupply = design.supply;
     const bigInsiders = (alloc.you + alloc.team) / 100 > uc.trust.fairInsiderShare;
-    previewNotes.replaceChildren(
-      notesList(designNotes({ supply: design.supply, price0, allocation: alloc, hype: design.hype, lpLocked: design.lpLocked, vesting: design.vesting, bigInsiders }, tier)),
-    );
+    const notes = designNotes({ supply: design.supply, price0, allocation: alloc, hype: design.hype, lpLocked: design.lpLocked, vesting: design.vesting, bigInsiders }, tier);
+    previewNotes.replaceChildren(notesList(notes));
     if (canSplit) {
       youOut.textContent = `${design.you}%`;
       teamOut.textContent = `${design.team}%`;
       publicOut.textContent = `Buyers get ${alloc.public}%`;
+      for (const s of sliders) {
+        s.input.style.setProperty('--fill', `${(Number(s.input.value) / s.max) * 100}%`);
+        s.input.setAttribute('aria-valuetext', `${s.input.value}%. Buyers get ${alloc.public}%`);
+      }
       splitBar.children[0].style.flexGrow = String(alloc.you);
       splitBar.children[1].style.flexGrow = String(alloc.team);
       splitBar.children[2].style.flexGrow = String(Math.max(0, alloc.public));
-      const short = alloc.public < uc.minPublic;
+      // Say it when the split flips buyers between trusting and worrying.
+      const insiders = notes.find((n) => n.id === 'insiders');
+      if (insiders && lastInsiders && insiders.tone !== lastInsiders) announce(insiders.text);
+      if (insiders) lastInsiders = insiders.tone;
       splitError.hidden = !short;
       splitError.textContent = short ? `Leave at least ${uc.minPublic}% for buyers, or nobody can buy your coin.` : '';
       launchBtn.disabled = short;
+      if (short) launchBtn.setAttribute('aria-describedby', 'create-split-error');
+      else launchBtn.removeAttribute('aria-describedby');
     }
     launchBtn.replaceChildren(`Launch ${design.ticker || 'my coin'}`, icon('arrow-right', { size: 22 }));
   }
@@ -289,18 +343,30 @@ export function mount(root, ctx) {
         vesting: isBuilder ? design.vesting : undefined,
       });
     } catch (err) {
+      // Name and ticker problems show at their field; anything else shows above the button.
+      const field = /TICKER/.test(err.code) ? tickerField : /NAME/.test(err.code) ? nameField : null;
+      if (field) {
+        setError(field, err);
+        field.input.focus();
+        return;
+      }
       formError.textContent = err.message || 'Your coin didn’t launch. Check the form and try again.';
       formError.hidden = false;
       formError.focus?.();
       return;
     }
+    market.draft = null;
     market.selected = id;
     market.justLaunched = id; // the Lab celebrates once when it first shows the coin
     const coin = market.session.getState().coins[id];
+    const pool = money(uc.graduateAtL, 0);
     const panel = resultPanel({
       mood: 'celebrating',
       title: `${coin.ticker} is live!`,
-      text: `It starts on a bonding curve at ${price(coin.price)} a coin. Once buyers put in ${number(uc.graduateAtL, 0)} L$, it moves to a real pool. Head back to the market to watch how buyers react.`,
+      // Explorer gets plain words; the bonding curve is Trader and Builder depth (BRIEF §2).
+      text: tier === 'explorer'
+        ? `It starts at ${price(coin.price)} a coin. Its price rises a little with every buyer. Once buyers put in ${pool}, it gets its own trading pool. Head back to the market to watch how buyers react.`
+        : `It starts on a bonding curve at ${price(coin.price)} a coin. Once buyers put in ${pool}, it moves to a real pool. Head back to the market to watch how buyers react.`,
       actions: [toMarket('Watch it in the market')],
     });
     view.replaceChildren(head, panel);
@@ -340,6 +406,7 @@ export function mount(root, ctx) {
     dataBase: config.DATA_BASE,
     hasNews: () => market.news.length > 0,
     hasCoin: () => Object.values(market.session.getState().coins).some((c) => c.user),
+    nameReady: () => !checkName(design.name) && !checkCoinTicker(design.ticker),
     drillConfig: () => ({ ...structuredClone({ coinsConfig: market.data.coinsConfig, agentsConfig: market.data.agentsConfig, scenario: market.data.scenario }), seed: market.seed, tier }),
   });
   animate(form, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }]);

@@ -12,6 +12,17 @@ export const setLiveMarket = (market) => {
 // The open market for this tier, for the Create screen (null when the Lab hasn't opened one).
 export const currentMarket = (tier) => (live && live.tier === tier ? live : null);
 
+// Why Create can't open the coin designer yet, or null when it can. The light Create shell checks this
+// before it loads the designer, so these notes never wait for the engine and the Coach (J13).
+export function blockedReason(market) {
+  if (!market) return { title: 'Open today’s market first', body: 'Coins launch into today’s market. Open it, wait for Penny’s first news, then come back here.' };
+  if (market.closed) return { title: 'Today’s market has closed', body: 'Coins can only launch while the market is open. Replay today’s market to try again.' };
+  const existing = Object.values(market.session.getState().coins).find((c) => c.user);
+  if (existing) return { title: `You already launched ${existing.ticker}`, body: 'One coin per market. Go back and see how buyers are reacting to it.' };
+  if (!market.news.length) return { title: 'Not open yet', body: 'Create a coin opens after Penny’s first market news. Keep watching the market, then come back.' };
+  return null;
+}
+
 // Who made a trade, in kids' words (transaction `who`: an agent archetype, 'issuer' or 'player').
 export const WHO = {
   player: 'You',
@@ -84,17 +95,18 @@ export function coinAmount(n) {
 }
 
 // Plain-language notes on a coin design (BRIEF §2 lenses). Used before launch (Create) and after (Lab).
-// tone: 'good' | 'risk' | 'info'. Only knobs the tier can see are explained.
+// tone: 'good' | 'risk' | 'info'; id 'insiders' marks the trust note. Only knobs the tier can see are explained.
+// price0 null: no starting price yet (a Create design that leaves buyers too little), so no supply note.
 export function designNotes({ supply, price0, allocation, hype, lpLocked, vesting, bigInsiders }, tier) {
-  const notes = [{ tone: 'info', text: `${coinAmount(supply)} coins, so each starts at ${price(price0)}. Make more and each one is worth less.` }];
+  const notes = price0 == null ? [] : [{ tone: 'info', text: `${coinAmount(supply)} coins, so each starts at ${price(price0)}. Make more and each one is worth less.` }];
   if (tier === 'explorer') {
     notes.push({ tone: 'good', text: `You keep ${allocation.you}% and buyers get ${allocation.public}%. There’s no team, so nobody sells a big pile of your coin.` });
   } else {
     const insiders = allocation.you + allocation.team;
     notes.push(
       bigInsiders
-        ? { tone: 'risk', text: `You and your team keep ${insiders}%. Buyers worry big holders will sell, so fewer of them buy.` }
-        : { tone: 'good', text: `You and your team keep ${insiders}%, which buyers see as fair.` },
+        ? { id: 'insiders', tone: 'risk', text: `You and your team keep ${insiders}%. Buyers worry big holders will sell, so fewer of them buy.` }
+        : { id: 'insiders', tone: 'good', text: `You and your team keep ${insiders}%, which buyers see as fair.` },
     );
     if (allocation.team > 0) notes.push({ tone: 'risk', text: `Your team’s ${allocation.team}% unlocks over a minute, and they sell half of it.` });
     if (hype >= 0.7) notes.push({ tone: 'risk', text: 'A loud launch brings a rush of buyers, but hype fades fast.' });

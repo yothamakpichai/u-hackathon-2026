@@ -7,32 +7,52 @@ const BLOCKED_TICKERS = new Set([
   'DOT', 'MATIC', 'LTC', 'BCH', 'XLM', 'UTOPIA', 'EDUU',
 ]);
 const BLOCKED_BRANDS = [
-  'bitcoin', 'ethereum', 'ether', 'tether', 'binance', 'solana', 'ripple', 'dogecoin', 'shiba', 'pepe', 'avalanche',
-  'toncoin', 'tron', 'cardano', 'chainlink', 'polkadot', 'polygon', 'litecoin', 'stellar', 'utopia', 'eduu', 'cenedury',
+  'bitcoin', 'ethereum', 'ether', 'tether', 'binance', 'solana', 'ripple', 'dogecoin', 'doge', 'shiba', 'shib', 'pepe',
+  'avalanche', 'toncoin', 'tron', 'cardano', 'chainlink', 'polkadot', 'polygon', 'litecoin', 'stellar', 'utopia', 'eduu',
+  'cenedury',
 ];
+// Made-up coin words: a name that spells one anywhere is a real coin too (Bitcoins, Mega Bit Coin).
+const BRAND_STEMS = ['bitcoin', 'ethereum', 'litecoin', 'dogecoin', 'solana', 'binance', 'cardano', 'chainlink', 'polkadot', 'toncoin'];
+// Words that only dress a name up as a coin, so "Doge Army" and "BNB Coin" still read as the real one.
+const FILLER = new Set(['coin', 'coins', 'token', 'tokens', 'cash', 'army', 'inu']);
+// Tickers that are everyday words too: fine in a name ("Golden Link"), blocked as a coin ("Link Coin").
+const EVERYDAY = new Set(['ada', 'dot', 'link', 'sol', 'ton']);
 
 // A small profanity list, stored ROT13 so the words don't sit in the source as plain text.
 const rot13 = (s) => s.replace(/[a-z]/g, (ch) => String.fromCharCode(((ch.charCodeAt(0) - 97 + 13) % 26) + 97));
 const PROFANITY = [
   'shpx', 'fuvg', 'cvff', 'phag', 'pbpx', 'qvpx', 'ovgpu', 'onfgneq', 'fyhg', 'juber', 'jnax', 'gjng', 'cevpx', 'nefr',
-  'nff', 'penc', 'gvgf', 'obbof', 'chffl', 'snt', 'avttre', 'ergneq', 'qvyqb', 'pyvg', 'phz', 'enpr',
+  'nff', 'penc', 'gvgf', 'obbof', 'chffl', 'snt', 'avttre', 'ergneq', 'qvyqb', 'pyvg', 'phz', 'encr',
 ].map(rot13);
+// Everyday words that start with a blocked word, so a cockatoo or a fire retardant isn't called rude.
+const ALLOW = new Set([
+  'arsenal', 'arsenic', 'cockatiel', 'cockatiels', 'cockatoo', 'cockatoos', 'cockerel', 'cockle', 'cockles', 'cockpit',
+  'cockpits', 'cockroach', 'cocktail', 'cocktails', 'cocky', 'dickens', 'prickle', 'prickles', 'prickly', 'pussycat',
+  'retardant',
+]);
 
 const words = (s) => s.toLowerCase().split(/[^a-z]+/).filter(Boolean);
 const squash = (s) => s.toLowerCase().replace(/[^a-z]/g, '');
 
 // A blocked word matches a whole word, or (4+ letters) the start of one, so "grape" and "class" stay fine.
 function rude(text) {
-  return words(text).some((t) => PROFANITY.some((w) => t === w || (w.length >= 4 && t.startsWith(w))));
+  return words(text).some((t) => !ALLOW.has(t) && PROFANITY.some((w) => t === w || (w.length >= 4 && t.startsWith(w))));
+}
+
+// A name reads as a real coin when a word, or the whole name without its filler words, is a real ticker or brand.
+function realCoin(name) {
+  const all = words(name);
+  const core = all.filter((w) => !FILLER.has(w));
+  const joined = core.join('');
+  const real = (w) => BLOCKED_BRANDS.includes(w) || (BLOCKED_TICKERS.has(w.toUpperCase()) && !EVERYDAY.has(w));
+  return core.some(real) || real(joined) || (core.length < all.length && EVERYDAY.has(joined)) || BRAND_STEMS.some((b) => squash(name).includes(b));
 }
 
 export function checkName(name) {
   const n = String(name ?? '').trim().replace(/\s+/g, ' ');
   if (!/^[A-Za-z ]{3,16}$/.test(n)) return { code: 'BAD_NAME', message: 'Use 3 to 16 letters or spaces for the name.' };
   if (rude(n)) return { code: 'BLOCKED_NAME', message: 'Let’s keep it friendly. Try a different name.' };
-  if (BLOCKED_BRANDS.some((b) => words(n).includes(b) || squash(n) === b)) {
-    return { code: 'BLOCKED_NAME', message: 'That name belongs to a real coin or brand. Make up your own.' };
-  }
+  if (realCoin(n)) return { code: 'BLOCKED_NAME', message: 'That name belongs to a real coin or brand. Make up your own.' };
   return null;
 }
 
