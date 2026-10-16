@@ -91,6 +91,31 @@
   100% { transform: none; }
 }
 
+/* Narrow phones: the chip, the gear, the mute button and Ask Penny all fit in 360 px. */
+@media (max-width: 399.98px) {
+  .lchip {
+    gap: 4px;
+    padding: 3px 9px 3px 4px;
+  }
+
+  .lchip__coin {
+    width: 18px;
+    height: 18px;
+  }
+
+  .lchip--arena .lchip__coin {
+    display: none;
+  }
+
+  .lchip--arena {
+    padding-left: 4px;
+  }
+
+  .shell-gear {
+    width: 40px;
+  }
+}
+
 .shell-gear {
   color: var(--ink-700);
   transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
@@ -615,4 +640,66 @@
 
 .set-foot a {
   color: var(--primary-700);
+}
+
+/* ---------------------------------------------------------------- Judge demo (landing) */
+
+.judge-demo {
+  display: grid;
+  gap: var(--sp-2);
+  justify-items: center;
+  margin-block: var(--sp-4);
+  text-align: center;
+}
+
+.judge-demo__btn {
+  --btn-bg: #2B2660;
+  --btn-bg-hover: #3A3480;
+  --btn-fg: #FFFFFF;
+  --btn-border: #2B2660;
+  --btn-lip: #17143A;
+  width: 100%;
+  max-width: 30rem;
+  gap: var(--sp-3);
+  color: #FFFFFF; /* 13:1 on #2B2660 */
+  background: #2B2660;
+  border-color: #2B2660;
+  box-shadow: 0 var(--lip) 0 #17143A;
+  font-family: var(--font-head);
+  font-weight: 900;
+  text-align: left;
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out);
+}
+
+.judge-demo__btn:hover {
+  background: #3A3480;
+  transform: translateY(-1px);
+  box-shadow: 0 calc(var(--lip) + 1px) 0 #17143A;
+}
+
+.judge-demo__btn:active {
+  transform: translateY(var(--lip));
+  box-shadow: 0 0 0 #17143A;
+}
+
+.judge-demo__btn:disabled {
+  opacity: 0.75;
+  cursor: progress;
+}
+
+.judge-demo__tag {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--amber-400);
+  color: var(--ink-900);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.judge-demo__note {
+  margin: 0;
+  color: var(--ink-700);
+  font-size: var(--fs-sm);
 }

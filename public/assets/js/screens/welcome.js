@@ -37,6 +37,7 @@ export function mount(root, ctx) {
         h('p', { class: 'bubble' }, [`Hi, I’m Penny, your money companion. ${config.MANIFESTO}: let’s start with your birthday cake.`]),
       ]),
     ]),
+    judgeDemo(),
     state.profile?.character && state.tier
       ? h('div', { class: 'card welcome__back' }, [
           h('p', { text: 'Welcome back! Your town is waiting.' }),
@@ -68,6 +69,25 @@ export function mount(root, ctx) {
     h('p', { class: 'welcome__research' }, [h('a', { href: '#/research', text: 'The research behind Penny' })]),
   ]);
   root.append(view);
+
+  // Judge demo (P1.B): a labelled sample profile with a full town, one tap away. Loaded on demand (demo.js).
+  function judgeDemo() {
+    const button = h('button', { class: 'btn judge-demo__btn', type: 'button' }, [h('span', { class: 'judge-demo__tag', text: 'Judges' }), 'Judge demo: see a full town in one tap', icon('arrow-right', { size: 20 })]);
+    const note = h('p', { class: 'judge-demo__note', 'aria-live': 'polite', text: 'Loads a sample grown-up profile on this device. “Leave demo” clears it.' });
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      note.textContent = 'Building the demo town…';
+      try {
+        const m = await import('../demo.js');
+        await m.loadDemo(store, { config });
+        navigate('/town');
+      } catch {
+        button.disabled = false;
+        note.textContent = 'The demo didn’t load. Check your connection and try again.';
+      }
+    });
+    return h('div', { class: 'judge-demo' }, [button, note]);
+  }
 
   function next(tier, birthYear) {
     store.set({ tier, birthYear });
