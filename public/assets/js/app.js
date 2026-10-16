@@ -5,6 +5,7 @@ import { createAudio } from './audio.js';
 import { createRouter } from './router.js';
 import { h, icon } from './ui.js';
 import { mountAskFab } from './askfab.js';
+import { mountShell } from './shell.js';
 import { BUILDINGS } from '../../js/buildings.js';
 
 const store = createStore();
@@ -36,6 +37,8 @@ const routes = {
   // The Arena screen itself explains when it is closed or locked (BRIEF §15).
   '/arena': { name: 'arena', title: 'Arena', load: () => import('./screens/arena.js'), guard: needsTier },
   '/privacy': { name: 'privacy', title: 'Privacy', load: () => import('./screens/privacy.js') },
+  // v4 shell (P1.B): nickname, character, Future You voice, narration, account and parent link.
+  '/settings': { name: 'settings', title: 'Settings', load: () => import('./screens/settings.js'), guard: needsTier },
 };
 
 // Buildings with their own screen get a route from the registry (BRIEF §16), so a new building is one entry there.
@@ -71,6 +74,9 @@ audio.hasAny().then((any) => {
 
 // "Ask Penny" (BRIEF §9) floats over every screen once a level is chosen, and gets out of the way of controls.
 mountAskFab({ store, onOpen: openTutor });
+
+// v4 shell (P1.B): L$ balance chip, Settings gear and the Judge demo strip.
+mountShell({ store });
 
 function openTutor() {
   import('./screens/tutor.js')
