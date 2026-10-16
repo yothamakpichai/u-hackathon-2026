@@ -212,6 +212,12 @@ Agreed with Yotha on 16 October 2026 and kept word for word in both sessions, so
 - **Arena wallet** (the server, Yotha). A Town→Arena transfer goes through `POST api/arena.php` with `action=transfer`, at most 200 L$ per account per Bangkok day. The Town wallet is debited, with `post()` and a negative amount, only after the server accepts.
 - **Lab.** Each market session keeps its own Practice L$. They start fresh with each market and never reach the Town wallet or the Arena.
 - **Piggy Bank.** Real THB, never L$.
+- **Economy** (`config.js` `ECONOMY`, Yotha; the wallet reads it). Every Town wallet starts with L$1,000, once. A wallet that began before v4 with the old L$50 is topped up to L$1,000 once (`starter-top-up`), and what was spent stays spent.
+  - `claimDaily(store)` pays the daily login: L$50 on the first claim of a Bangkok day, +10 for each day in a row before it, up to L$100. It is a `grant` with ref `daily:<date>`, so the Farm doesn't count it as a day with an action. The Farm, Stall and Bank claim it when they open; the Town can call it too.
+  - Town sources (the daily login, milk and harvests) pay at most L$300 a Bangkok day together. `post()` pays up to the cap and says so (`capped`, `cut`), then refuses with a plain reason. Stall sales and loans only move L$ the player had or must repay, so they aren't capped. `earnedToday(state)` gives the day's total.
+  - The Stall's buy-back spread is `ECONOMY.storeSpread` (10%).
+- **Disclaimer.** "Simulation · No real money" sits on the Lab's trade panel, as on the Arena's.
+- **Penny.** The Lab's closing panel opens Penny with `penny:open` in `review_run` mode, with the run's numbers as context. Future You opens it in `future` mode with the plan's inputs and outputs and `store.profile.futureVoice`.
 
 ## Town wallet and Orchard (BRIEF §16.1)
 
