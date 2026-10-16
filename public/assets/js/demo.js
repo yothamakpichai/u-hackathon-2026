@@ -117,6 +117,14 @@ export async function loadDemo(store, { config, character } = {}) {
   const birthYear = thisYear - 25;
   const { cow, patch } = demoState(now);
   const char = { ...DEMO_CHARACTER, ...character };
+  // Someone signed in on this device: log them out first, so the demo is never auto-saved into their account.
+  try {
+    const sync = await import('./sync.js');
+    if (sync.currentAccount()) await sync.signOut();
+    else sync.stopAutoSave();
+  } catch {
+    // offline: nothing to save to anyway
+  }
   store.replace({
     ...patch,
     tier: TIER,
