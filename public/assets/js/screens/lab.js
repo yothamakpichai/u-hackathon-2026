@@ -738,14 +738,18 @@ export function mount(root, ctx) {
     );
     const preview = h('p', { class: 'trade__preview', id: 'trade-preview' });
     const errorEl = h('p', { class: 'trade__error', role: 'alert', hidden: true });
-    const doneEl = h('p', { class: 'trade__done', hidden: true }); // read out through announce()
+    const doneEl = h('p', { class: 'trade__done', tabindex: '-1', hidden: true }); // read out through announce()
     // The button is aria-disabled, not disabled, while it can't be used: it keeps keyboard focus
     // after a trade, and a tap says what is missing instead of doing nothing.
     const submit = h('button', { class: 'btn btn--primary btn--block', type: 'submit', 'aria-describedby': 'trade-preview' });
-    let whyNot = '';
-    function setReady(ok, why) {
-      whyNot = ok ? '' : why || preview.textContent;
+    let ready = false;
+    let hint = ''; // what to do first; empty when the preview already says what's wrong
+    function setReady(ok, why = '') {
+      ready = ok;
+      hint = ok ? '' : why;
       submit.setAttribute('aria-disabled', String(!ok));
+      // Once no problem shows (fixed, or a new coin, side or order type), the same problem is read out again.
+      if (!preview.classList.contains('is-problem')) lastProblem = '';
     }
     const tradeTitle = h('h2', { class: 'lab-card__title' });
     const sideGroup = h('div', { class: 'segmented', role: 'group', 'aria-label': 'Buy or sell' }, sideButtons);
@@ -931,7 +935,17 @@ export function mount(root, ctx) {
 
     function trade(event) {
       event.preventDefault();
-      if (whyNot) return showError(whyNot);
+      if (!ready) {
+        // A tap on the dimmed button says what is missing. A problem the preview already states
+        // isn't copied into the alert line: it is read out again and the preview gives a shake.
+        if (hint) return showError(hint);
+        clearMessages();
+        clearTimeout(problemTimer); // read out now, not again once typing pauses
+        if (preview.classList.contains('is-problem')) lastProblem = preview.textContent;
+        announce(preview.textContent);
+        animate(preview, [{ transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'none' }], { duration: 300 });
+        return;
+      }
       const amt = amount();
       if (amt == null) return;
       const c = session.getState().coins[market.selected];
@@ -1034,7 +1048,7 @@ export function mount(root, ctx) {
       const key = list.map((o) => `${o.id}:${o.status}`).join('|');
       if (key === ordersKey) return;
       ordersKey = key;
-      // A rebuild keeps keyboard focus in the list: the same order's Cancel, the next one, or the amount field.
+      // A rebuild keeps keyboard focus in the list: the same order's Cancel, the next one, or ordersFocus().
       const was = [...ordersList.querySelectorAll('.trade__order-cancel')];
       const at = was.indexOf(document.activeElement);
       const open = list.filter((o) => o.status === 'open');
@@ -1053,11 +1067,12 @@ export function mount(root, ctx) {
       };
       const cancel = (o) => {
         session.cancelOrder(o.id);
-        notify('Order cancelled.');
+        notify('Order cancelled.', { say: '' });
         render();
+        if (document.activeElement !== doneEl) announce('Order cancelled.'); // focus there reads it already
       };
       ordersList.replaceChildren(...(!open.length && !recent.length ? [] : [
-        h('h3', { class: 'trade__orders-title', text: 'Your orders' }),
+        h('h3', { class: 'trade__orders-title', tabindex: '-1', text: 'Your orders' }),
         h('ul', { class: 'trade__orders-list' }, [
           ...open.map((o) => h('li', { class: 'trade__order' }, [
             h('span', { text: label(o) }),
@@ -1068,9 +1083,20 @@ export function mount(root, ctx) {
       ]));
       if (at >= 0) {
         const btns = [...ordersList.querySelectorAll('.trade__order-cancel')];
-        (btns.find((b) => b.dataset.order === was[at].dataset.order) || btns[Math.min(at, btns.length - 1)] || tradeInput).focus({ preventScroll: true });
+        const next = btns.find((b) => b.dataset.order === was[at].dataset.order) || btns[Math.min(at, btns.length - 1)];
+        (next || ordersFocus()).focus({ preventScroll: true });
       }
     }
+    // Where focus goes when its button in the list is gone: a Cancel, the list's heading, or the
+    // notice. Never the amount field, which would open the keyboard on a phone.
+    const ordersFocus = () =>
+      ordersList.querySelector('.trade__order-cancel') || ordersList.querySelector('.trade__orders-title') || (doneEl.hidden ? submit : doneEl);
+    // A news dialog gives focus back to the Cancel it came from, but if that order filled while the
+    // dialog was open the button is gone. The dialog's close listener below catches that.
+    let ordersHadFocus = false;
+    ordersList.addEventListener('focusout', (e) => {
+      ordersHadFocus = Boolean(e.relatedTarget?.closest('.lab-dialog'));
+    });
 
     function renderDepth(st) {
       if (!depthBox?.open) return;
@@ -1520,7 +1546,7 @@ export function mount(root, ctx) {
         select('VAULT');
       },
       tradesCount: () => session.getState().portfolio.trades.length,
-      canTrade: () => !form.hidden && !whyNot,
+      canTrade: () => !form.hidden && ready,
       hasNews: () => market.news.length > 0,
       hasCoin: () => Object.values(session.getState().coins).some((c) => c.user),
       drillConfig: () => ({ ...structuredClone({ coinsConfig: market.data.coinsConfig, agentsConfig: market.data.agentsConfig, scenario: market.data.scenario }), seed: market.seed, tier }),
@@ -1533,6 +1559,12 @@ export function mount(root, ctx) {
     }));
     // At the close the list behind the closing panel shows which open orders ended.
     cleanup.push(session.on('close', (final) => renderOrders(final)));
+    dialog.addEventListener('close', () => {
+      // Focus still in the closed dialog (or on the page) means the way back was gone.
+      const lost = document.activeElement === document.body || dialog.contains(document.activeElement);
+      if (ordersHadFocus && lost) ordersFocus().focus({ preventScroll: true });
+      ordersHadFocus = false;
+    });
     // Badge mints go into today's chain while this market is open (BRIEF §15).
     setChainSink((id) => {
       if (market.closed || liveMarket() !== market) return false;

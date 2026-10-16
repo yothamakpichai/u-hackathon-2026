@@ -605,6 +605,12 @@
   transform: none;
 }
 
+/* The text colour fades with the background, so a button turning on or off never flashes white
+   on grey or grey on green. */
+.lab-trade .btn {
+  transition-property: transform, box-shadow, background-color, border-color, color;
+}
+
 /* ---- portfolio ------------------------------------------------------------------------------ */
 
 .lab-portfolio__value {
@@ -2583,6 +2589,11 @@
 
 .trade__orders-title {
   font-size: var(--fs-md);
+}
+
+/* Focus lands here after the last Cancel; like the screen headings, it is not a control. */
+.trade__orders-title:focus-visible {
+  outline: none;
 }
 
 .trade__orders-list {
