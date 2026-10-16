@@ -1,8 +1,9 @@
 // Cow Fair rules (BRIEF §16 stretch). Pure, no DOM. Collectors trade cow cards: pictures of cows,
 // not cows. One rare trait gets hyped, so cards with it balloon in price; then new buyers stop
 // coming, nobody will buy for a while, and prices crash (as with CryptoKitties in 2017 and
-// Axie Infinity in 2022). Players use pretend fair tickets, never the Town wallet, and their own
-// cows are never for sale: a cow's birth certificate is soulbound.
+// Axie Infinity in 2022). Players use practice money (L$ that never touch the Town wallet; the
+// round calls it `tickets`), and their own cows are never for sale: a cow's birth certificate is
+// soulbound.
 import { hashString, mulberry32 } from './prng.js';
 import { cowTraits } from './farm.js';
 
@@ -91,7 +92,7 @@ export function buyCard(fair, round, i) {
   if (round.step >= FAIR.steps) return { ok: false, error: 'The fair is over.' };
   if (round.owned[i]) return { ok: false, error: 'You already own this card.' };
   const cost = askOf(fair, i, round.step);
-  if (cost > round.tickets + 1e-9) return { ok: false, error: 'Not enough tickets.' };
+  if (cost > round.tickets + 1e-9) return { ok: false, error: 'You don’t have enough practice money for this card.' };
   return { ok: true, round: { ...round, tickets: round1(round.tickets - cost), owned: { ...round.owned, [i]: { paid: cost, step: round.step } }, trades: [...round.trades, { i, side: 'buy', price: cost, step: round.step }] } };
 }
 
