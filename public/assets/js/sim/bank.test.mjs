@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GOODS, SPREAD, dateKeyOf, dayGoods, dayPath, minuteOf, priceAt, sellPrice, spoilState } from './stall.js';
-import { RULES, addDays, canBorrow, earnsOnTime, interestOn, loanState, minimumDue, minimumPayoff, payoffPlan, quoteLoan, restructure } from './bank.js';
+import { RULES, addDays, canBorrow, earnsOnTime, interestOn, loanState, minimumDue, minimumPayoff, payLoan, payoffPlan, quoteLoan, restructure } from './bank.js';
 import { coinText, coinsText, post } from '../../../js/wallet.js';
 
 test('a refused spend shows the balance cut to the cent and says how much is short', () => {
@@ -50,6 +50,22 @@ test('a loan shows its total cost up front and interest never exceeds the princi
   const shark = quoteLoan({ principal: 30, days: 30, dailyRate: RULES.quickCash.dailyRate });
   assert.equal(shark.interest, 30);
   assert.equal(shark.capped, true);
+});
+
+test('a loan repaid in full stays repaid: no interest comes back the next day', () => {
+  const loan = { id: 'a', principal: 20, dailyRate: 0.01, start: '2026-10-14', due: '2026-10-20', paid: 0 };
+  const half = payLoan(loan, 10, '2026-10-15');
+  assert.equal(half.closedOn, undefined, 'a part payment leaves it open');
+  const done = payLoan(half, loanState(half, '2026-10-16').owed, '2026-10-16');
+  assert.equal(done.closedOn, '2026-10-16');
+  for (const day of ['2026-10-17', '2026-10-21', '2026-12-01']) {
+    const s = loanState(done, day);
+    assert.ok(s.paid && !s.late && s.owed === 0, `${day}: owed ${s.owed}`);
+  }
+  // A plan paid off before its freeze date stops at the day it was paid.
+  const planned = restructure(loan, '2026-10-14', 4);
+  const cleared = payLoan(planned, loanState(planned, '2026-10-15').owed, '2026-10-15');
+  assert.equal(loanState(cleared, '2026-10-30').owed, 0);
 });
 
 test('restructuring freezes interest and spreads the rest weekly', () => {
@@ -124,6 +140,16 @@ test('the score grows only from loans really carried and repaid on time', () => 
   assert.equal(earnsOnTime(loan, '2026-10-17'), true);
   assert.equal(earnsOnTime(restructure(loan, '2026-10-16'), '2026-10-17'), false, 'no +20 after a plan');
   assert.equal(earnsOnTime({ ...loan, lateMarked: true }, '2026-10-17'), false);
+  // Once a week at most, so six small loans held overnight earn one +20, not six.
+  assert.equal(earnsOnTime(loan, '2026-10-17', '2026-10-17'), false, 'already earned today');
+  assert.equal(earnsOnTime(loan, '2026-10-17', '2026-10-11'), false, 'six days ago');
+  assert.equal(earnsOnTime(loan, '2026-10-17', '2026-10-10'), true, 'a week ago');
+});
+
+test('on equal rates both payoff orders start with the smallest loan', () => {
+  const loans = [{ id: 'big', owed: 50.5, dailyRate: 0.01, principal: 50 }, { id: 'small', owed: 20.2, dailyRate: 0.01, principal: 20 }];
+  assert.deepEqual(payoffPlan(loans, 10, 'rate').order, payoffPlan(loans, 10, 'smallest').order);
+  assert.equal(payoffPlan(loans, 10, 'rate').order[0], 'small');
 });
 
 test('the Bank checks before it lends; Quick Cash lends one loan at a time', () => {

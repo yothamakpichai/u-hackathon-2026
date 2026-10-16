@@ -3,9 +3,9 @@
 // Game rule, unlike real loans: total interest is capped at the amount borrowed, and a plan to
 // restructure is always available. All coins are fake. Explorers get plainer words and costs in
 // coins; Builders also get the research citation.
-import { RULES, addDays, canBorrow, daysBetween, earnsOnTime, interestOn, loanState, minimumDue, minimumPayoff, payoffPlan, quoteLoan, restructure } from '../sim/bank.js';
+import { RULES, addDays, canBorrow, daysBetween, earnsOnTime, interestOn, loanState, minimumDue, minimumPayoff, payLoan, payoffPlan, quoteLoan, restructure } from '../sim/bank.js';
 import { dateKeyOf } from '../sim/stall.js';
-import { CREDIT, adjustCredit, balance as walletBalance, coinsText, creditScore, ensureStarter, post, rateFor } from '../../../js/wallet.js';
+import { CREDIT, adjustCredit, balance as walletBalance, coinsText, creditEvents, creditScore, ensureStarter, ledger, post, rateFor } from '../../../js/wallet.js';
 import { announce, h, icon, number } from '../ui.js';
 
 const coins = (n) => `${number(n, 2)} coins`;
@@ -14,6 +14,21 @@ const round = (n) => Math.round(n * 100) / 100;
 const uid = () => `l${Date.now().toString(36)}${Math.floor(performance.now() * 1000).toString(36)}`;
 const band = (s) => (s >= 750 ? 'Excellent' : s >= 650 ? 'Good' : s >= 550 ? 'Fair' : 'Building');
 const limitFor = (score) => Math.round(50 + ((score - CREDIT.min) / (CREDIT.max - CREDIT.min)) * 150);
+const ON_TIME = 'Repaid a loan on time'; // the credit event for the +20, which counts once a week
+const daysText = (n) => `${n} day${n === 1 ? '' : 's'}`;
+// Each open loan's title ('Bank loan of 20.00 coins') and name in a sentence ('the Bank loan of 20.00
+// coins', 'Quick Cash'), numbered when two loans would read the same.
+function loanNames(loans) {
+  const base = (l) => (l.lender === 'quickcash' ? 'Quick Cash' : `Bank loan of ${coins(l.principal)}`);
+  const seen = new Map();
+  return new Map(loans.map((l) => {
+    const b = base(l);
+    seen.set(b, (seen.get(b) || 0) + 1);
+    const n = loans.filter((x) => base(x) === b).length > 1 ? ` (${seen.get(b)})` : '';
+    const quick = l.lender === 'quickcash';
+    return [l.id, { title: quick ? `Quick Cash of ${coins(l.principal)}${n}` : `${b}${n}`, name: quick ? `Quick Cash${n}` : `the ${b}${n}` }];
+  }));
+}
 // 'Fri 16 Oct' for a Bangkok date key.
 const dayText = (key) => new Date(`${key}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 
@@ -32,11 +47,26 @@ export function mount(root, ctx) {
   const bill = young ? 'bill' : 'statement';
   const weekly = number(RULES.card.weeklyRate * 100, 0); // the Town Card's weekly rate, in %
 
+  // The Bangkok date of the last on-time +20, from the credit history.
+  const lastOnTime = () => {
+    const e = creditEvents(store.get()).filter((x) => x.reason === ON_TIME).at(-1);
+    return e ? dateKeyOf(e.at) : null;
+  };
+  // The Bangkok date of a loan's last repayment, from the wallet ledger.
+  const lastRepaid = (id) => {
+    const at = ledger(store.get()).filter((e) => e.kind === 'repay' && e.ref === id).reduce((m, e) => Math.max(m, e.at), 0);
+    return at ? dateKeyOf(at) : null;
+  };
+
   // Late payments and card statements are settled when the Bank is opened (interest is per real day).
   function settle(today) {
     let bank = bankOf();
     let changed = false;
-    const loans = bank.loans.map((l) => {
+    const loans = bank.loans.map((l0) => {
+      // Saves from before loans were closed: close a loan repaid in full on the day of its last payment.
+      const paidOn = !l0.closedOn && l0.paid > 0 ? lastRepaid(l0.id) : null;
+      const l = paidOn && loanState(l0, paidOn).paid ? { ...l0, closedOn: paidOn } : l0;
+      if (l !== l0) changed = true;
       const s = loanState(l, today);
       if (s.late && !l.lateMarked) {
         adjustCredit(store, RULES.credit.late, `Late on a loan of ${l.principal}`);
@@ -46,14 +76,18 @@ export function mount(root, ctx) {
       return l;
     });
     let card = bank.card;
+    let missed = 0; // minimums missed in the statements rolled just now, so the card can say so
     while (card && today >= addDays(card.statementDate, 7)) {
       const unpaid = Math.max(0, card.statementBalance - card.paidSince);
-      if (card.statementBalance > 0 && card.paidSince < card.minDue && !card.lateMarked) adjustCredit(store, RULES.credit.late, 'Missed a Town Card minimum');
+      if (card.statementBalance > 0 && card.paidSince < card.minDue && !card.lateMarked) {
+        adjustCredit(store, RULES.credit.late, 'Missed a Town Card minimum');
+        missed += 1;
+      }
       // Game rule: card interest never adds up to more than was spent on the card.
       const add = round(Math.max(0, Math.min(unpaid * RULES.card.weeklyRate, (card.spent || 0) - (card.interest || 0))));
       const balance = round(card.balance + add);
       const statementDate = addDays(card.statementDate, 7);
-      card = { ...card, balance, interest: (card.interest || 0) + add, added: add, statementDate, statementBalance: balance, minDue: minimumDue(balance), dueDate: addDays(statementDate, RULES.card.dueDays), paidSince: 0, lateMarked: false };
+      card = { ...card, balance, interest: (card.interest || 0) + add, added: add, statementDate, statementBalance: balance, minDue: minimumDue(balance), dueDate: addDays(statementDate, RULES.card.dueDays), paidSince: 0, lateMarked: false, missed };
       changed = true;
     }
     // The minimum is due 3 days after the statement: missing it is late on the due date, once.
@@ -73,6 +107,7 @@ export function mount(root, ctx) {
     const score = creditScore(store.get());
     const rate = rateFor(score, RULES.bankDailyRate);
     const active = bank.loans.filter((l) => !loanState(l, today).paid);
+    const names = loanNames(active);
     view.replaceChildren(
       h('div', { class: 'screen-head' }, [
         h('p', { class: 'screen-eyebrow', text: 'Bank' }),
@@ -92,8 +127,8 @@ export function mount(root, ctx) {
                 : `From ${CREDIT.min} to ${CREDIT.max}. Paying back on time raises it; paying late lowers it. A better score means a lower rate: yours today is ${pct(rate)} a day.`,
             }),
           ]),
-          loansCard(active, today),
-          active.length >= 2 ? payoffCard(active, today) : null,
+          loansCard(active, today, names),
+          active.length >= 2 ? payoffCard(active, today, names) : null,
         ]),
         h('div', { class: 'bank__col' }, [
           borrowCard(bank, score, rate, today),
@@ -127,25 +162,29 @@ export function mount(root, ctx) {
   const note = (key) => (notice && notice.key === key ? h('p', { class: 'field__error', text: notice.text }) : null);
 
   // ---- loans --------------------------------------------------------------------------------
-  function loansCard(active, today) {
+  function loansCard(active, today, names) {
     const rows = active.map((l) => {
       const s = loanState(l, today);
       const quick = l.lender === 'quickcash';
-      const title = `${quick ? 'Quick Cash' : 'Bank loan'} of ${coins(l.principal)}`;
+      const { title, name } = names.get(l.id);
       const key = `loan:${l.id}`;
       const repay = (amt, which) => {
         const pay = round(Math.min(amt, s.owed));
         const paid = post(store, { amount: -pay, kind: 'repay', note: quick ? 'Quick Cash' : 'Bank loan', ref: l.id });
         if (!paid.ok) return refuse(key, `${paid.error} You need ${number(paid.short, 2)} more coins. Sell something at the Daily Stall${l.plan ? '' : ', or make a plan to pay in parts'}.`, `${key}:${which}`);
         const bank = bankOf();
-        const loans = bank.loans.map((x) => (x.id === l.id ? { ...x, paid: round((x.paid || 0) + pay) } : x));
+        const loans = bank.loans.map((x) => (x.id === l.id ? payLoan(x, pay, today) : x));
         saveBank({ ...bank, loans });
         const after = loanState(loans.find((x) => x.id === l.id), today);
-        if (after.paid && earnsOnTime(l, today)) {
-          adjustCredit(store, RULES.credit.onTime, 'Repaid a loan on time');
+        const last = lastOnTime();
+        if (after.paid && earnsOnTime(l, today, last)) {
+          adjustCredit(store, RULES.credit.onTime, ON_TIME);
           announce('Paid off on time. Your credit score went up by 20.');
         } else if (after.paid) {
-          announce(l.plan ? 'Paid off. Your plan is done.' : l.start >= today ? 'Paid off. A loan repaid the day you take it doesn’t change your score.' : 'Paid off.');
+          announce(l.plan ? 'Paid off. Your plan is done.'
+            : l.start >= today ? 'Paid off. A loan repaid the day you take it doesn’t change your score.'
+            : earnsOnTime(l, today) ? `Paid off on time. Your score goes up for this once a week, and it already did on ${dayText(last)}.`
+            : 'Paid off.');
         } else announce(`Paid ${coins(pay)}. You still owe ${coins(after.owed)}.`);
         render([`${key}:${which}`, key, 'loans']);
       };
@@ -159,7 +198,6 @@ export function mount(root, ctx) {
       };
       const half = round(s.owed / 2);
       const week = round(Math.min(s.owed, l.plan ? l.plan.weekly : 0));
-      const name = quick ? 'Quick Cash' : `the ${title}`;
       return h('li', { class: `bank-loan${s.late ? ' is-late' : ''}` }, [
         h('p', { class: 'bank-loan__title', text: title, dataset: { key } }),
         h('p', { text: `You owe ${coins(s.owed)} (interest so far ${coins(s.interest)}). Due ${dayText(s.due)}.` }),
@@ -179,7 +217,7 @@ export function mount(root, ctx) {
       h('h2', { class: 'lab-card__title', text: 'Your loans', dataset: { key: 'loans' } }),
       rows.length ? h('ul', { class: 'bank-list' }, rows) : h('p', { class: 'piggy-empty', text: 'No loans. That’s a fine place to be.' }),
       h('p', { class: 'field__hint', text: 'Game rule: interest builds up each real day but never adds up to more than you borrowed. Real loans have no such cap. A plan to pay in weekly parts is always on offer.' }),
-      h('p', { class: 'field__hint', text: 'Your score goes up by 20 when you repay a loan on time, at least a day after you took it.' }),
+      h('p', { class: 'field__hint', text: 'Your score goes up by 20 when you repay a loan on time, but not on the same day you took it. That can happen once a week.' }),
     ]);
   }
 
@@ -291,8 +329,9 @@ export function mount(root, ctx) {
       announce(balance > 0 ? `Paid ${coins(a)} on your Town Card. ${coins(balance)} still to pay.` : `Paid ${coins(a)}. Your Town Card is all paid off.`);
       render([`card:${which}`, 'card:full', 'card']);
     };
-    const firstWeek = !(card.statementBalance > 0);
+    const firstWeek = !(card.statementBalance > 0); // nothing due this week
     const minLeft = round(Math.max(0, card.minDue - (card.paidSince || 0)));
+    const missedLoss = -RULES.credit.late * (card.missed || 0);
     const calc = minimumPayoff(Math.max(card.balance, 0));
     const grows = young ? `Anything left unpaid grows by ${weekly} coins for every 100 each week.` : `Unpaid statement balances add ${weekly}% a week.`;
     return h('div', { class: 'card bank-card' }, [
@@ -301,10 +340,13 @@ export function mount(root, ctx) {
       h('p', {
         class: 'field__hint',
         text: firstWeek
-          ? `Your first ${bill} comes on ${dayText(addDays(card.statementDate, 7))}. ${grows}`
+          ? `Your ${card.statementDate === card.opened ? 'first' : 'next'} ${bill} comes on ${dayText(addDays(card.statementDate, 7))}. ${grows}`
           : `This week’s ${bill}: ${coins(card.statementBalance)}, minimum ${coins(card.minDue)}, due ${dayText(card.dueDate)}.${card.paidSince > 0 ? ` You’ve paid ${coins(card.paidSince)} since.` : ''} ${grows}`,
       }),
       card.added > 0 ? h('p', { class: 'chip chip--warn', text: `We added ${coins(card.added)} (${weekly}%) to the unpaid ${bill}.` }) : null,
+      card.missed > 0
+        ? h('p', { class: 'chip chip--loss', text: card.missed === 1 ? `You missed last week’s minimum, so your score went down by ${missedLoss}.` : `You missed the minimum ${card.missed} weeks in a row, so your score went down by ${missedLoss}.` })
+        : null,
       card.lateMarked
         ? h('p', { class: 'chip chip--loss', text: minLeft > 0 ? 'Late: minimum not paid. Your score went down by 40.' : 'Minimum paid late. Your score went down by 40.' })
         : !firstWeek && minLeft === 0 && card.balance > 0 ? h('p', { class: 'chip chip--ok', text: 'Minimum paid for this week' }) : null,
@@ -327,7 +369,7 @@ export function mount(root, ctx) {
     ]);
   }
 
-  function payoffCard(active, today) {
+  function payoffCard(active, today, names) {
     const loans = active.map((l) => ({
       id: l.id,
       owed: loanState(l, today).owed,
@@ -335,14 +377,24 @@ export function mount(root, ctx) {
       principal: l.principal,
       interest: interestOn(l, today),
       freezeIn: l.frozenOn ? daysBetween(today, l.frozenOn) : undefined,
-      label: l.lender === 'quickcash' ? 'Quick Cash' : `the Bank loan of ${coins(l.principal)}`,
+      label: names.get(l.id).name,
     }));
     const budget = 10;
     const rateFirst = payoffPlan(loans, budget, 'rate');
     const smallFirst = payoffPlan(loans, budget, 'smallest');
     const name = (id) => loans.find((l) => l.id === id)?.label || id;
-    const result = (p) => (p.finished ? `done in ${p.days} days, ${coins(p.interest)} more interest` : `still not done after ${p.days} days`);
+    const result = (p) => (p.finished ? `done in ${daysText(p.days)}, ${coins(p.interest)} more interest` : `still not done after ${daysText(p.days)}`);
     const same = rateFirst.order.join() === smallFirst.order.join();
+    const sameRate = loans.every((l) => l.dailyRate === loans[0].dailyRate);
+    // The dearest loan first usually costs less, but not when the game's cap has (nearly) stopped its
+    // interest, or when interest still runs on a loan that is mostly repaid: say why.
+    const dear = loans.find((l) => l.id === rateFirst.order[0]);
+    const capped = dear && dear.interest + dear.principal * dear.dailyRate * Math.ceil(dear.owed / budget) >= dear.principal - 0.005;
+    const reached = dear && dear.interest >= dear.principal - 0.005;
+    const smallWins = young ? 'paying the smallest first' : 'smallest first';
+    const why = same || !(rateFirst.interest > smallFirst.interest + 0.005) ? null
+      : capped ? `Here ${smallWins} costs less, because ${name(dear.id)} ${reached ? 'has reached' : 'is close to'} the game’s interest cap, so its interest ${reached ? 'has stopped' : 'soon stops'} growing. Real loans have no cap.`
+      : `Here ${smallWins} costs less, because in this game interest is worked out on what you first borrowed, even after you pay some back.`;
     const hint = young
       ? 'Paying the dearest loan first usually costs less. Paying the smallest first gives a quick win. Both beat paying a little on everything.'
       : `Highest rate first usually costs less. Smallest first gives a quick win, and people who clear a whole loan early are more likely to keep going${tier === 'builder' ? ' (Gal and McShane, 2012)' : ''}. Both beat paying a little on everything.`;
@@ -350,12 +402,15 @@ export function mount(root, ctx) {
       h('h2', { class: 'lab-card__title', text: 'Which loan to pay first?' }),
       h('p', { text: `Paying ${budget} coins a day:` }),
       h('ul', { class: 'bank-list' }, same
-        ? [h('li', { text: `Here the smallest loan ${young ? 'is also the dearest' : 'also has the highest rate'}, so both ways start with ${name(rateFirst.order[0])}: ${result(rateFirst)}.` })]
+        ? [h('li', { text: sameRate
+            ? `${young ? 'Your loans charge the same interest for each coin' : 'Your loans have the same rate'}, so start with the smallest for a quick win: ${result(rateFirst)}.`
+            : `Here the smallest loan ${young ? 'is also the dearest' : 'also has the highest rate'}, so both ways start with ${name(rateFirst.order[0])}: ${result(rateFirst)}.` })]
         : [
             h('li', { text: `${young ? 'Dearest loan first' : 'Highest rate first'}: ${result(rateFirst)}. Starts with ${name(rateFirst.order[0])}.` }),
             h('li', { text: `Smallest first: ${result(smallFirst)}. Starts with ${name(smallFirst.order[0])}.` }),
           ]),
-      rateFirst.covered ? null : h('p', { class: 'field__error', text: `At first, ${budget} coins a day wouldn’t even cover the interest. This only ends because the game caps interest; a real loan would keep growing. Repay the dearest loan first or make a plan.` }),
+      why ? h('p', { text: why }) : null,
+      rateFirst.covered ? null : h('p', { class: 'field__error', text: `At first, ${budget} coins a day wouldn’t even cover the interest. This only ends because the game caps interest; a real loan would keep growing. ${sameRate ? 'Make a plan to stop the interest growing.' : 'Repay the dearest loan first or make a plan.'}` }),
       h('p', { class: 'field__hint', text: hint }),
     ]);
   }

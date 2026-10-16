@@ -3,7 +3,7 @@
 // coins (or the Town Card), and learn why borrowing to speculate is dangerous.
 import { GOODS, dateKeyOf, dayGoods, dayPath, minuteOf, priceAt, sellPrice, spoilState } from '../sim/stall.js';
 import { addDays, loanState } from '../sim/bank.js';
-import { balance as walletBalance, coinText, coinsText, ensureStarter, post } from '../../../js/wallet.js';
+import { balance as walletBalance, coinsText, ensureStarter, post } from '../../../js/wallet.js';
 import { announce, delta, h, icon, number } from '../ui.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -53,7 +53,7 @@ export function mount(root, ctx) {
       ]),
       h('div', { class: 'stall-bar' }, [
         h('p', { class: 'chip', text: `${coinsText(wallet)} in your Town wallet` }),
-        card ? h('p', { class: 'chip', text: `Town Card: ${coinsText(card.limit - card.balance)} left to spend` }) : null,
+        card ? h('p', { class: 'chip', text: card.balance < card.limit ? `Town Card: ${coinsText(card.limit - card.balance)} left to spend` : 'Town Card: nothing left to spend' }) : null,
         h('p', { class: 'field__hint', text: `Prices for ${dayText(today)}, updated every 10 minutes. The stall buys back 10% below its selling price.` }),
       ]),
       borrowed
@@ -113,7 +113,8 @@ export function mount(root, ctx) {
     const showTotal = () => {
       const cost = round(ask * qty);
       const short = round(cost - wallet);
-      total.textContent = short > 0 ? `Total: ${coins(cost)}. You have ${coinText(wallet)}, so you need ${number(short, 2)} more coins.` : `Total: ${coins(cost)}`;
+      const cardPays = card && cost <= round(card.limit - card.balance) + 1e-9;
+      total.textContent = short > 0 ? `Total: ${coins(cost)}. You have ${coinsText(wallet)}, so you need ${number(short, 2)} more coins${cardPays ? ', or pay with the Town Card' : ''}.` : `Total: ${coins(cost)}`;
     };
     showTotal();
     const step = (d) => {
@@ -136,7 +137,8 @@ export function mount(root, ctx) {
       if (withCard) {
         const bank = bankOf();
         if (!bank.card) return refuse(key, 'Open a Town Card at the Bank first.', focusKey);
-        const room = round(bank.card.limit - bank.card.balance);
+        const room = round(Math.max(0, bank.card.limit - bank.card.balance));
+        if (!(room > 0)) return refuse(key, 'Your Town Card has nothing left to spend. Pay some of it off at the Bank first.', focusKey);
         if (cost > room + 1e-9) return refuse(key, `That’s ${coins(round(cost - room))} over your Town Card limit: you have ${coins(room)} left on it. Try buying fewer.`, focusKey);
         store.set({ bank: { ...bank, card: { ...bank.card, balance: round(bank.card.balance + cost), spent: (bank.card.spent || 0) + cost } } });
       } else {
@@ -153,7 +155,7 @@ export function mount(root, ctx) {
     const hi = Math.max(...path);
     return h('li', { class: 'card stall-good' }, [
       h('div', { class: 'stall-good__head' }, [
-        h('h2', { class: 'stall-good__name', text: g.label }),
+        h('h2', { class: 'stall-good__name', text: g.label, dataset: { key: `name:${good}` } }),
         h('p', { class: 'chip', text: keepsText(g.spoilDays, today) }),
       ]),
       h('p', { class: 'stall-price' }, [h('span', { class: 'stall-price__value', dataset: { ask: good }, text: coins(ask) }), ` per ${g.unit} `, h('span', {}, [delta(change), ' today'])]),
@@ -219,9 +221,14 @@ export function mount(root, ctx) {
 
   render();
   // Prices change every 10 minutes: redraw when the step changes, keeping focus and the picked amounts.
+  // At midnight the goods change: focus on a good that is gone moves to the first new good.
   timer = setInterval(() => {
     const now = Date.now();
-    if (Math.floor(minuteOf(now) / 10) !== shownStep || dateKeyOf(now) !== shownDay) render([focusedKey()]);
+    const day = dateKeyOf(now);
+    if (Math.floor(minuteOf(now) / 10) === shownStep && day === shownDay) return;
+    const newDay = day !== shownDay;
+    render(view.contains(document.activeElement) ? [focusedKey(), `name:${dayGoods(day)[0]}`, 'title'] : []);
+    if (newDay) announce('A new day has started at the stall, with new goods and prices.');
   }, 15_000);
   return () => {
     clearInterval(timer);

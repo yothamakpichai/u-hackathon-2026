@@ -8,7 +8,7 @@ export const RULES = Object.freeze({
   quickCash: { dailyRate: 0.15, days: 3, amount: 30 },
   loanAmounts: [20, 50, 100],
   loanDays: [3, 7, 14],
-  credit: { onTime: 20, late: -40, restructure: -10 },
+  credit: { onTime: 20, onTimeEvery: 7, late: -40, restructure: -10 },
   card: { weeklyRate: 0.05, minShare: 0.1, minFloor: 5, dueDays: 3 },
 });
 
@@ -23,9 +23,10 @@ export function quoteLoan({ principal, days, dailyRate }) {
   return { principal, days, dailyRate, interest: round(interest), total: round(principal + interest), capped: raw > principal };
 }
 
-// Interest so far: simple, per real day, frozen once restructured, never above the principal.
+// Interest so far: simple, per real day, frozen once restructured or repaid, never above the principal.
 export function interestOn(loan, todayKey) {
-  const until = loan.frozenOn && loan.frozenOn < todayKey ? loan.frozenOn : todayKey;
+  const stop = [loan.frozenOn, loan.closedOn].filter(Boolean).sort()[0];
+  const until = stop && stop < todayKey ? stop : todayKey;
   const days = Math.max(1, daysBetween(loan.start, until) + 1);
   return round(Math.min(loan.principal, loan.principal * loan.dailyRate * days));
 }
@@ -37,6 +38,12 @@ export function loanState(loan, todayKey) {
   return { interest, owed, due, late: owed > 0 && todayKey > due, paid: owed <= 0 };
 }
 
+// A repayment. A loan repaid in full is closed that day, so no more interest builds up on it later.
+export function payLoan(loan, amount, todayKey) {
+  const next = { ...loan, paid: round((loan.paid || 0) + amount) };
+  return loanState(next, todayKey).paid ? { ...next, closedOn: todayKey } : next;
+}
+
 // Restructuring: freeze the interest and spread what is owed over equal weekly payments. A plan made
 // before the due date still counts the interest up to the due date, so it never costs less than the
 // loan's own terms; it only stops the interest growing after that.
@@ -46,9 +53,11 @@ export function restructure(loan, todayKey, weeks = 4) {
   return { ...loan, frozenOn, plan: { weeks, weekly: round(owed / weeks), due: addDays(todayKey, weeks * 7), from: todayKey } };
 }
 
-// The +20 for repaying on time goes only to a loan that was held at least a day and never late or
-// on a plan, so borrowing and repaying at once can't farm the score.
-export const earnsOnTime = (loan, todayKey) => loan.start < todayKey && !loan.plan && !loan.lateMarked && !loanState(loan, todayKey).late;
+// The +20 for repaying on time goes only to a loan repaid on a later Bangkok day than it was taken,
+// never late or on a plan, and at most once a week (`lastOn`: the date of the last one), so borrowing
+// and repaying at once, or many small loans, can't farm the score.
+export const earnsOnTime = (loan, todayKey, lastOn = null) => loan.start < todayKey && !loan.plan && !loan.lateMarked && !loanState(loan, todayKey).late
+  && !(lastOn && daysBetween(lastOn, todayKey) < RULES.credit.onTimeEvery);
 
 // The Bank checks before it lends; Quick Cash checks nothing but lends one loan at a time.
 // `limit` is the most the player may owe across all loans (set by the credit score).
@@ -87,13 +96,14 @@ export const minimumDue = (balance) => round(Math.min(balance, Math.max(RULES.ca
 // ---- several loans: which to pay first --------------------------------------------------------
 
 // Pay `budget` a day, starting today, all of it to one loan at a time, ordered smallest balance first
-// or highest rate first. Interest follows the loans' own game rule: simple, per day, never above the
-// principal, and none after a plan's freeze date. Each loan: { id, owed, dailyRate, principal,
-// interest (so far), freezeIn (days until its interest stops, if on a plan) }. `covered` is false when
-// the budget can't even pay the next day's interest, so only the game's cap lets the plan finish.
+// or highest rate first (the smaller one first on equal rates). Interest follows the loans' own game
+// rule: simple, per day, never above the principal, and none after a plan's freeze date. Each loan:
+// { id, owed, dailyRate, principal, interest (so far), freezeIn (days until its interest stops, if on
+// a plan) }. `covered` is false when the budget can't even pay the next day's interest, so only the
+// game's cap lets the plan finish.
 export function payoffPlan(loans, budget, order) {
   const ls = loans.map((l) => ({ id: l.id, owed: l.owed, rate: l.dailyRate, principal: l.principal ?? l.owed, interest: l.interest || 0, freezeIn: l.freezeIn ?? Infinity }));
-  ls.sort(order === 'smallest' ? (a, b) => a.owed - b.owed : (a, b) => b.rate - a.rate);
+  ls.sort(order === 'smallest' ? (a, b) => a.owed - b.owed : (a, b) => b.rate - a.rate || a.owed - b.owed);
   const nextInterest = (l, day) => (l.owed <= 0.005 || day > l.freezeIn ? 0 : Math.max(0, Math.min(l.principal * l.rate, l.principal - l.interest)));
   const covered = ls.reduce((s, l) => s + nextInterest(l, 1), 0) < budget;
   let interest = 0;

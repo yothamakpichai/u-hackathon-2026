@@ -10,6 +10,7 @@ const walletOf = (state) => ({ ledger: [], credit: { score: CREDIT.start, events
 export const balance = (state) => walletOf(state).ledger.reduce((s, e) => s + e.amount, 0);
 export const ledger = (state) => walletOf(state).ledger.slice();
 export const creditScore = (state) => walletOf(state).credit.score;
+export const creditEvents = (state) => walletOf(state).credit.events.slice();
 
 let seq = 0;
 const nextId = (now) => `w${now.toString(36)}${(seq++).toString(36)}`;
