@@ -216,7 +216,7 @@ export function mount(root, ctx) {
     return h('div', { class: 'card bank-loans' }, [
       h('h2', { class: 'lab-card__title', text: 'Your loans', dataset: { key: 'loans' } }),
       rows.length ? h('ul', { class: 'bank-list' }, rows) : h('p', { class: 'piggy-empty', text: 'No loans. That’s a fine place to be.' }),
-      h('p', { class: 'field__hint', text: 'Game rule: interest builds up each real day but never adds up to more than you borrowed. Real loans have no such cap. A plan to pay in weekly parts is always on offer.' }),
+      h('p', { class: 'field__hint', text: 'Game rule: interest builds up each real day but never adds up to more than you borrowed. Real loans keep charging until you repay; Thai law caps the rate, not the total. A plan to pay in weekly parts is always on offer.' }),
       h('p', { class: 'field__hint', text: 'Your score goes up by 20 when you repay a loan on time, but not on the same day you took it. That can happen once a week.' }),
     ]);
   }
@@ -416,12 +416,12 @@ export function mount(root, ctx) {
   }
 
   const realLifeCard = () => h('details', { class: 'card card--quiet bank-real' }, [
-    h('summary', { text: 'Real life in Thailand (still being checked)' }),
-    h('p', { text: 'Thailand sets legal limits on what banks and other lenders can charge, and on credit card minimum payments. Lending above the legal limit is against the law. These figures are on our list to check before we show numbers here.' }),
+    h('summary', { text: 'Real life in Thailand' }),
+    h('p', { text: 'Credit card interest is capped at 16% a year, and the minimum payment is 8% of what you owe through the end of 2026. A private loan between people is capped at 15% a year. Lending above the legal limit is against the law.' }),
+    h('p', { text: 'The law caps the rate, not the total: a real loan keeps charging interest until you repay it.' }),
     h('p', { class: 'field__hint' }, [
-      'Still being checked, and listed under ',
+      'Sources: Bangkok Post on the credit card ceiling; The Nation on the minimum payment; Thai Civil and Commercial Code s.654. Personal loan ceilings and credit bureau scoring are still being checked. ',
       h('a', { href: '#/research', text: 'Why this works' }),
-      ': Bank of Thailand credit card and personal loan ceilings and minimum payment rate; National Credit Bureau scoring; the maximum interest for private lending.',
     ]),
   ]);
 

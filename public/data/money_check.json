@@ -68,15 +68,15 @@
     {
       "id": "t-now",
       "kind": "time",
-      "prompt": "Which would you pick: 100 baht today, or 120 baht in one month?",
-      "options": ["100 baht today", "120 baht in one month"],
+      "prompt": "Which would you pick: 100 baht today, or 105 baht in one month?",
+      "options": ["100 baht today", "105 baht in one month"],
       "later": 1
     },
     {
       "id": "t-far",
       "kind": "time",
-      "prompt": "And this one: 100 baht in 6 months, or 120 baht in 7 months?",
-      "options": ["100 baht in 6 months", "120 baht in 7 months"],
+      "prompt": "And this one: 100 baht in 6 months, or 105 baht in 7 months?",
+      "options": ["100 baht in 6 months", "105 baht in 7 months"],
       "later": 1
     },
     {
@@ -117,7 +117,7 @@
       "strengths": ["You save steadily and plan ahead.", "You rarely panic when prices jump around."],
       "blindSpots": ["Money kept too safe can lose value as prices rise.", "You might skip chances to learn how investing works."],
       "scam": "“Guaranteed” savings schemes that promise high, steady returns with no risk. Real safe returns are small; high returns always come with risk.",
-      "building": "school"
+      "building": "future"
     },
     "eagle": {
       "name": "Patient Eagle",

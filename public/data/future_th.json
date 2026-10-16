@@ -16,20 +16,20 @@
     "planTo": { "value": 90, "source": "Planning convention used by the Penny team (plan beyond the average, because many people live longer than it).", "retrieved": "2026-10-16" }
   },
   "inflation": {
-    "low": { "annual": 0.01, "source": "[unverified] Bank of Thailand headline inflation target range 1–3% (lower bound).", "retrieved": "2026-10-16" },
-    "target": { "annual": 0.02, "source": "[unverified] Bank of Thailand headline inflation target range 1–3% (midpoint).", "retrieved": "2026-10-16" },
-    "high": { "annual": 0.04, "source": "[unverified] Penny team scenario above the Bank of Thailand target range; Thai headline CPI was about 6.1% in 2022.", "retrieved": "2026-10-16" },
+    "low": { "annual": 0.01, "source": "Bank of Thailand 2026 headline inflation target range 1–3% (lower bound).", "retrieved": "2026-10-16" },
+    "target": { "annual": 0.02, "source": "Bank of Thailand 2026 headline inflation target range 1–3% (midpoint).", "retrieved": "2026-10-16" },
+    "high": { "annual": 0.04, "source": "Penny team assumption (not a sourced fact): a scenario above the Bank of Thailand target range. Thai average headline inflation was 6.08% in 2022 (TPSO).", "retrieved": "2026-10-16" },
     "monthlyNoise": { "annual": 0.01, "source": "Model choice by the Penny team: small random variation around the scenario.", "retrieved": "2026-10-16" }
   },
   "assets": {
-    "cash": { "label": "Cash and deposits", "mean": 0.01, "vol": 0.002, "currency": "THB", "source": "[unverified] Typical Thai savings deposit rates (about 0.5–1.5% a year).", "retrieved": "2026-10-16" },
-    "bonds": { "label": "Thai government bonds", "mean": 0.025, "vol": 0.04, "currency": "THB", "source": "[unverified] Thai government bond yields (about 2–3% a year).", "retrieved": "2026-10-16" },
-    "thaiStocks": { "label": "Thai stocks", "mean": 0.07, "vol": 0.2, "currency": "THB", "source": "[unverified] SET Total Return Index long-run nominal return and volatility.", "retrieved": "2026-10-16" },
-    "globalStocks": { "label": "Global stocks (in US dollars)", "mean": 0.07, "vol": 0.16, "currency": "USD", "source": "[unverified] Long-run nominal return and volatility of broad global equity indices, in US dollars.", "retrieved": "2026-10-16" },
-    "stockCorrelation": { "value": 0.6, "source": "[unverified] Typical correlation between Thai and global stock returns.", "retrieved": "2026-10-16" }
+    "cash": { "label": "Cash and deposits", "mean": 0.01, "vol": 0.002, "currency": "THB", "source": "Penny team assumption (not a sourced fact): typical Thai savings deposit rates (about 0.5–1.5% a year).", "retrieved": "2026-10-16" },
+    "bonds": { "label": "Thai government bonds", "mean": 0.025, "vol": 0.04, "currency": "THB", "source": "Penny team assumption (not a sourced fact): Thai government bond yields (about 2–3% a year).", "retrieved": "2026-10-16" },
+    "thaiStocks": { "label": "Thai stocks", "mean": 0.07, "vol": 0.2, "currency": "THB", "source": "Penny team assumption (not a sourced fact): long-run nominal return and volatility of Thai stocks.", "retrieved": "2026-10-16" },
+    "globalStocks": { "label": "Global stocks (in US dollars)", "mean": 0.07, "vol": 0.16, "currency": "USD", "source": "Penny team assumption (not a sourced fact): long-run nominal return and volatility of broad global equity indices, in US dollars.", "retrieved": "2026-10-16" },
+    "stockCorrelation": { "value": 0.6, "source": "Penny team assumption (not a sourced fact): typical correlation between Thai and global stock returns.", "retrieved": "2026-10-16" }
   },
   "fx": {
-    "base": { "annualDrift": 0, "vol": 0.07, "source": "[unverified] THB/USD history: long-run drift near zero outside crises, about 7% yearly volatility.", "retrieved": "2026-10-16" },
+    "base": { "annualDrift": 0, "vol": 0.07, "source": "Penny team assumption (not a sourced fact): THB/USD long-run drift near zero outside crises, about 7% yearly volatility.", "retrieved": "2026-10-16" },
     "weakBaht": { "annualDrift": 0.02, "vol": 0.07, "source": "Penny team scenario: the baht weakens 2% a year against the US dollar. A scenario, not a forecast.", "retrieved": "2026-10-16" }
   },
   "mixes": {
@@ -39,9 +39,9 @@
     "source": "Illustrative mixes by the Penny team for learning; not advice."
   },
   "shocks": {
-    "1997": { "label": "1997 Asian financial crisis", "hint": "Thai stocks fell by about half. The baht lost almost half its value against the US dollar, so savings in US dollars were worth more in baht.", "thaiStocks": -0.55, "globalStocks": 0.31, "fx": 0.85, "inflation": 0.056, "source": "[unverified] Approximate 1997 changes: SET index about −55%, baht from about 25 to about 47 per US dollar after the July 1997 float, Thai CPI about 5.6%, US stocks about +31%.", "retrieved": "2026-10-16" },
-    "2020": { "label": "2020 pandemic year", "hint": "Thai stocks fell a little, global stocks rose and prices dipped slightly.", "thaiStocks": -0.08, "globalStocks": 0.16, "fx": 0, "inflation": -0.008, "source": "[unverified] Approximate 2020 changes: SET index about −8%, global stocks about +16%, baht roughly unchanged against the US dollar, Thai CPI about −0.8%.", "retrieved": "2026-10-16" },
-    "2022": { "label": "2022 inflation year", "hint": "Prices rose fast, about 6% in a year, and global stocks fell by about a fifth.", "thaiStocks": 0.01, "globalStocks": -0.18, "fx": 0.04, "inflation": 0.061, "source": "[unverified] Approximate 2022 changes: SET index about +1%, global stocks about −18%, baht about 4% weaker against the US dollar, Thai CPI about 6.1%.", "retrieved": "2026-10-16" },
+    "1997": { "label": "1997 Asian financial crisis", "hint": "Thai stocks fell by about half. The baht lost almost half its value against the US dollar, so savings in US dollars were worth more in baht.", "thaiStocks": -0.55, "globalStocks": 0.31, "fx": 0.85, "inflation": 0.056, "source": "SET index 1997 −55% (year-end 831.57 to 372.69, verified). [unverified] Other approximate 1997 changes: baht from about 25 to about 47 per US dollar after the July 1997 float, Thai CPI about 5.6%, US stocks about +31%.", "retrieved": "2026-10-16" },
+    "2020": { "label": "2020 pandemic year", "hint": "Thai stocks fell a little, global stocks rose and prices dipped slightly.", "thaiStocks": -0.08, "globalStocks": 0.16, "fx": 0, "inflation": -0.008, "source": "SET index 2020 −8% (year-end 1,579.84 to 1,449.35, verified). [unverified] Other approximate 2020 changes: global stocks about +16%, baht roughly unchanged against the US dollar, Thai CPI about −0.8%.", "retrieved": "2026-10-16" },
+    "2022": { "label": "2022 inflation year", "hint": "Prices rose fast, about 6% in a year, and global stocks fell by about a fifth.", "thaiStocks": 0.01, "globalStocks": -0.18, "fx": 0.04, "inflation": 0.0608, "source": "SET index 2022 +1% (year-end 1,657.62 to 1,668.66) and Thai average headline inflation 6.08% (TPSO), verified. [unverified] Global stocks about −18%, baht about 4% weaker against the US dollar.", "retrieved": "2026-10-16" },
     "note": "Economic variables only, applied over 12 months starting at the chosen year. Never a statement about parties, politicians or who governs."
   },
   "inputs": {

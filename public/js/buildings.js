@@ -68,7 +68,7 @@ export const BUILDINGS = [
     status: 'live',
     blurb: 'A cow you earn, and an orchard',
     why: [
-      'Small daily actions are how habits form (Whitebread & Bingham, 2013).',
+      'Habits form when you repeat a small action every day, and missing one day does not undo the habit (Lally, van Jaarsveld, Potts & Wardle, 2010).',
       'A cow that gives milk every day is a productive asset: it pays you. A meme coin pays you nothing.',
     ],
   },
@@ -94,7 +94,7 @@ export const BUILDINGS = [
     why: [
       'A loan costs more than you borrow: the bank always shows the total before you agree.',
       'With several debts, clearing small ones first can keep people going (Gal & McShane, 2012).',
-      'In the game, interest stops at the amount borrowed. Real loans have no such cap.',
+      'In the game, interest stops at the amount borrowed. Real loans keep charging until you repay; Thai law caps the rate, not the total.',
     ],
   },
   {
@@ -127,9 +127,9 @@ export const BUILDINGS = [
         'Gold shops follow buying and selling prices announced by the Gold Traders Association of Thailand during the day.',
         'A shop buys gold back for a little less than it sells it for. That gap is how the shop earns, and it means gold bought today and sold tomorrow usually loses a little.',
       ],
-      source: 'Gold Traders Association of Thailand (marked unverified in our sources until it is checked).',
+      source: 'BullionStar, the Thailand gold market: 96.5% bar gold, 1 baht = 15.244 g, prices set by the Gold Traders Association of Thailand.',
     },
-    why: ['Gold facts here come from the Gold Traders Association of Thailand, an entry still being checked in our sources.'],
+    why: ['Thai bar gold is 96.5% pure, one baht of it weighs 15.244 g, and the Gold Traders Association of Thailand sets the prices (BullionStar, the Thailand gold market).'],
   },
 ];
 

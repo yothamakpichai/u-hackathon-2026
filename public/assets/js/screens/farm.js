@@ -114,7 +114,7 @@ export function mount(root, ctx) {
       ]),
       h('details', { class: 'card card--quiet future-why' }, [
         h('summary', { text: 'ⓘ Why this works' }),
-        h('p', { text: 'Habits form through small actions repeated every day, and they are easiest to build when young (Whitebread and Bingham, 2013). The cow makes those daily actions visible.' }),
+        h('p', { text: 'Habits form when you repeat a small action every day, and missing one day does not undo the habit (Lally and others, 2010). The cow makes those daily actions visible.' }),
         h('p', { class: 'field__hint' }, [h('a', { href: '#/research', text: 'See our sources' })]),
       ]),
     );
