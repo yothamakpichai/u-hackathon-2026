@@ -115,7 +115,7 @@ test('the payoff comparison follows the game rule and always ends with finite nu
   const rate = payoffPlan(mixed, 10, 'rate');
   assert.ok(small.finished && rate.finished && small.days < 15 && rate.days < 15, `${small.days} / ${rate.days} days`);
   assert.ok(rate.interest <= 20, 'the capped Quick Cash adds nothing; the Bank loan at most its principal');
-  // Eight loans of 100 at 1.5% a day: 12 coins of interest a day is more than the budget.
+  // Eight loans of L$100 at 1.5% a day: L$12 of interest a day is more than the budget.
   const many = [...Array(8)].map((_, i) => asPayoff({ id: `m${i}`, lender: 'bank', principal: 100, dailyRate: 0.015, start: today, due: addDays(today, 13), paid: 0 }, today));
   const slow = payoffPlan(many, 10, 'rate');
   assert.equal(slow.covered, false, 'the budget does not cover the interest');
