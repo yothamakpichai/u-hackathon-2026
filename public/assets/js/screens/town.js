@@ -96,13 +96,17 @@ export function mount(root, ctx) {
       if (!alive) return;
       if (live) navigate(b.route);
       else lessonSheet(b);
+      if (stale) renderTiles();
     };
     if (reducedMotion()) return go();
     tile.classList.add(live ? 'is-opening' : 'is-knocking');
     opening = setTimeout(go, OPEN_MS);
   }
 
+  let stale = false; // new data arrived while a building was opening: redraw once it has opened
   function renderTiles() {
+    stale = Boolean(opening);
+    if (stale) return;
     tiles.replaceChildren(
       ...TOWN.map((b, i) => {
         const live = b.status === 'live';
