@@ -70,11 +70,13 @@ audio.hasAny().then((any) => {
 });
 
 // "Ask Penny" (BRIEF §9) floats over every screen once a level is chosen, and gets out of the way of controls.
-mountAskFab({ store, onOpen: openTutor });
+mountAskFab({ store, onOpen: () => openTutor({ mode: 'ask' }) });
+// BRIEF §17: any screen opens Penny with dispatchEvent(new CustomEvent('penny:open', { detail: { mode, context } })).
+addEventListener('penny:open', (e) => openTutor(e.detail || {}));
 
-function openTutor() {
+function openTutor(opts = {}) {
   import('./screens/tutor.js')
-    .then((m) => m.openTutor({ store, config }))
+    .then((m) => m.openTutor({ store, config }, opts))
     .catch(() => {}); // offline: the button simply does nothing until the page can load the module
 }
 

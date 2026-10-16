@@ -1,0 +1,72 @@
+/* Penny v4 (P1.C): voice buttons on Penny's bubbles, the Future You chat, and the Talk to Future You button. */
+
+.tutor-msg--penny {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+
+.tutor-msg__text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.tutor-msg__play {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -6px -6px -6px 0;
+  border: 1px solid var(--primary-200);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--primary-800);
+  font-size: 0.875rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.tutor-msg__play:hover {
+  background: var(--primary-100);
+}
+
+.tutor-msg__play:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.tutor-msg__play.is-playing {
+  border-color: var(--primary-600);
+  background: var(--primary-600);
+  color: var(--surface);
+}
+
+.tutor-msg.is-thinking .tutor-msg__play {
+  display: none;
+}
+
+.tutor--future .tutor-msg--penny {
+  background: var(--amber-50);
+}
+
+.tutor--future .tutor__title {
+  color: var(--amber-800);
+}
+
+.future-talk {
+  display: grid;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+.future-talk .btn {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .future-talk .btn {
+    width: auto;
+    justify-self: start;
+  }
+}
