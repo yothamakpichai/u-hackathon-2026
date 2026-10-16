@@ -4,58 +4,218 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Penny · Money companion for life</title>
-<meta name="description" content="Penny is a money companion for kids from 8 and for grown-ups: save, spend, borrow, trade and spot scams in a friendly town. Everything is simulated except the Piggy Bank, which only records savings you report.">
-<meta name="color-scheme" content="light">
-<meta name="theme-color" content="#F7FAF8">
+<meta name="description" content="Penny is a money companion for kids from 8 and for grown-ups: ask Penny anything, practise in a living money town, and build real saving habits.">
+<meta name="theme-color" content="#0B1D17">
 <link rel="icon" href="assets/svg/mark.svg" type="image/svg+xml">
+<link rel="preload" href="landing/fonts/fraunces-latin-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/fonts/nunito-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/tokens.css">
-<link rel="stylesheet" href="assets/css/base.css">
-<link rel="stylesheet" href="assets/css/components.css">
-<link rel="stylesheet" href="assets/css/lab.css">
-<link rel="stylesheet" href="assets/css/v4-shell.css">
-<link rel="stylesheet" href="assets/css/v4-arena.css">
-<link rel="stylesheet" href="assets/css/v4-penny.css">
-<link rel="stylesheet" href="assets/css/v4-town.css">
-<script type="module" src="assets/js/app.js"></script>
+<link rel="stylesheet" href="landing/landing.css">
+<script src="landing/forward.js"></script>
+<script type="module" src="landing/landing.js"></script>
 </head>
-<body>
-<div class="app">
-  <header class="app-header">
-    <a class="brand" href="#/">
-      <svg class="brand__mark" viewBox="0 0 32 32" width="32" height="32" aria-hidden="true" focusable="false">
-        <rect width="32" height="32" rx="9" fill="#0DA678"/>
-        <rect x="7" y="17" width="4.5" height="8" rx="2.25" fill="#FFFFFF"/>
-        <rect x="13.75" y="12" width="4.5" height="13" rx="2.25" fill="#FFFFFF"/>
-        <rect x="20.5" y="7" width="4.5" height="18" rx="2.25" fill="#FFFFFF"/>
-      </svg>
-      <span class="brand__name" data-slot="product-name"></span>
-    </a>
-    <div class="app-header__actions">
-    </div>
-  </header>
+<body class="landing">
+<a class="skip" href="#main">Skip to content</a>
+<canvas id="scene" class="scene" aria-hidden="true"></canvas>
+<div class="scene-shade" aria-hidden="true"></div>
 
-  <main id="main" class="app-main" tabindex="-1">
-    <div class="state state--loading" role="status">
-      <span class="spinner" aria-hidden="true"></span>
-      <p class="state__title">Loading…</p>
-      <p class="state__body boot__slow">This is taking longer than usual. Check your connection, then reload the page.</p>
-    </div>
-    <noscript>
-      <div class="state state--error">
-        <p class="state__title">This simulation needs JavaScript</p>
-        <p class="state__body">Turn on JavaScript in your browser settings, then reload the page.</p>
+<header class="site-nav">
+  <a class="site-nav__brand" href="./" aria-label="Penny home">
+    <img src="assets/svg/penny/happy.svg" alt="" width="34" height="34">
+    <span>Penny</span>
+  </a>
+  <button class="site-nav__menu" type="button" aria-expanded="false" aria-controls="site-menu">Menu</button>
+  <nav id="site-menu" class="site-nav__links" aria-label="Main">
+    <a href="#town">The town</a>
+    <a href="#real">Real habits</a>
+    <a href="#research">Research</a>
+    <a href="guide.html">How to play</a>
+    <a href="about.html">Project report</a>
+    <a class="btn btn--gold btn--sm" href="app.html">Play Penny</a>
+  </nav>
+</header>
+
+<main id="main">
+  <section class="hero" data-focus="hero">
+    <div class="hero__inner">
+      <h1 class="hero__title">Raising the generation <em>nobody can fool.</em></h1>
+      <p class="hero__lede">Penny is a money companion for life. Kids from 8 and grown-ups practise saving, borrowing, investing and spotting scams in a living town, and Penny explains every step.</p>
+
+      <div class="hero__ctas">
+        <a class="btn btn--gold btn--lg" href="app.html">Play Penny</a>
+        <a class="btn btn--line btn--lg v4-only" href="app.html#/demo">Judge demo</a>
       </div>
-    </noscript>
-  </main>
 
-  <footer class="app-footer">
-    <p class="app-footer__sim"><span class="app-footer__dot" aria-hidden="true"></span><strong>Simulation · No real money</strong></p>
-    <p>Educational simulation. Not financial advice. No real cryptocurrency is bought, sold or held.</p>
-    <p class="app-footer__credit">Built by <a href="https://cenedury.com" target="_blank" rel="noopener">Cenedury</a></p>
-  </footer>
-</div>
-<div id="live" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+      <div class="ask" data-ask>
+        <div class="ask__log" role="log" aria-live="polite" aria-label="Conversation with Penny">
+          <div class="msg msg--penny">
+            <img class="msg__avatar" src="assets/svg/penny/happy.svg" alt="" width="40" height="40">
+            <p class="msg__bubble">Hi, I’m Penny. Ask me anything about money. I’ll explain it plainly, and I’ll never try to sell you anything.</p>
+          </div>
+        </div>
+        <div class="ask__chips" aria-label="Try asking">
+          <button type="button" class="chip" data-q="Someone promises to double my money in a week. Is that real?">“Double your money in a week”?</button>
+          <button type="button" class="chip" data-q="Why does paying only the minimum on a credit card cost so much?">The minimum-payment trap</button>
+          <button type="button" class="chip" data-q="What does inflation do to money I keep in a jar?">Inflation and my savings</button>
+          <button type="button" class="chip" data-q="What is a rug pull?">What is a rug pull?</button>
+        </div>
+        <form class="ask__form" autocomplete="off">
+          <label class="sr-only" for="ask-input">Ask Penny a question</label>
+          <input id="ask-input" name="q" type="text" maxlength="300" placeholder="Ask Penny about money…" enterkeyhint="send">
+          <button class="ask__send" type="submit" aria-label="Send">
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 12l16-8-6 16-2.5-6.5L4 12z" fill="currentColor"/></svg>
+          </button>
+        </form>
+        <p class="ask__note">Penny teaches with simulated money, never recommends a coin, stock or trade, and never holds your money. Please don’t share personal details.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="statement" data-focus="problem">
+    <div class="wrap">
+      <p class="statement__text" data-reveal>Money habits are largely set by about <mark>age seven</mark>.<sup>1</sup> Thai households owe <mark>85.9% of GDP</mark>.<sup>2</sup> A Thai woman can expect to reach <mark>80</mark>, a man <mark>72</mark>, and both will need to fund the years after work.<sup>3</sup> <span class="statement__turn">Nobody gets a practice round. Penny is one.</span></p>
+      <ol class="notes" data-reveal>
+        <li>Whitebread &amp; Bingham (2013), Money Advice Service / University of Cambridge.</li>
+        <li>SCB EIC, reported by The Nation, 15 July 2026 (Q1 2026).</li>
+        <li>Thai Population Gazette 2025, Institute for Population and Social Research, Mahidol University.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="town" class="tour">
+    <div class="tour__head wrap" data-focus="wide">
+      <h2 class="h2" data-reveal>One town. Every money skill has a building.</h2>
+      <p class="lede" data-reveal>Whatever you do in any building feeds one daily streak, so five minutes a day becomes a habit.</p>
+    </div>
+
+    <article class="stop stop--school" data-focus="school">
+      <div class="stop__card" data-reveal>
+        <p class="stop__no">01</p>
+        <h3 class="h3">School</h3>
+        <p>Short lessons, market missions and checkpoints for three age levels, all read aloud. XP, a daily goal and a streak keep you coming back.</p>
+      </div>
+      <figure class="phone" data-reveal><img src="landing/img/school.webp" alt="The Learning Path in Penny with a streak, XP and the first unit, Money Basics" width="390" height="780" loading="lazy"></figure>
+    </article>
+
+    <article class="stop stop--market" data-focus="market">
+      <div class="stop__card" data-reveal>
+        <p class="stop__no">02</p>
+        <h3 class="h3">Market Lab</h3>
+        <p>A crypto market that changes every day, with real chart tools and real traps: whale dumps, rug pulls, wash-trading bots. The Coach takes your hand through every step, and the Arena puts you in a live market with other players and bots.</p>
+      </div>
+      <figure class="phone" data-reveal><img src="landing/img/market.webp" alt="The Coach in Market Lab offering five guided chapters, from reading a candle to surviving a whale dump" width="390" height="780" loading="lazy"></figure>
+    </article>
+
+    <article class="stop stop--future" data-focus="future">
+      <div class="stop__card" data-reveal>
+        <p class="stop__no">03</p>
+        <h3 class="h3">Future You</h3>
+        <p>Five hundred projections of your own plan in today’s baht, with Thai inflation and currency scenarios. Your character ages in front of you<span class="v4-only">, and you can talk to them</span>.</p>
+      </div>
+      <figure class="phone" data-reveal><img src="landing/img/future.webp" alt="Future You asking for age, monthly saving and the age to use it, with a projection-not-prediction note" width="390" height="780" loading="lazy"></figure>
+    </article>
+
+    <article class="stop stop--money" data-focus="money">
+      <div class="stop__card" data-reveal>
+        <p class="stop__no">04</p>
+        <h3 class="h3">Money Town</h3>
+        <p>A Piggy Bank for your real savings, a cow you earn by doing, an orchard that rewards waiting, a store, and a bank where you meet interest, credit scores and the quick-cash trap before real life does.</p>
+      </div>
+      <figure class="phone" data-reveal><img src="landing/img/money.webp" alt="The Farm: you can’t buy a cow, you earn one from the Piggy Bank, lessons and markets" width="390" height="780" loading="lazy"></figure>
+    </article>
+
+    <article class="stop stop--research" data-focus="research">
+      <div class="stop__card" data-reveal>
+        <p class="stop__no">05</p>
+        <h3 class="h3">Research Lab</h3>
+        <p>Stocks and gold are next. We are studying them before we build them; until then the lab teaches one real lesson, like how Thai bar gold is priced.</p>
+      </div>
+    </article>
+  </section>
+
+  <section id="real" class="bridge" data-focus="ai">
+    <div class="wrap">
+      <h2 class="h2" data-reveal>Practise in a simulation. Change real habits.</h2>
+      <div class="bridge__grid">
+        <div class="bridge__item" data-reveal>
+          <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M4 11c0-3 3-5 7-5h2c3 0 5 1.5 6 3.5l2 .5v3l-2 .5c-.5 1.5-1.5 2.5-3 3V19h-3v-2h-3v2H7v-3c-2-1-3-3-3-5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          <h3 class="h3">Your real savings</h3>
+          <p>The Piggy Bank records the cash you actually keep, and rewards the habit, never the amount.</p>
+        </div>
+        <div class="bridge__item" data-reveal>
+          <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <h3 class="h3">Your real plan</h3>
+          <p>Future You projects what you can really save, in today’s money, with Thai data.</p>
+        </div>
+        <div class="bridge__item" data-reveal>
+          <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M4 5h16v10H9l-5 4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          <h3 class="h3">Your real decisions</h3>
+          <p>Penny reviews what you did in the market from your own numbers: where you panicked, where you held.</p>
+        </div>
+        <div class="bridge__item" data-reveal>
+          <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 20c.5-3.5 3-5.5 6.5-5.5s6 2 6.5 5.5M16 4.5a3.5 3.5 0 010 7M18 14.5c2 .8 3.2 2.8 3.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <h3 class="h3">Your real family</h3>
+          <p>A parent link lets a grown-up see progress, confirm savings and approve a young player’s account.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="research" class="journal" data-focus="wide">
+    <div class="wrap">
+      <h2 class="h2 h2--ink" data-reveal>Every building says why it works.</h2>
+      <dl class="journal__list">
+        <div data-reveal><dt>Habits form early, and through daily repetition.</dt><dd>Whitebread &amp; Bingham, 2013 · Lally et al., 2010</dd></div>
+        <div data-reveal><dt>Interest, inflation and diversification are the core of financial literacy.</dt><dd>Lusardi &amp; Mitchell, 2011, 2014</dd></div>
+        <div data-reveal><dt>Seeing an older self raised saving.</dt><dd>Hershfield et al., 2011</dd></div>
+        <div data-reveal><dt>A conversation with an AI future self reduced anxiety and strengthened future-self continuity.</dt><dd>Pataranutaporn et al., 2024</dd></div>
+        <div data-reveal><dt>Financial education works, and fades without practice.</dt><dd>Kaiser et al., 2022 · Fernandes et al., 2014</dd></div>
+        <div data-reveal><dt>Being asked to recall beats re-reading.</dt><dd>Roediger &amp; Karpicke, 2006</dd></div>
+      </dl>
+      <p class="journal__more"><a href="about.html#references">All references in the project report</a></p>
+    </div>
+  </section>
+
+  <section class="safety-band" data-focus="wide">
+    <div class="wrap">
+      <h2 class="h2 h2--ink" data-reveal>Built for an 8-year-old first.</h2>
+      <ul class="safety-row" data-reveal>
+        <li>Simulated money only</li>
+        <li>No ads for anyone under 20</li>
+        <li>Play as a guest, no sign-up</li>
+        <li>Parents approve under-13 accounts</li>
+        <li>No analytics</li>
+        <li>No gender question</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="closing" data-focus="hero">
+    <div class="wrap closing__grid">
+      <div>
+        <h2 class="h2" data-reveal>Five minutes a day. A lifetime of better money.</h2>
+        <div class="hero__ctas" data-reveal>
+          <a class="btn btn--gold btn--lg" href="app.html">Play Penny</a>
+          <a class="btn btn--line btn--lg" href="guide.html">How to play</a>
+        </div>
+      </div>
+      <div class="people" data-reveal>
+        <p class="people__title">Team Cenedury</p>
+        <p><b>Yotha Makpichai</b> Engineering lead and product</p>
+        <p><b>Joewee Loke</b> Game systems: markets, farm and simulations</p>
+        <p><b>Aphatcha Poolphol</b> Research, user testing and communication</p>
+        <p class="people__note">Built during U-Hackathon 2026, AI track. <a href="https://cenedury.com" rel="noopener">Partner with us</a></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__row">
+    <p>Built by <a href="https://cenedury.com" rel="noopener">Cenedury</a> · <span data-year>2026</span></p>
+    <p>Simulation · No real money · Not financial advice</p>
+    <nav aria-label="Footer"><a href="guide.html">How to play</a> <a href="about.html">Project report</a> <a href="app.html#/research">Research</a> <a href="app.html#/privacy">Privacy</a></nav>
+  </div>
+</footer>
 </body>
 </html>

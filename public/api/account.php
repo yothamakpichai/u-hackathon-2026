@@ -22,6 +22,8 @@ require REPO_ROOT . '/src/accounts.php';
 require REPO_ROOT . '/src/arena.php';
 
 const MAX_STATE_BYTES = 300000;
+// Judge demo accounts per IP per hour. Judges at the venue share one Wi-Fi address, so the default is generous.
+define('DEMO_PER_HOUR', max(1, (int) env('DEMO_PER_HOUR', '60')));
 
 $action = is_string($_GET['action'] ?? null) ? $_GET['action'] : '';
 if ($action === 'status') {
@@ -63,7 +65,7 @@ switch ($action) {
         if (!arena_v2_ready()) {
             send_error(503, 'V2_OFF', 'Demo accounts aren’t available right now. You can make a normal account instead.');
         }
-        rate_limit('demo', 5, 3600); // per IP
+        rate_limit('demo', DEMO_PER_HOUR, 3600); // per IP
         demo_signup($db);
     case 'logout':
         require_method('POST');

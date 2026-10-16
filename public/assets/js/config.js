@@ -1,5 +1,5 @@
 // App-wide constants. Screens receive this module as ctx.config.
-// Renaming the product is this one line: index.html carries no product name.
+// Renaming the product is this one line: app.html carries no product name.
 export const PRODUCT_NAME = 'Penny';
 export const TAGLINE = 'Money companion for life';
 export const MANIFESTO = 'Raising the generation nobody can fool';
@@ -13,7 +13,7 @@ export const QUOTE = 'L$';
 export const START_CASH = 1000;
 export const TIME_ZONE = 'Asia/Bangkok';
 
-// Browser-loaded JSON lives in public/data/ (docs/DECISIONS.md #1). Paths are relative to index.html.
+// Browser-loaded JSON lives in public/data/ (docs/DECISIONS.md #1). Paths are relative to app.html (the app; index.html is the landing page).
 export const DATA_BASE = 'data/';
 export const AUDIO_BASE = 'assets/audio/';
 

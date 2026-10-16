@@ -37,6 +37,8 @@ const routes = {
   // The Arena screen itself explains when it is closed or locked (BRIEF §15).
   '/arena': { name: 'arena', title: 'Arena', load: () => import('./screens/arena.js'), guard: needsTier },
   '/privacy': { name: 'privacy', title: 'Privacy', load: () => import('./screens/privacy.js') },
+  // The landing page's Judge demo link (app.html#/demo): the same demo as the welcome button (judge-demo.js).
+  '/demo': { name: 'demo', title: 'Judge demo', load: () => import('./screens/demo-start.js') },
   // v4 shell (P1.B): nickname, character, Future You voice, narration, account and parent link.
   '/settings': { name: 'settings', title: 'Settings', load: () => import('./screens/settings.js'), guard: needsTier },
 };

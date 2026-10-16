@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Penny · Project report</title>
+<meta name="description" content="Project report for Penny, a money companion for life: background, objectives, research basis, design, AI, architecture, safety, evaluation plan, limitations and references.">
+<meta name="theme-color" content="#0B1D17">
+<link rel="icon" href="assets/svg/mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="landing/landing.css">
+<script src="landing/forward.js"></script>
+<script type="module" src="landing/landing.js"></script>
+</head>
+<body class="doc-page">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-nav is-solid">
+  <a class="site-nav__brand" href="./" aria-label="Penny home"><img src="assets/svg/penny/happy.svg" alt="" width="36" height="36"><span>Penny</span></a>
+  <button class="site-nav__menu" type="button" aria-expanded="false" aria-controls="site-menu">Menu</button>
+  <nav id="site-menu" class="site-nav__links" aria-label="Main">
+    <a href="./">Home</a>
+    <a href="guide.html">How to play</a>
+    <a href="about.html" aria-current="page">Project report</a>
+    <a class="btn btn--gold btn--sm" href="app.html">Play now</a>
+  </nav>
+</header>
+
+<main id="main">
+  <section class="doc-hero">
+    <div class="wrap">
+      <p class="doc-kicker">Project report · U-Hackathon 2026, AI track</p>
+      <h1 class="h2">Penny: a money companion for life</h1>
+      <p class="lede">Team Cenedury: Yotha Makpichai, Joewee Loke, Aphatcha Poolphol. Bangkok, 16 October 2026.</p>
+    </div>
+  </section>
+
+  <div class="wrap doc">
+    <nav class="doc__toc" aria-label="Contents">
+      <ol>
+        <li><a href="#abstract">Abstract</a></li>
+        <li><a href="#background">Background and problem</a></li>
+        <li><a href="#objectives">Objectives</a></li>
+        <li><a href="#users">Who it serves</a></li>
+        <li><a href="#research">Research foundations</a></li>
+        <li><a href="#design">Product design</a></li>
+        <li><a href="#ai">How AI is used</a></li>
+        <li><a href="#simulation">Simulation engine</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#safety">Safety, privacy and ethics</a></li>
+        <li><a href="#evaluation">Evaluation plan</a></li>
+        <li><a href="#limitations">Limitations</a></li>
+        <li><a href="#roadmap">Roadmap</a></li>
+        <li><a href="#references">References</a></li>
+      </ol>
+    </nav>
+
+    <article class="doc__body">
+      <h2 id="abstract">Abstract</h2>
+      <p class="abstract">Money habits form early, yet most people meet credit, investing and scams with no practice at all. Penny is a web app in which children from 8 and adults learn money skills in a small town: a learning path, a simulated crypto market with a coach, a future-self projection, and a set of everyday money places including a piggy bank for real savings, a farm, a store and a bank. An AI companion explains every step. All money is simulated except the piggy bank, which only records savings the user reports. The design draws on financial-literacy, behavioural-economics and learning-science research, cites its sources in the product, and treats child safety and data minimisation as requirements rather than features.</p>
+
+      <h2 id="background">1. Background and problem</h2>
+      <p>Research for the UK Money Advice Service found that core money habits are largely formed by about age seven (Whitebread &amp; Bingham, 2013). In Thailand, household debt stood at 85.9% of GDP in the first quarter of 2026 (SCB EIC, reported by The Nation, 2026), and life expectancy at birth is 80.1 years for women and 72.0 for men (Institute for Population and Social Research, 2025), which means long retirements to fund.</p>
+      <p>Children already spend daily time in games. A mentor at this event described his own children: hours every day in Roblox and Minecraft, and no sense of money. Penny’s bet is that the same pull can carry a few minutes of real practice each day, and that a safe simulation is the right place to make the first mistakes.</p>
+
+      <h2 id="objectives">2. Objectives</h2>
+      <ul>
+        <li>Teach the core ideas of financial literacy (interest, inflation, diversification) in short daily practice.</li>
+        <li>Let people feel market risk, scams and debt in a simulation before they meet them with real money.</li>
+        <li>Connect today’s choices to the future through projections in today’s money.</li>
+        <li>Build saving habits around real cash without rewarding amounts that cannot be verified.</li>
+        <li>Do all of this safely for an 8-year-old and usefully for an adult.</li>
+      </ul>
+
+      <h2 id="users">3. Who it serves</h2>
+      <table>
+        <tr><th>Level</th><th>Ages</th><th>Focus</th></tr>
+        <tr><td>Explorer</td><td>8–12</td><td>Saving, spending, prices, spotting a scam; simpler markets.</td></tr>
+        <tr><td>Trader</td><td>13–15</td><td>Supply and demand, hype, unlocks, indicators, orders.</td></tr>
+        <tr><td>Builder</td><td>16+</td><td>Creating a coin, tokenomics, rug pulls, wash trading, blockchain.</td></tr>
+        <tr><td>Grown-ups</td><td>20+</td><td>Any level; credit, retirement projections, the Arena without a score gate.</td></tr>
+      </table>
+
+      <h2 id="research">4. Research foundations</h2>
+      <p>Every building in the town carries a “Why this works” note that cites only a checked list of sources. The main foundations:</p>
+      <ul>
+        <li><b>Financial literacy.</b> Interest, inflation and diversification are the core ideas measured across countries (Lusardi &amp; Mitchell, 2011, 2014); the Money Check’s knowledge items follow them, and its behaviour items adapt the OECD/INFE toolkit (OECD, 2022).</li>
+        <li><b>Money personality.</b> Present bias predicts credit-card borrowing (Meier &amp; Sprenger, 2010); money scripts relate to financial behaviour (Klontz et al., 2011; Klontz &amp; Britt, 2012). The four Money Types combine a now-or-later axis with a careful-or-bold axis (Holt &amp; Laury, 2002). We avoid over-claiming: single choices say little about a person (Watts, Duncan &amp; Quan, 2018).</li>
+        <li><b>Saving.</b> Labelled savings are easier to keep (Soman &amp; Cheema, 2011); people speed up near a goal (Kivetz, Urminsky &amp; Zheng, 2006); fresh starts such as birthdays prompt new goals (Dai, Milkman &amp; Riis, 2014).</li>
+        <li><b>The future self.</b> Seeing an age-progressed self increased saving (Hershfield et al., 2011), and a conversation with an AI-generated future self reduced anxiety and strengthened future-self continuity (Pataranutaporn et al., 2024).</li>
+        <li><b>Learning.</b> Financial education has causal effects on knowledge and behaviour (Kaiser et al., 2022), but effects fade without practice (Fernandes, Lynch &amp; Netemeyer, 2014). Retrieval practice beats re-reading (Roediger &amp; Karpicke, 2006), and habits form through daily repetition (Lally et al., 2010).</li>
+        <li><b>Debt.</b> Paying off smaller debts first can keep people going (Gal &amp; McShane, 2012).</li>
+      </ul>
+
+      <h2 id="design">5. Product design</h2>
+      <h3>The town</h3>
+      <p>A single town is the home screen; each building is one money skill, and every action in every building feeds one streak and daily goal. Buildings that are not ready are shown under construction and open a real lesson card instead of a dead end.</p>
+      <h3>Onboarding</h3>
+      <p>The first screen asks for a birth year on a cake whose candles match the age; the level follows from it. Users build a character rather than answer a gender question. The 15-item Money Check is the same for everyone, written for a 9-year-old reader and read aloud, and produces a Money Health Score and a Money Type that routes each person to the building that addresses their blind spot.</p>
+      <h3>Teaching that holds your hand</h3>
+      <p>A coach pauses the market and walks through it on the real interface: reading a candle, indicators and what they cannot tell you, a first trade with its price impact, and a whale dump played twice, once panic-selling and once holding, compared side by side.</p>
+      <h3>Rewards that resist cheating</h3>
+      <p>The piggy bank records real cash by self-report, which no app can verify. Penny therefore never rewards amounts; it rewards the behaviour it can see (logging, planning, reflecting, keeping a streak), caps rewards per day and has no leaderboards, so cheating gains nothing. A parent can confirm entries through the parent link.</p>
+
+      <h2 id="ai">6. How AI is used</h2>
+      <ul>
+        <li><b>Content engine.</b> Claude generated the lessons, market events and quizzes for three levels at build time. Claims may cite only the checked source list, and numbers were verified against their sources.</li>
+        <li><b>Ask Penny.</b> At runtime Claude answers questions, reviews a market run from its actual metrics and explains Money Check results. It is educational only: it never recommends a coin, stock, fund or trade, never predicts real prices and asks for no personal data. When the AI is unavailable, Penny answers from a checked FAQ without showing an error.</li>
+        <li class="v4-only"><b>Future You.</b> A persona mode lets users talk with their future self, grounded only in their own projection numbers, and hear the reply in a voice they choose.</li>
+        <li><b>Voice.</b> ElevenLabs narration reads lessons and every Money Check question aloud, using premade voices only.</li>
+      </ul>
+
+      <h2 id="simulation">7. Simulation engine</h2>
+      <p>Every market is deterministic and seeded by the Bangkok date (a mulberry32 generator), so everyone sees the same market on the same day and every run can be reproduced. Coins trade against constant-product pools (x·y = k) with a 0.3% fee. Ten agent archetypes trade alongside the player, including momentum traders, whales, panic sellers, insiders, hype accounts, arbitrageurs, a rug puller and a wash-trading bot. Scripted events teach halvings, unlocks, whale dumps, rug pulls and stablecoin de-pegs. Trades are sealed into blocks with SHA-256 hashes on a simulated chain that users can inspect and try to tamper with. Future You runs 500 seeded projections per plan and reports results in today’s baht.</p>
+
+      <h2 id="architecture">8. Architecture</h2>
+      <table>
+        <tr><th>Layer</th><th>Choice</th></tr>
+        <tr><td>Client</td><td>Vanilla HTML, CSS and JavaScript modules; no build step; works at 360 px and up.</td></tr>
+        <tr><td>Charts</td><td>TradingView Lightweight Charts (Apache-2.0), vendored.</td></tr>
+        <tr><td>Server</td><td>PHP 8.3 endpoints for Ask Penny, accounts and the Arena; MariaDB for accounts and the shared Arena market.</td></tr>
+        <tr><td>Arena</td><td>A server-authoritative market advanced lazily on each request under a database lock, with bots inside the tick.</td></tr>
+        <tr><td>Security</td><td>Strict content security policy (no third-party scripts or requests), argon2id passwords, secure session cookie, CSRF tokens, rate limits, prepared statements.</td></tr>
+        <tr><td>Landing</td><td>A procedural low-poly 3D town drawn with Three.js (MIT), vendored; reduced-motion and no-WebGL fallbacks.</td></tr>
+      </table>
+
+      <h2 id="safety">9. Safety, privacy and ethics</h2>
+      <ul>
+        <li><b>No real money.</b> No wallets, deposits or exchange links. Adults are told that real trading happens only on licensed exchanges with identity checks.</li>
+        <li><b>No ads for children.</b> No sponsor or broker banners for anyone under 20, Thailand’s age of majority.</li>
+        <li><b>Data minimisation.</b> Guest play needs no data at all. Accounts hold a username, a password hash and a birth year; no email or phone number is collected from children.</li>
+        <li><b>Parental consent.</b> Accounts for players under 13 stay inactive until a parent approves them through the parent link.</li>
+        <li><b>No profiling by gender.</b> Users build a character; no gender is asked or used.</li>
+        <li><b>Honest numbers.</b> Projections are labelled “projection, not prediction”, model assumptions are labelled as assumptions, and game rules that differ from real life (for example capped game interest) say so.</li>
+      </ul>
+
+      <h2 id="evaluation">10. Evaluation plan</h2>
+      <p>Penny was built during the hackathon and has not yet been evaluated with users. The plan:</p>
+      <ol>
+        <li>Knowledge: change in the Money Check knowledge score between first use and four weeks later.</li>
+        <li>Behaviour: share of active days with a piggy bank log, and the now-or-later choices revealed in the orchard compared with the quiz.</li>
+        <li>Market judgement: panic sells after negative events and holdings at rug pulls, from the market metrics.</li>
+        <li>Engagement: daily return rate and streak length, with time on task kept short by design.</li>
+        <li>Safety: parent-approval rates and any reports from the parent link.</li>
+      </ol>
+
+      <h2 id="limitations">11. Limitations</h2>
+      <ul>
+        <li>Age is self-declared; real identity checks belong to licensed partners at adulthood.</li>
+        <li>The Money Check adapts published constructs but is not a validated clinical or licensed instrument.</li>
+        <li>Simulated markets simplify real ones; long-run return and volatility values in Future You are team assumptions, labelled as such.</li>
+        <li>English only for now.</li>
+        <li>Built in about a day; the evaluation above has not been run.</li>
+      </ul>
+
+      <h2 id="roadmap">12. Roadmap</h2>
+      <ul>
+        <li>Friends and weekly leagues with child-safe design.</li>
+        <li>A teacher dashboard through eduu, our education platform.</li>
+        <li>Stocks and gold buildings, after research.</li>
+        <li>Learning partners in the School, and an identity-checked handoff to licensed partners at 20.</li>
+        <li>Thai language.</li>
+      </ul>
+
+      <h2 id="references">References</h2>
+      <ol class="refs-list">
+        <li>Dai, H., Milkman, K. L. &amp; Riis, J. (2014). The fresh start effect. <i>Management Science</i>, 60(10), 2563–2582.</li>
+        <li>Fernandes, D., Lynch, J. G. &amp; Netemeyer, R. G. (2014). Financial literacy, financial education, and downstream financial behaviors. <i>Management Science</i>, 60(8), 1861–1883.</li>
+        <li>Gal, D. &amp; McShane, B. B. (2012). Can small victories help win the war? Evidence from consumer debt management. <i>Journal of Marketing Research</i>, 49(4), 487–501.</li>
+        <li>Hershfield, H. E. et al. (2011). Increasing saving behavior through age-progressed renderings of the future self. <i>Journal of Marketing Research</i>, 48(SPL), S23–S37.</li>
+        <li>Holt, C. A. &amp; Laury, S. K. (2002). Risk aversion and incentive effects. <i>American Economic Review</i>, 92(5), 1644–1655.</li>
+        <li>Institute for Population and Social Research, Mahidol University (2025). <a href="https://ipsr.mahidol.ac.th/wp-content/uploads/2025/01/Gazette2025EN.pdf" rel="noopener">Thai Population Gazette 2025</a>.</li>
+        <li>Kaiser, T., Lusardi, A., Menkhoff, L. &amp; Urban, C. (2022). Financial education affects financial knowledge and downstream behaviors. <i>Journal of Financial Economics</i>, 145(2), 255–272.</li>
+        <li>Kivetz, R., Urminsky, O. &amp; Zheng, Y. (2006). The goal-gradient hypothesis resurrected. <i>Journal of Marketing Research</i>, 43(1), 39–58.</li>
+        <li>Klontz, B., Britt, S. L., Mentzer, J. &amp; Klontz, T. (2011). Money beliefs and financial behaviors: development of the Klontz Money Script Inventory. <i>Journal of Financial Therapy</i>, 2(1).</li>
+        <li>Klontz, B. T. &amp; Britt, S. L. (2012). How clients’ money scripts predict their financial behaviors. <i>Journal of Financial Planning</i>, 25(11).</li>
+        <li>Lally, P., van Jaarsveld, C. H. M., Potts, H. W. W. &amp; Wardle, J. (2010). How are habits formed: modelling habit formation in the real world. <i>European Journal of Social Psychology</i>, 40(6), 998–1009.</li>
+        <li>Lusardi, A. &amp; Mitchell, O. S. (2011). Financial literacy around the world: an overview. <i>Journal of Pension Economics &amp; Finance</i>, 10(4), 497–508.</li>
+        <li>Lusardi, A. &amp; Mitchell, O. S. (2014). The economic importance of financial literacy: theory and evidence. <i>Journal of Economic Literature</i>, 52(1), 5–44.</li>
+        <li>Meier, S. &amp; Sprenger, C. (2010). Present-biased preferences and credit card borrowing. <i>American Economic Journal: Applied Economics</i>, 2(1), 193–210.</li>
+        <li>OECD (2022). OECD/INFE Toolkit for Measuring Financial Literacy and Financial Inclusion 2022.</li>
+        <li>Pataranutaporn, P., Winson, K., Yin, P., Lapapirojn, A., Ouppaphan, P., Lertsutthiwong, M., Maes, P. &amp; Hershfield, H. (2024). <a href="https://arxiv.org/abs/2405.12514" rel="noopener">Future You: a conversation with an AI-generated future self reduces anxiety, negative emotions, and increases future self-continuity</a>. arXiv:2405.12514.</li>
+        <li>Roediger, H. L. &amp; Karpicke, J. D. (2006). Test-enhanced learning: taking memory tests improves long-term retention. <i>Psychological Science</i>, 17(3), 249–255.</li>
+        <li>SCB EIC, reported by The Nation (15 July 2026). <a href="https://www.nationthailand.com/business/economy/40068669" rel="noopener">Thai household debt-to-GDP ratio falls amid restricted credit access</a>.</li>
+        <li>Soman, D. &amp; Cheema, A. (2011). Earmarking and partitioning: increasing saving by low-income households. <i>Journal of Marketing Research</i>, 48(SPL), S14–S22.</li>
+        <li>Watts, T. W., Duncan, G. J. &amp; Quan, H. (2018). Revisiting the marshmallow test. <i>Psychological Science</i>, 29(7), 1159–1177.</li>
+        <li>Whitebread, D. &amp; Bingham, S. (2013). Habit formation and learning in young children. Money Advice Service / University of Cambridge.</li>
+      </ol>
+      <p class="more"><a href="app.html">Play Penny</a> · <a href="guide.html">How to play</a></p>
+    </article>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap site-footer__row">
+    <p>Built by <a href="https://cenedury.com" rel="noopener">Cenedury</a> · <span data-year>2026</span></p>
+    <p>Simulation · No real money · Not financial advice</p>
+    <nav aria-label="Footer"><a href="./">Home</a> <a href="guide.html">How to play</a> <a href="app.html#/privacy">Privacy</a></nav>
+  </div>
+</footer>
+</body>
+</html>

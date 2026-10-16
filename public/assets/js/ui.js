@@ -133,7 +133,7 @@ export function stateView({ kind = 'empty', title, body = '', actions = [], head
   ]);
 }
 
-// Polite screen-reader announcement through the shared live region in index.html.
+// Polite screen-reader announcement through the shared live region in app.html.
 export function announce(message) {
   const region = document.getElementById('live');
   if (!region) return;

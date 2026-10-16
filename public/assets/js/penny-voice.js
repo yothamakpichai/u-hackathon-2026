@@ -60,7 +60,7 @@ export function speak(text, { voice = 'penny', token = '' } = {}) {
   });
 }
 
-// Penny's v4 styles (assets/css/v4-penny.css), added once if index.html doesn't link them already.
+// Penny's v4 styles (assets/css/v4-penny.css), added once if app.html doesn't link them already.
 export function ensurePennyStyles() {
   if (typeof document === 'undefined' || document.querySelector('link[href$="v4-penny.css"]')) return;
   document.head.append(Object.assign(document.createElement('link'), { rel: 'stylesheet', href: 'assets/css/v4-penny.css' }));

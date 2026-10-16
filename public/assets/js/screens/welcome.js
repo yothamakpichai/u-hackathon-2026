@@ -3,6 +3,7 @@
 // Under 8 plays with a grown-up; 20 and over also sees cards for parents, teachers and real markets.
 // The year is self-declared and stays in localStorage only.
 import { h, icon, animate } from '../ui.js';
+import { startDemo, takeDemoNote } from '../judge-demo.js';
 
 const SVG = 'http://www.w3.org/2000/svg';
 const MAX_CANDLES = 20;
@@ -73,20 +74,15 @@ export function mount(root, ctx) {
   // Judge demo (P1.B): a labelled sample profile with a full town, one tap away. Loaded on demand (demo.js).
   function judgeDemo() {
     const button = h('button', { class: 'btn judge-demo__btn', type: 'button' }, [h('span', { class: 'judge-demo__tag', text: 'Judges' }), 'Judge demo: see a full town in one tap', icon('arrow-right', { size: 20 })]);
-    const note = h('p', { class: 'judge-demo__note', 'aria-live': 'polite', text: 'Loads a sample grown-up profile on this device. “Leave demo” clears it.' });
+    const note = h('p', { class: 'judge-demo__note', 'aria-live': 'polite', text: takeDemoNote() || 'Loads a sample grown-up profile on this device. “Leave demo” clears it.' });
     button.addEventListener('click', async () => {
-      // A real player's progress is never swapped out without asking.
-      const s = store.get();
-      if ((s.profile || s.assessment || s.progress?.xp) && !s.demo && !confirm('The demo replaces the progress saved on this device. Continue?')) return;
-      button.disabled = true;
-      note.textContent = 'Building the demo town…';
-      try {
-        const m = await import('../demo.js');
-        await m.loadDemo(store, { config });
-        navigate('/town');
-      } catch {
+      const onStart = () => {
+        button.disabled = true;
+        note.textContent = 'Building the demo town…';
+      };
+      if ((await startDemo({ store, config, navigate }, { onStart })) === 'failed') {
         button.disabled = false;
-        note.textContent = 'The demo didn’t load. Check your connection and try again.';
+        note.textContent = takeDemoNote();
       }
     });
     return h('div', { class: 'judge-demo' }, [button, note]);
