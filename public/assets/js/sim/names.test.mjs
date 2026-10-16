@@ -34,3 +34,24 @@ test('rude words are still blocked', () => {
   for (const n of ['Rape', 'Rapey', 'Crap Coin']) assert.equal(checkName(n)?.code, 'BLOCKED_NAME', n);
   assert.equal(checkTicker('RAPE')?.code, 'BLOCKED_TICKER');
 });
+
+test('hateful and sexual names and tickers are blocked', () => {
+  for (const n of ['Nazi Coin', 'Nazis', 'KKK', 'Hitler Token', 'Porn', 'Porno Coin', 'Sex Coin', 'Sexy Coin', 'XXX', 'Nudes']) {
+    assert.equal(checkName(n)?.code, 'BLOCKED_NAME', n);
+  }
+  for (const t of ['NAZI', 'KKK', 'PORN', 'SEX', 'SEXY', 'XXX']) assert.equal(checkTicker(t)?.code, 'BLOCKED_TICKER', t);
+  // The short ones match whole words only, so Essex and a sextant stay fine.
+  for (const n of ['Essex Coin', 'Sussex', 'Sextant']) assert.equal(checkName(n), null, n);
+  // Real names that start with a blocked word stay fine (Thai names like Pornchai), its other forms don't.
+  for (const n of ['Pornchai', 'Pornthip Coin', 'Pornsak', 'Nazira', 'Nazim Coin']) assert.equal(checkName(n), null, n);
+  for (const n of ['Porns', 'Pornhub', 'Pornography', 'Nazism']) assert.equal(checkName(n)?.code, 'BLOCKED_NAME', n);
+});
+
+test('real company stocks and brands are blocked, everyday words stay fine', () => {
+  for (const t of ['TSLA', 'AAPL', 'MSFT', 'GOOG', 'AMZN', 'NVDA', 'META', 'PTT', 'KBANK']) assert.equal(checkTicker(t)?.code, 'BLOCKED_TICKER', t);
+  for (const n of ['TSLA', 'Aapl', 'Tesla', 'Teslas', 'Tesla Coin', 'Google', 'Coca Cola', 'McDonalds', 'Nvidia Token', 'Apple Coin', 'Amazon Token', 'Meta Coin']) {
+    assert.equal(checkName(n)?.code, 'BLOCKED_NAME', n);
+  }
+  for (const n of ['Apple Pie', 'Green Apple', 'Amazon River', 'Metal Coin', 'Ali Baba', 'Smoke Test', 'Moon Coin']) assert.equal(checkName(n), null, n);
+  for (const t of ['MOON', 'SMOKE', 'COIN', 'APPLE']) assert.equal(checkTicker(t), null, t);
+});
