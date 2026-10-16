@@ -1357,32 +1357,43 @@
 
 /* Ask Penny (BRIEF §9): floating button and chat sheet */
 
+/* A small round button inside the safe areas; .is-away slides it off while it would cover a control. */
 .ask-fab {
   position: fixed;
-  right: var(--gutter);
-  bottom: max(var(--sp-4), env(safe-area-inset-bottom));
+  right: max(var(--sp-3), calc(env(safe-area-inset-right) + var(--sp-2)));
+  bottom: max(var(--sp-3), calc(env(safe-area-inset-bottom) + var(--sp-2)));
   z-index: var(--z-toast);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  min-height: var(--tap);
-  padding: var(--sp-1) var(--sp-4) var(--sp-1) var(--sp-1);
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
   border: 2px solid var(--primary-600);
-  border-radius: var(--r-pill);
+  border-radius: 50%;
   background: var(--surface);
   box-shadow: var(--shadow-md);
-  color: var(--primary-800);
-  font-family: var(--font-head);
-  font-weight: 800;
-  transition: transform var(--dur-1) var(--ease-out);
+  transition: transform var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out), visibility var(--dur-2);
 }
 
 .ask-fab:hover {
   transform: translateY(-1px);
 }
 
+.ask-fab.is-away {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(100% + 32px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-fab {
+    transition: none;
+  }
+}
+
 body.has-ask .app-footer {
-  padding-bottom: calc(var(--tap) + var(--sp-8));
+  padding-bottom: calc(52px + var(--sp-8));
 }
 
 .tutor {

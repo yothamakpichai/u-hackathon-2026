@@ -3,7 +3,8 @@ import * as config from './config.js';
 import { createStore } from './state.js';
 import { createAudio } from './audio.js';
 import { createRouter } from './router.js';
-import { h, icon, penny } from './ui.js';
+import { h, icon } from './ui.js';
+import { mountAskFab } from './askfab.js';
 import { BUILDINGS } from '../../js/buildings.js';
 
 const store = createStore();
@@ -68,18 +69,8 @@ audio.hasAny().then((any) => {
   document.querySelector('.app-header__actions')?.append(button);
 });
 
-// "Ask Penny" (BRIEF §9) floats over every screen once a level is chosen.
-const askButton = h('button', { class: 'ask-fab', type: 'button', hidden: true, onClick: openTutor }, [
-  penny('happy', { size: 32, className: 'ask-fab__penny' }),
-  h('span', { text: 'Ask Penny' }),
-]);
-document.body.append(askButton);
-const renderAsk = () => {
-  askButton.hidden = !store.get().tier;
-  document.body.classList.toggle('has-ask', !askButton.hidden);
-};
-store.subscribe(renderAsk);
-renderAsk();
+// "Ask Penny" (BRIEF §9) floats over every screen once a level is chosen, and gets out of the way of controls.
+mountAskFab({ store, onOpen: openTutor });
 
 function openTutor() {
   import('./screens/tutor.js')
