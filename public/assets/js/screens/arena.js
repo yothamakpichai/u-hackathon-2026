@@ -25,14 +25,25 @@ export function arenaScore(state) {
   return best;
 }
 
-export async function arenaEnabled() {
+export async function arenaStatus() {
   try {
     const res = await fetch(`${API}?action=status`);
-    return res.ok && (await res.json())?.enabled === true;
+    const json = res.ok ? await res.json() : null;
+    return { enabled: json?.enabled === true, v2: json?.enabled === true && json?.v2 === true };
   } catch {
-    return false;
+    return { enabled: false, v2: false };
   }
 }
+
+export async function arenaEnabled() {
+  return (await arenaStatus()).enabled;
+}
+
+const REASONS = {
+  NO_ACCOUNT: 'Make an account to trade. Watching is free.',
+  TOO_YOUNG: 'Trading in the Arena opens at age 13. You can still watch the market.',
+  NOT_QUALIFIED: 'Score 70+ in today’s market or pass the Unit 2 checkpoint to trade here. You can watch until then.',
+};
 
 export function mount(root, ctx) {
   const { store, navigate, config, tier } = ctx;
@@ -79,7 +90,10 @@ export function mount(root, ctx) {
 
   async function start() {
     show(stateView({ kind: 'loading', title: 'Opening the Arena…' }));
-    if (!(await arenaEnabled())) {
+    const status = await arenaStatus();
+    if (!alive) return;
+    if (status.enabled && status.v2) return spectate();
+    if (!status.enabled) {
       if (alive) show(stateView({ kind: 'empty', title: 'The Arena is closed right now', body: 'Today’s market is open, and you can practise there any time.', actions: [back('Open today’s market', '/lab')] }));
       return;
     }
@@ -95,6 +109,17 @@ export function mount(root, ctx) {
     } catch (err) {
       if (alive) show(stateView({ kind: 'error', title: 'The Arena didn’t load', body: err.message, actions: [h('button', { class: 'btn', type: 'button', onClick: start }, 'Try again')] }));
     }
+  }
+
+  // Arena v2: anyone can watch the market; the server says who may trade (canTrade, reason).
+  async function spectate() {
+    let user = null;
+    try {
+      if (await sync.accountsAvailable()) user = await sync.refreshMe();
+    } catch {
+      user = null;
+    }
+    if (alive) market(user, true);
   }
 
   const thisYear = () => Number(new Intl.DateTimeFormat('en-US', { timeZone: config.TIME_ZONE, year: 'numeric' }).format(new Date()));
@@ -150,7 +175,7 @@ export function mount(root, ctx) {
 
   // ---------------------------------------------------------------- the live market
 
-  function market(user) {
+  function market(user, v2 = false) {
     const tabs = h('div', { class: 'arena-coins', role: 'group', 'aria-label': 'Coins' });
     const chart = h('div', { class: 'arena-chart' });
     const chartHead = h('div', { class: 'arena-chart__head' });
@@ -167,23 +192,46 @@ export function mount(root, ctx) {
     const go = h('button', { class: 'btn btn--primary btn--block', type: 'submit' });
     const sideBtns = ['buy', 'sell'].map((s) => h('button', { class: 'segmented__btn', type: 'button', dataset: { side: s }, onClick: () => setSide(s) }, s === 'buy' ? 'Buy' : 'Sell'));
     const quick = [0.25, 0.5, 1].map((f) => h('button', { class: 'btn btn--sm', type: 'button', onClick: () => fill(f) }, f === 1 ? 'Max' : `${f * 100}%`));
-    const tradeForm = h('form', { class: 'card arena-trade', novalidate: true, onSubmit: trade }, [
-      h('h2', { class: 'arena-title', text: 'Trade' }),
+    const gate = h('div', { class: 'arena-gate', hidden: true });
+    const controls = h('div', { class: 'arena-trade__controls' }, [
       h('div', { class: 'segmented', role: 'group', 'aria-label': 'Buy or sell' }, sideBtns),
       h('div', { class: 'arena-field' }, [amountLabel, amount]),
       h('div', { class: 'arena-trade__quick' }, quick),
       preview,
       go,
-      result,
     ]);
+    const tradeForm = h('form', { class: 'card arena-trade', novalidate: true, onSubmit: trade }, [
+      h('h2', { class: 'arena-title', text: 'Trade' }),
+      gate,
+      controls,
+      result,
+      h('p', { class: 'arena-disclaimer', text: 'Simulation · No real money' }),
+    ]);
+    let gateReason;
+    // Watchers see the market but not the controls: an account (or the reason the server gives) comes first.
+    function setGate(reason) {
+      if (reason === gateReason) return;
+      gateReason = reason;
+      controls.hidden = Boolean(reason);
+      gate.hidden = !reason;
+      if (!reason) return gate.replaceChildren();
+      const needsAccount = reason === 'NO_ACCOUNT' || !REASONS[reason];
+      gate.replaceChildren(
+        h('p', { class: 'arena-gate__text', text: REASONS[reason] || REASONS.NO_ACCOUNT }),
+        needsAccount ? h('a', { class: 'btn btn--primary btn--block', href: '#/account?next=/arena' }, 'Make an account to trade') : null,
+      );
+    }
     amount.addEventListener('input', renderPreview);
 
     show(
       adultNote,
-      h('div', { class: 'arena-top' }, [
-        h('p', { class: 'arena-top__who' }, [`Signed in as `, h('strong', { text: user.username })]),
-        h('button', { class: 'btn btn--sm btn--ghost', type: 'button', onClick: logout }, 'Log out'),
-      ]),
+      h(
+        'div',
+        { class: 'arena-top' },
+        user
+          ? [h('p', { class: 'arena-top__who' }, ['Signed in as ', h('strong', { text: user.username })]), h('button', { class: 'btn btn--sm btn--ghost', type: 'button', onClick: logout }, 'Log out')]
+          : [h('p', { class: 'arena-top__who' }, ['Watching as a guest. ', h('a', { href: '#/account?next=/arena', text: 'Log in or make an account' }), ' to trade.'])],
+      ),
       tabs,
       h('div', { class: 'arena-grid' }, [
         h('div', { class: 'arena-main' }, [h('div', { class: 'card' }, [chartHead, chart, washNote]), tradeForm]),
@@ -194,7 +242,7 @@ export function mount(root, ctx) {
           h('div', { class: 'card card--quiet' }, [
             h('h2', { class: 'arena-title', text: 'Who else is trading?' }),
             h('p', { class: 'arena-help', text: 'Four bots trade here all the time. A market maker keeps prices near a fair value, a momentum bot follows trends and makes moves bigger, a whale sometimes sells a huge pile at once, and a wash bot trades FUEL with itself to fake busy volume.' }),
-            h('button', { class: 'btn btn--sm btn--ghost', type: 'button', onClick: removeAccount }, 'Delete my account'),
+            user ? h('button', { class: 'btn btn--sm btn--ghost', type: 'button', onClick: removeAccount }, 'Delete my account') : null,
           ]),
         ]),
       ]),
@@ -223,7 +271,7 @@ export function mount(root, ctx) {
     }
 
     function fill(f) {
-      if (!last) return;
+      if (!last?.me) return;
       const held = last.me.holdings.find((x) => x.coin === coin)?.coins || 0;
       const max = side === 'buy' ? last.me.cash : held;
       amount.value = String(Math.floor(max * f * 100) / 100);
@@ -272,7 +320,10 @@ export function mount(root, ctx) {
         render(res);
       } catch (err) {
         result.textContent = err.message;
-        if (err.code === 'SIGNED_OUT') needAccount();
+        if (err.code === 'SIGNED_OUT') {
+          if (v2) setGate('NO_ACCOUNT');
+          else needAccount();
+        }
       } finally {
         go.disabled = false;
       }
@@ -288,6 +339,7 @@ export function mount(root, ctx) {
         live.lastChild.textContent = 'Live';
         if (alive) render(res);
       } catch (err) {
+        if (v2 && ['SIGNED_OUT', 'NOT_QUALIFIED', 'TOO_YOUNG'].includes(err.code)) return setGate(err.code === 'SIGNED_OUT' ? 'NO_ACCOUNT' : err.code);
         if (err.code === 'SIGNED_OUT') return needAccount();
         if (err.code === 'NOT_QUALIFIED') return notYet(arenaScore(store.get()));
         if (err.code === 'TOO_YOUNG') return show(stateView({ kind: 'empty', title: 'The Arena opens at age 13', body: err.message, actions: [back('Open today’s market', '/lab')] }));
@@ -298,9 +350,13 @@ export function mount(root, ctx) {
       }
     }
 
-    function render(s) {
+    function render(raw) {
+      const s = { ...raw, coins: raw.coins || [], candles: raw.candles || [], trades: raw.trades || [], leaderboard: raw.leaderboard || [] };
       last = s;
+      if (!s.coins.length) return;
+      if (!s.coins.some((x) => x.id === coin)) coin = s.coins[0].id;
       const c = s.coins.find((x) => x.id === coin);
+      if (v2) setGate(s.me && s.canTrade !== false ? null : s.reason || (s.me ? 'NOT_QUALIFIED' : 'NO_ACCOUNT'));
       if (tabs.childElementCount !== s.coins.length) {
         tabs.replaceChildren(
           ...s.coins.map((x) =>
@@ -328,8 +384,10 @@ export function mount(root, ctx) {
       washNote.hidden = !c.wash;
       washNote.textContent = c.wash ? 'Amber bars are wash volume: a bot buying from and selling to itself. It looks busy, but the price barely moves. Real demand is the grey part.' : '';
 
-      const held = s.me.holdings;
-      pf.replaceChildren(
+      const held = s.me?.holdings || [];
+      if (!s.me) pf.replaceChildren(h('p', { class: 'arena-help', text: 'Make an account to get your own Arena wallet and portfolio. Watching is free.' }));
+      else
+        pf.replaceChildren(
         h('p', { class: 'arena-pf__value' }, [money(s.me.value), ' ', delta((s.me.value / s.me.startValue - 1) * 100)]),
         h('ul', { class: 'arena-pf__list' }, [
           h('li', {}, [h('span', { text: 'Cash' }), h('span', { text: money(s.me.cash) })]),
@@ -337,17 +395,17 @@ export function mount(root, ctx) {
         ]),
       );
       const row = (r) =>
-        h('li', { class: `board__row${r.username === user.username ? ' is-me' : ''}` }, [
+        h('li', { class: `board__row${r.username === user?.username ? ' is-me' : ''}` }, [
           h('span', { class: 'board__rank', text: String(r.rank) }),
           h('span', { class: 'board__name', text: r.username }),
-          r.username === user.username ? h('span', { class: 'board__you', text: 'You' }) : null,
+          r.username === user?.username ? h('span', { class: 'board__you', text: 'You' }) : null,
           h('span', { class: 'board__score arena-board__value', text: money(r.value, 0) }),
         ]);
       const mine = s.myRank;
       board.replaceChildren(
         ...s.leaderboard.map(row),
         ...(mine && mine.rank > s.leaderboard.length ? [row(mine)] : []),
-        ...(mine ? [] : [h('li', { class: 'board__join', text: s.leaderboard.length ? 'Make your first trade to join the leaderboard.' : 'No trades yet. Make the first one to top the leaderboard.' })]),
+        ...(mine || !s.me ? [] : [h('li', { class: 'board__join', text: s.leaderboard.length ? 'Make your first trade to join the leaderboard.' : 'No trades yet. Make the first one to top the leaderboard.' })]),
       );
       feed.replaceChildren(
         ...(s.trades.length

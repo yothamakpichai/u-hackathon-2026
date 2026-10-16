@@ -1,0 +1,36 @@
+/* Arena v2 (BRIEF §17): spectating, the Arena wallet, coin launches, red flags, personas, news, season and the
+   central bank. Only Arena classes live here. Text colours are tokens with >= 4.5:1 on their backgrounds. */
+
+.arena {
+  --arena-ink: #0F1C17;
+  --arena-night: #13221C;
+  --arena-night-2: #1C2F27;
+  --arena-on-night: #F2F7F4;   /* 14.9:1 on --arena-night */
+  --arena-on-night-2: #B8CBC2; /* 8.6:1 on --arena-night */
+  --arena-line-night: #2E463B;
+}
+
+.arena-disclaimer {
+  margin: var(--sp-3) 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--line);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-500);
+  text-align: center;
+}
+
+.arena-gate {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: var(--r-md);
+  background: var(--amber-50);
+  border: 1px solid var(--amber-100);
+}
+.arena-gate__text { margin: 0; color: var(--ink-900); font-weight: 600; }
+.arena-gate .btn { min-height: var(--tap); }
+.arena-trade__controls { display: grid; gap: 0.75rem; }
+.arena-trade__controls[hidden], .arena-gate[hidden] { display: none; }
+.arena-top__who a { color: var(--primary-700); font-weight: 600; }
