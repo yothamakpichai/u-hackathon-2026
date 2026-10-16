@@ -98,6 +98,7 @@ const QUICK = {
 
 export async function openTutor({ store, config }, { mode } = {}) {
   const tier = store.get().tier || 'explorer';
+  const opener = document.activeElement;
   dialog?.remove();
 
   const log = h('div', { class: 'tutor__log', 'aria-live': 'polite' });
@@ -124,6 +125,12 @@ export async function openTutor({ store, config }, { mode } = {}) {
   dialog.addEventListener('close', () => {
     document.dispatchEvent(new CustomEvent('askpenny', { detail: { open: false } }));
     dialog.remove();
+    // The floating button is hidden while Penny is open and comes back a frame later, so focus waits a moment.
+    setTimeout(() => {
+      const usable = (el) => el?.isConnected && el.getClientRects().length && !el.closest('[aria-hidden="true"], [hidden]');
+      const target = [opener, document.querySelector('.ask-head'), document.querySelector('.ask-fab')].find(usable);
+      target?.focus({ preventScroll: true });
+    }, 80);
   });
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -157,13 +164,17 @@ export async function openTutor({ store, config }, { mode } = {}) {
     const msg = h('div', { class: `tutor-msg tutor-msg--${who}` }, [text]);
     log.append(msg);
     animate(msg, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }]);
-    msg.scrollIntoView({ block: 'nearest' });
+    reveal(msg);
     return msg;
+  }
+
+  function reveal(msg) {
+    msg.scrollIntoView({ block: msg.offsetHeight > log.clientHeight * 0.6 ? 'start' : 'nearest' });
   }
 
   function askFaq(item) {
     say('you', item.question);
-    say('penny', item.answer);
+    reveal(say('penny', item.answer));
     announce(item.answer);
   }
 
@@ -174,6 +185,7 @@ export async function openTutor({ store, config }, { mode } = {}) {
     const answer = await work();
     thinking.classList.remove('is-thinking');
     thinking.textContent = answer;
+    reveal(thinking);
     announce(answer);
     send.disabled = false;
   }

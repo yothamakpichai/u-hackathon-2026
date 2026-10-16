@@ -197,8 +197,12 @@ export function mount(root, ctx) {
   }
 
   async function loadBoard() {
-    boardBody.replaceChildren(stateView({ kind: 'loading', heading: 'h3', title: 'Loading the leaderboard…' }));
     boardMe.replaceChildren();
+    if (run.date !== today && run.date !== bangkokDate(config.TIME_ZONE, -1)) {
+      boardBody.replaceChildren(stateView({ kind: 'empty', heading: 'h3', title: 'This board has closed', body: 'Leaderboards keep only today and yesterday. Play today’s market to join today’s board.', actions: [h('button', { class: 'btn', type: 'button', onClick: () => navigate('/lab') }, 'Open today’s market')] }));
+      return;
+    }
+    boardBody.replaceChildren(stateView({ kind: 'loading', heading: 'h3', title: 'Loading the leaderboard…' }));
     try {
       const nickname = store.get().nickname;
       const data = await call({}, { tier, date: run.date, ...(nickname && { nickname }) });
@@ -255,9 +259,9 @@ function head(title, eyebrow) {
   ]);
 }
 
-// YYYY-MM-DD for "now" in Bangkok, the same day the Lab's seed uses.
-function bangkokDate(timeZone) {
-  return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+// YYYY-MM-DD in Bangkok for today (or days later, or earlier when negative), the same day the Lab's seed uses.
+function bangkokDate(timeZone, days = 0) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(Date.now() + days * 864e5));
 }
 
 function formatDate(iso) {

@@ -107,10 +107,11 @@ function composure({ run, bought }) {
 function returns({ run }) {
   const value = run.metrics?.finalValue ?? run.value;
   const change = run.startValue > 0 ? value / run.startValue - 1 : 0;
-  const signed = `${change >= 0 ? '+' : '−'}${Math.abs(change * 100).toFixed(1)}%`;
+  const pct = Math.abs(change * 100).toFixed(1);
+  const signed = `${pct === '0.0' ? '' : change > 0 ? '+' : '−'}${pct}%`;
   return {
     value: 10 * Math.min(1, Math.max(0, change / 0.5)),
-    reason: `You finished with ${L(value)}, ${signed}. ${change > 0 ? 'Full points need +50%.' : 'Only gains score here, and they are worth just 10 points.'}`,
+    reason: `You finished with L$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}, ${signed}. ${change > 0 ? 'Full points need +50%.' : 'Only gains score here, and they are worth just 10 points.'}`,
   };
 }
 
