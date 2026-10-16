@@ -29,6 +29,7 @@ test('plants grow in real time, are harvested, and the big tree fruits again', (
   const r = harvest(o, 0, T0 + 2 * MIN);
   assert.equal(r.coins, SEEDS.sprout.harvest);
   assert.equal(r.orchard.plots[0], null, 'the plot is free to replant');
+  assert.equal(harvest(r.orchard, 0, T0 + 3 * MIN).coins, 0, 'nothing to harvest in an empty plot');
   const big = harvest(r.orchard, 1, T0 + 7 * DAY);
   assert.equal(big.coins, SEEDS.big.harvest);
   assert.equal(plotState(big.orchard.plots[1], T0 + 7 * DAY + DAY / 2).stage, 'grown');
@@ -37,7 +38,7 @@ test('plants grow in real time, are harvested, and the big tree fruits again', (
 
 test('choices reveal a time preference', () => {
   let o = {};
-  for (const s of ['big', 'big', 'fruit', 'sprout']) o = plant(o, 0, s, T0);
+  for (const [i, s] of ['big', 'big', 'fruit', 'sprout'].entries()) o = plant(o, i, s, T0);
   assert.deepEqual(revealedPreference(o.choices), { count: 4, laterShare: 0.5, nowShare: 0.25, lean: 'Later' });
   assert.equal(revealedPreference([]), null);
 });
@@ -51,8 +52,10 @@ test('per day of waiting the patient choice pays most, and sprouts are no coin l
   // A herb sprout grows once a day in each plot: no replanting all day for coins.
   let o = plant({ plots: Array(PLOTS).fill(null) }, 0, 'sprout', T0);
   assert.equal(canPlant(o, 0, 'fruit', T0).ok, false, 'the plot is busy');
+  assert.equal(plant(o, 0, 'fruit', T0), o, 'plant() keeps the same rules');
   o = harvest(o, 0, T0 + 2 * MIN).orchard;
   assert.equal(canPlant(o, 0, 'sprout', T0 + 2 * MIN).ok, false, 'one sprout a day in this plot');
+  assert.equal(plant(o, 0, 'sprout', T0 + 2 * MIN), o, 'nothing planted, no choice recorded');
   assert.equal(canPlant(o, 0, 'fruit', T0 + 2 * MIN).ok, true, 'other seeds can go in');
   assert.equal(canPlant(o, 1, 'sprout', T0 + 2 * MIN).ok, true, 'other plots can grow a sprout');
   assert.equal(canPlant(o, 0, 'sprout', T0 + DAY).ok, true, 'again tomorrow');

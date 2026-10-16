@@ -40,3 +40,21 @@ test('the days that make the streak feed the cow, and feed never goes down', () 
   assert.ok(later.total > feed.total);
   assert.deepEqual(feedFrom({}), { total: 0, piggy: 0, coach: 0, lessons: 0, runs: 0, days: 0 });
 });
+
+test('a day still feeds the cow after the progress log prunes it', () => {
+  // progress.js keeps 400 days but every ref, with the day it was logged on.
+  const refs = { 'path:explorer:u1-l1': '2025-01-02', 'piggy:p1': '2026-10-16' };
+  const feed = feedFrom({ progress: { xp: 15, days: { '2026-10-16': { xp: 5, actions: 1 } }, refs } });
+  assert.equal(feed.days, 2);
+});
+
+test('the starter grant alone does not make a day count', () => {
+  const wallet = { ledger: [{ id: 'wg1', at: at('2026-10-15'), amount: 50, kind: 'grant', ref: 'starter' }, { id: 'wm1', at: at('2026-10-16'), amount: 10, kind: 'milk' }] };
+  const progress = {
+    days: { '2026-10-15': { xp: 2, actions: 1 }, '2026-10-16': { xp: 4, actions: 2 } },
+    refs: { 'wallet:wg1': '2026-10-15', 'wallet:wm1': '2026-10-16', 'piggy:p1': '2026-10-16' },
+  };
+  assert.equal(feedFrom({ wallet, progress }).days, 1, 'opening a building gave the grant; selling milk is doing something');
+  const both = { ...progress, days: { ...progress.days, '2026-10-15': { xp: 7, actions: 2 } }, refs: { ...progress.refs, 'piggy:p0': '2026-10-15' } };
+  assert.equal(feedFrom({ wallet, progress: both }).days, 2, 'a day with the grant and a real action counts');
+});

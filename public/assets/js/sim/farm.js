@@ -32,7 +32,17 @@ export function feedFrom(state) {
     if (r && typeof r === 'object' && 'finalValue' in (r.metrics || {})) markets.add(`${tier}:${r.at ? dayKey(r.at) : 'saved'}`);
   }
   const runs = markets.size;
-  const days = Object.values(state.progress?.days || {}).filter((d) => d?.actions > 0).length;
+  // Days with an action. The refs keep each action's day for good while old days are pruned, so feed
+  // never goes down. The wallet's starter grant isn't something the player did: alone, it doesn't count.
+  const grants = new Set((state.wallet?.ledger || []).filter((e) => e.kind === 'grant').map((e) => `wallet:${e.id || e.at}`));
+  const grantsOn = {};
+  const active = new Set();
+  for (const [ref, day] of Object.entries(state.progress?.refs || {})) {
+    if (grants.has(ref)) grantsOn[day] = (grantsOn[day] || 0) + 1;
+    else active.add(day);
+  }
+  for (const [day, d] of Object.entries(state.progress?.days || {})) if ((d?.actions || 0) > (grantsOn[day] || 0)) active.add(day);
+  const days = active.size;
   return { total: piggy + 5 * coach + 5 * lessons + 3 * runs + 2 * days, piggy, coach, lessons, runs, days };
 }
 

@@ -46,7 +46,9 @@ export function canPlant(orchard, index, seedId, now) {
   return { ok: true };
 }
 
+// Plants a seed, if canPlant() allows it; otherwise the orchard stays as it was.
 export function plant(orchard, index, seedId, now) {
+  if (!canPlant(orchard, index, seedId, now).ok) return orchard;
   const plots = [...(orchard.plots || Array(PLOTS).fill(null))];
   plots[index] = { seed: seedId, plantedAt: now, harvests: 0, lastHarvestAt: null };
   const choices = [...(orchard.choices || []), { at: now, seed: seedId, patience: SEEDS[seedId].patience }];
@@ -57,6 +59,7 @@ export function plant(orchard, index, seedId, now) {
 export function harvest(orchard, index, now) {
   const plots = [...orchard.plots];
   const p = plots[index];
+  if (!p) return { orchard, coins: 0 };
   const s = plotState(p, now);
   if (s.stage !== 'ready') return { orchard, coins: 0 };
   const seed = SEEDS[p.seed];

@@ -55,7 +55,7 @@ export function mount(root, ctx) {
           if (cert) view.querySelector(`[data-cow="${cow.id}"] .farm-cow__cert`)?.replaceWith(certLine(cert));
         });
       }
-      const names = born.map((c) => c.name).join(' and ');
+      const names = listText(born.map((c) => c.name));
       announce(born.length > 1 ? `${CALVES[born.length]}, ${names}, were born on your farm!` : `A calf called ${names} was born on your farm!`);
       celebrateIds = born.map((c) => c.id);
     }
@@ -270,11 +270,14 @@ export function mount(root, ctx) {
         h('span', { class: 'orchard-seed__meta', text: meta }),
       ]);
       b.addEventListener('click', () => {
-        const check = canPlant({ plots: Array(PLOTS).fill(null), ...store.get().orchard }, i, id, Date.now());
+        // One clock reading for the check, the payment and the planting, so they can't disagree at midnight.
+        const at = Date.now();
+        const latest = { plots: Array(PLOTS).fill(null), choices: [], ...store.get().orchard };
+        const check = canPlant(latest, i, id, at);
         if (!check.ok) return announce(check.error);
-        const paid = post(store, { amount: -seed.cost, kind: 'seed', note: seed.label });
+        const paid = post(store, { amount: -seed.cost, kind: 'seed', note: seed.label }, at);
         if (!paid.ok) return announce(paid.error);
-        store.set({ orchard: plant({ plots: Array(PLOTS).fill(null), choices: [], ...store.get().orchard }, i, id, Date.now()) });
+        store.set({ orchard: plant(latest, i, id, at) });
         announce(`Planted a ${seed.label.toLowerCase()}.`);
         renderOrchard(true);
         focusPlot(i);
@@ -336,11 +339,12 @@ export function mount(root, ctx) {
     const clock = h('p', { class: 'chip fair__clock' });
     const news = h('p', { class: 'fair__news', role: 'status' });
     const index = h('p', { class: 'fair__index' });
-    fairEls = { T, rows, tickets, clock, news, index };
+    // Time left, tickets and news: on a phone this block stays in view while the cards scroll.
+    const status = h('div', { class: 'fair__status' }, [h('div', { class: 'fair__bar' }, [tickets, clock]), news]);
+    fairEls = { T, rows, tickets, clock, news, index, status };
     fairBox.replaceChildren(
       h('div', { class: 'card-head' }, [h('h2', { class: 'lab-card__title', text: 'Cow Fair' })]),
-      // Time left, tickets and news: on a phone this block stays in view while the cards scroll.
-      h('div', { class: 'fair__status' }, [h('div', { class: 'fair__bar' }, [tickets, clock]), news]),
+      status,
       index,
       h('ul', { class: 'fair-cards' }, rows.map((r) => r.el)),
     );
@@ -352,7 +356,7 @@ export function mount(root, ctx) {
     const { T } = fairEls;
     const held = Object.keys(round.owned).reduce((v, i) => v + (bidOf(fair, Number(i), s) ?? 0), 0);
     fairEls.clock.textContent = `${Math.ceil(((FAIR.steps - s) * FAIR.stepMs) / 1000)} s left`;
-    fairEls.tickets.textContent = `${number(round.tickets, 1)} tickets${Object.keys(round.owned).length ? ` · your cards would sell for ${number(held, 1)}` : ''}`;
+    fairEls.tickets.textContent = `${ticketText(round.tickets)} tickets${Object.keys(round.owned).length ? ` · your cards would sell for ${ticketText(Math.round(held * 10) / 10)}` : ''}`;
     const line = newsAt(fair, s);
     if (line) fairEls.news.textContent = line;
     const hi = hypeIndex(fair, s);
@@ -381,6 +385,8 @@ export function mount(root, ctx) {
       r.sell.setAttribute('aria-label', bid == null ? `No buyers right now for ${name}` : `Sell for ${number(bid, 1)} tickets, ${name}`);
       usable(r.sell, bid != null);
     });
+    // The status block grows when its lines wrap; lab.css uses its height to keep focused cards clear of it on phones.
+    fairBox.style.setProperty('--fair-status-h', `${fairEls.status.offsetHeight}px`);
   }
 
   function stepFair() {
@@ -467,6 +473,8 @@ function usable(btn, ok) {
 }
 
 const capital = (s) => s[0].toUpperCase() + s.slice(1);
+// Names in a sentence: "Mali", "Mali and Loli", "Mali, Loli and Surin".
+const listText = (names) => (names.length > 2 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names.join(' and '));
 // Fair tickets keep one decimal, and whole numbers show none: 18.9, 100.
 const ticketText = (n) => number(n, Number.isInteger(n) ? 0 : 1);
 

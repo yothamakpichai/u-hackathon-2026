@@ -3251,9 +3251,14 @@
 
 /* On a phone the eight cards are much taller than the screen: the time left, tickets and news stay in view. */
 @media (max-width: 40rem) {
+  .fair {
+    /* Right under the app header, which is taller than --header-h: its padding, a tap-sized row and its border. */
+    --fair-top: max(var(--header-h), calc(max(var(--sp-2), env(safe-area-inset-top)) + var(--tap) + var(--sp-2) + 1px));
+  }
+
   .fair__status {
     position: sticky;
-    top: var(--header-h);
+    top: var(--fair-top);
     z-index: 1;
     margin-inline: calc(-1 * var(--sp-2));
     padding: var(--sp-2);
@@ -3261,10 +3266,11 @@
     background: var(--surface);
   }
 
-  /* Keyboard focus scrolls a card's controls clear of that block, not under it. */
+  /* Keyboard focus scrolls a card's controls clear of that block, not under it. farm.js keeps
+     --fair-status-h at the block's height, which grows when the tickets line or the news wraps. */
   .fair-card .btn,
   .fair-card__name {
-    scroll-margin-top: 14rem;
+    scroll-margin-top: calc(var(--fair-top) + var(--fair-status-h, 10rem) + var(--sp-2));
   }
 }
 
