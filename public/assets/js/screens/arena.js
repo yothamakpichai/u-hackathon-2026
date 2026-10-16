@@ -2,7 +2,7 @@
 // Simulated L$ only. It needs a free Penny account (api/account.php). Kids enter at Trader level or above with a
 // Money Health Score of 70+ in the Market Lab or a passed Unit 2 checkpoint; adults (20+) skip the score gate.
 // The server decides prices, balances and trades, and checks 13+ from the account's birth year.
-import { h, icon, stateView, money, price, delta, number, announce } from '../ui.js';
+import { h, icon, stateView, money, price, delta, number } from '../ui.js';
 import { scoreRun } from '../score.js';
 import * as sync from '../sync.js';
 
@@ -90,21 +90,22 @@ export function mount(root, ctx) {
       }
       const user = await sync.refreshMe();
       if (!alive) return;
-      if (!user) return needAccount();
+      if (!user) return guestAge() < 13 ? tooYoung() : needAccount();
       enter(user);
     } catch (err) {
       if (alive) show(stateView({ kind: 'error', title: 'The Arena didn’t load', body: err.message, actions: [h('button', { class: 'btn', type: 'button', onClick: start }, 'Try again')] }));
     }
   }
 
+  const thisYear = () => Number(new Intl.DateTimeFormat('en-US', { timeZone: config.TIME_ZONE, year: 'numeric' }).format(new Date()));
+  // Only steers a guest away from making an account they couldn't use yet; signed-in players are judged by the server.
+  const guestAge = () => (store.get().birthYear ? thisYear() - Number(store.get().birthYear) : 99);
+  const tooYoung = () => show(stateView({ kind: 'empty', title: 'The Arena opens at age 13', body: 'Keep exploring today’s market: every run makes you a sharper trader.', actions: [back('Open today’s market', '/lab')] }));
+
   // Every age decision uses the birth year stored with the account, never this browser's (the server checks too).
   async function enter(user) {
-    const thisYear = Number(new Intl.DateTimeFormat('en-US', { timeZone: config.TIME_ZONE, year: 'numeric' }).format(new Date()));
-    const age = thisYear - Number(user.birthYear);
-    if (age < 13) {
-      show(stateView({ kind: 'empty', title: 'The Arena opens at age 13', body: 'Keep exploring today’s market: every run makes you a sharper trader.', actions: [back('Open today’s market', '/lab')] }));
-      return;
-    }
+    const age = thisYear() - Number(user.birthYear);
+    if (age < 13) return tooYoung();
     const adult = age >= 20;
     adultNote = adult ? h('p', { class: 'arena-adult', text: 'Kids unlock this at Money Health Score 70.' }) : null;
     if (!adult) {
@@ -267,7 +268,6 @@ export function mount(root, ctx) {
         const res = await api('trade', { method: 'POST', data: { coin, side, amount: a } });
         const t = res.trade;
         result.textContent = `${t.side === 'buy' ? 'Bought' : 'Sold'} ${number(t.coins, 4)} ${t.coin} for ${money(t.amountL)}. Your trade moved the price ${number(t.impactPct, 2)}%.`;
-        announce(result.textContent);
         amount.value = '';
         render(res);
       } catch (err) {
@@ -301,15 +301,25 @@ export function mount(root, ctx) {
     function render(s) {
       last = s;
       const c = s.coins.find((x) => x.id === coin);
-      tabs.replaceChildren(
-        ...s.coins.map((x) =>
-          h('button', { class: `arena-coin${x.id === coin ? ' is-active' : ''}`, type: 'button', 'aria-pressed': String(x.id === coin), onClick: () => pick(x.id) }, [
-            h('span', { class: 'arena-coin__id', text: x.id }),
-            h('span', { class: 'arena-coin__price', text: price(x.price) }),
-            delta(x.changePct),
-          ]),
-        ),
-      );
+      if (tabs.childElementCount !== s.coins.length) {
+        tabs.replaceChildren(
+          ...s.coins.map((x) =>
+            h('button', { class: 'arena-coin', type: 'button', dataset: { coin: x.id }, onClick: () => pick(x.id) }, [
+              h('span', { class: 'arena-coin__id', text: x.id }),
+              h('span', { class: 'arena-coin__price' }),
+              h('span', { class: 'arena-coin__delta' }),
+            ]),
+          ),
+        );
+      }
+      for (const x of s.coins) {
+        const b = tabs.querySelector(`[data-coin="${x.id}"]`);
+        if (!b) continue;
+        b.classList.toggle('is-active', x.id === coin);
+        b.setAttribute('aria-pressed', String(x.id === coin));
+        b.querySelector('.arena-coin__price').textContent = price(x.price);
+        b.querySelector('.arena-coin__delta').replaceChildren(delta(x.changePct));
+      }
       chartHead.replaceChildren(
         h('h2', { class: 'arena-title', text: `${c.id} · ${c.name}` }),
         h('p', { class: 'arena-chart__price' }, [price(c.price), ' ', delta(c.changePct)]),
@@ -326,15 +336,18 @@ export function mount(root, ctx) {
           ...held.map((x) => h('li', {}, [h('span', { text: `${number(x.coins, 4)} ${x.coin}` }), h('span', { text: money(x.value) })])),
         ]),
       );
+      const row = (r) =>
+        h('li', { class: `board__row${r.username === user.username ? ' is-me' : ''}` }, [
+          h('span', { class: 'board__rank', text: String(r.rank) }),
+          h('span', { class: 'board__name', text: r.username }),
+          r.username === user.username ? h('span', { class: 'board__you', text: 'You' }) : null,
+          h('span', { class: 'board__score arena-board__value', text: money(r.value, 0) }),
+        ]);
+      const mine = s.myRank;
       board.replaceChildren(
-        ...s.leaderboard.map((r) =>
-          h('li', { class: `board__row${r.username === user.username ? ' is-me' : ''}` }, [
-            h('span', { class: 'board__rank', text: String(r.rank) }),
-            h('span', { class: 'board__name', text: r.username }),
-            r.username === user.username ? h('span', { class: 'board__you', text: 'You' }) : null,
-            h('span', { class: 'board__score arena-board__value', text: money(r.value, 0) }),
-          ]),
-        ),
+        ...s.leaderboard.map(row),
+        ...(mine && mine.rank > s.leaderboard.length ? [row(mine)] : []),
+        ...(mine ? [] : [h('li', { class: 'board__join', text: s.leaderboard.length ? 'Make your first trade to join the leaderboard.' : 'No trades yet. Make the first one to top the leaderboard.' })]),
       );
       feed.replaceChildren(
         ...(s.trades.length

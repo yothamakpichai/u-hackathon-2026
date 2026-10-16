@@ -181,14 +181,25 @@ function state(PDO $db, int $userId, string $coin): array
         $value += $v;
     }
 
+    // Ranked: approved accounts aged 13+ (stored birth year) that have traded here. Accounts made only to save progress,
+    // and children under 13, never appear.
     $leaders = [];
-    $rows = $db->query(
-        'SELECT u.username, u.cash + COALESCE(SUM(h.amount * c.reserve_l / c.reserve_c), 0) AS value FROM arena_users u
+    $mine = null;
+    $st = $db->prepare(
+        'SELECT u.id, u.username, u.cash + COALESCE(SUM(h.amount * c.reserve_l / c.reserve_c), 0) AS value FROM arena_users u
          LEFT JOIN arena_holdings h ON h.user_id = u.id LEFT JOIN arena_coins c ON c.id = h.coin_id
-         GROUP BY u.id, u.username, u.cash ORDER BY value DESC, u.id ASC LIMIT 10'
-    )->fetchAll();
-    foreach ($rows as $i => $r) {
-        $leaders[] = ['rank' => $i + 1, 'username' => $r['username'], 'value' => (float) $r['value']];
+         WHERE u.approved_at IS NOT NULL AND u.birth_year <= ? AND EXISTS (SELECT 1 FROM arena_trades t WHERE t.user_id = u.id)
+         GROUP BY u.id, u.username, u.cash ORDER BY value DESC, u.id ASC LIMIT 1000'
+    );
+    $st->execute([bangkok_year() - MIN_AGE]);
+    foreach ($st->fetchAll() as $i => $r) {
+        $row = ['rank' => $i + 1, 'username' => $r['username'], 'value' => (float) $r['value']];
+        if ($i < 10) {
+            $leaders[] = $row;
+        }
+        if ((int) $r['id'] === $userId) {
+            $mine = $row;
+        }
     }
 
     return [
@@ -199,5 +210,6 @@ function state(PDO $db, int $userId, string $coin): array
         'trades' => $trades,
         'me' => ['cash' => $cash, 'holdings' => $holdings, 'value' => $value, 'startValue' => ARENA_START_CASH],
         'leaderboard' => $leaders,
+        'myRank' => $mine,
     ];
 }

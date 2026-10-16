@@ -1312,8 +1312,23 @@
 }
 
 .board__name {
+  overflow: hidden;
   font-weight: 600;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Usernames are typed text: no contextual alternates (Inter draws the x in "4x2" as a multiplication sign). */
+.board__name,
+.arena-feed__who,
+.arena-top__who strong {
+  font-feature-settings: 'calt' 0;
+}
+
+.board__join {
+  padding: var(--sp-2) var(--sp-3);
+  color: var(--ink-500);
+  font-size: var(--fs-sm);
 }
 
 .board__you {
