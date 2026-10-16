@@ -75,6 +75,11 @@ export async function deleteAccount() {
 }
 
 const hasProgress = (s) => Boolean(s.profile || s.assessment || s.progress?.xp || s.lab || s.piggy);
+// This device's progress counts as the account's only when this account saved it (accountUser), never another one's.
+const sameName = (a, b) => Boolean(a && b && a.toLowerCase() === b.toLowerCase());
+const isMine = (s) => Boolean(user && sameName(s.accountUser, user.username));
+// An unanswered "Which progress should we keep?" survives a reload: nothing is loaded or saved until the player chooses.
+export const choicePending = (store) => Boolean(user && sameName(store.get().accountPending, user.username));
 
 function quietly(store, fn) {
   quiet = true;
@@ -95,8 +100,9 @@ export function applyConfirmations(store, ids = []) {
 
 export async function saveNow(store) {
   const at = Date.now();
-  await call('state', { method: 'POST', data: { state: { ...store.get(), accountSavedAt: at }, updatedAt: at } });
-  quietly(store, () => store.set({ accountSavedAt: at }));
+  const owner = user?.username || null;
+  await call('state', { method: 'POST', data: { state: { ...store.get(), accountSavedAt: at, accountUser: owner, accountPending: null }, updatedAt: at } });
+  quietly(store, () => store.set({ accountSavedAt: at, accountUser: owner, accountPending: null }));
   return at;
 }
 
@@ -113,16 +119,27 @@ export async function loadAfterLogin(store) {
     useAccountCopy(store, server);
     return 'loaded';
   }
-  if (local.accountSavedAt && server.updatedAt <= local.accountSavedAt) {
+  if (isMine(local) && local.accountSavedAt && server.updatedAt <= local.accountSavedAt) {
     await saveNow(store);
     return 'saved';
   }
+  quietly(store, () => store.set({ accountPending: user.username }));
   return { ask: server.updatedAt, server };
 }
 
 export function useAccountCopy(store, server) {
-  quietly(store, () => store.replace({ ...server.state, accountSavedAt: server.updatedAt }));
+  quietly(store, () => store.replace({ ...server.state, accountSavedAt: server.updatedAt, accountUser: user?.username || null, accountPending: null }));
   applyConfirmations(store, server.confirmations);
+}
+
+// One line per copy for the choice: level, XP, Money Check and Piggy entries.
+export function describe(s) {
+  if (!s) return 'Nothing saved';
+  const bits = [s.tier ? s.tier[0].toUpperCase() + s.tier.slice(1) : 'No level yet', `${s.progress?.xp || 0} XP`];
+  if (s.assessment) bits.push(`Money Health ${s.assessment.score}`);
+  const entries = s.piggy?.entries?.length || 0;
+  bits.push(`${entries} Piggy Bank ${entries === 1 ? 'entry' : 'entries'}`);
+  return bits.join(' · ');
 }
 
 export function startAutoSave(store) {
@@ -130,7 +147,19 @@ export function startAutoSave(store) {
   unsubscribe = store.subscribe(() => {
     if (quiet || !user) return;
     clearTimeout(timer);
-    timer = setTimeout(() => saveNow(store).catch(() => {}), SAVE_DELAY);
+    timer = setTimeout(
+      () =>
+        saveNow(store).catch((err) => {
+          // Logged out elsewhere (a parent set a new password, or the session ended): stop trying. The account screen
+          // then offers to log in again, because this device still remembers which account it saved to.
+          if (err.code === 'SIGNED_OUT') {
+            stopAutoSave();
+            user = null;
+            csrf = null;
+          }
+        }),
+      SAVE_DELAY,
+    );
   });
 }
 
@@ -145,10 +174,18 @@ export async function bootAccount(store) {
   if (!(await accountsAvailable())) return;
   try {
     if (!(await refreshMe())) return;
+    if (choicePending(store)) return; // the player hasn't chosen which progress to keep: change nothing until they do
     const server = await call('state');
-    // Another device saved after this one: load its copy, so progress follows the account.
-    if (server.state && server.updatedAt > (store.get().accountSavedAt || 0)) useAccountCopy(store, server);
-    else applyConfirmations(store, server.confirmations);
+    const local = store.get();
+    if (server.state && server.updatedAt > (local.accountSavedAt || 0)) {
+      // Another device saved after this one: load its copy, so progress follows the account. Progress on this device
+      // that this account never saved (a guest's, or another account's) is never replaced without asking.
+      if (!isMine(local) && hasProgress(local)) {
+        quietly(store, () => store.set({ accountPending: user.username }));
+        return;
+      }
+      useAccountCopy(store, server);
+    } else applyConfirmations(store, server.confirmations);
     startAutoSave(store);
   } catch {
     // stay a guest on this load

@@ -71,8 +71,8 @@ export function mount(root, ctx) {
               'ul',
               { class: 'parent__entries' },
               snap.piggy.entries.map((e) => {
-                const seal = h('span', { class: 'chip chip--ok' }, [icon('check', { size: 14 }), 'Verified']);
-                const confirm = h('button', { class: 'btn btn--sm', type: 'button', onClick: async () => { confirm.disabled = true; try { await post('parent_confirm', { entryId: e.id }); confirm.replaceWith(seal); } catch (err) { confirm.disabled = false; confirm.textContent = err.message; } } }, 'Confirm');
+                const seal = h('span', { class: 'chip chip--ok', tabindex: '-1' }, [icon('check', { size: 14 }), 'Verified']);
+                const confirm = h('button', { class: 'btn btn--sm', type: 'button', onClick: async () => { confirm.disabled = true; try { await post('parent_confirm', { entryId: e.id }); confirm.replaceWith(seal); seal.focus(); } catch (err) { confirm.disabled = false; confirm.textContent = err.message; } } }, 'Confirm');
                 return h('li', { class: 'parent__entry' }, [
                   h('span', { text: `${e.date} · ${e.kind === 'in' ? 'saved' : 'took out'} ${baht(e.amount)}${e.goalId && goalName[e.goalId] ? ` · ${goalName[e.goalId]}` : ''}` }),
                   e.verified ? seal : confirm,
@@ -94,6 +94,7 @@ export function mount(root, ctx) {
       try {
         const r = await post(action, {});
         if (r.approved) return load();
+        queueMicrotask(() => view.querySelector('h1')?.focus());
         view.replaceChildren(stateView({ kind: 'empty', heading: 'h1', title: 'Declined', body: 'The waiting account was removed. Your child can keep playing as a guest, with nothing saved to our server.', actions: [h('button', { class: 'btn', type: 'button', onClick: () => navigate('/') }, 'Go to Penny')] }));
       } catch (err) {
         note.textContent = err.message;

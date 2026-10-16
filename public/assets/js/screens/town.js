@@ -101,7 +101,7 @@ export function mount(root, ctx) {
   sync.accountsAvailable().then(async (on) => {
     if (!on || !alive) return;
     const user = sync.currentAccount() || (await sync.refreshMe().catch(() => null));
-    if (alive) accountSlot.replaceChildren(h('a', { class: 'town-account', href: '#/account' }, [icon('shield', { size: 18 }), user ? user.username : 'Save progress']));
+    if (alive) accountSlot.replaceChildren(h('a', { class: 'town-account', href: '#/account' }, [icon('shield', { size: 18 }), user ? (sync.choicePending(store) ? 'Choose your progress' : user.username) : 'Save progress']));
   });
 
   renderTiles();

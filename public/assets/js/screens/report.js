@@ -94,12 +94,17 @@ export function mount(root, ctx) {
   if (tierInfo.rank >= 1) {
     arenaEnabled().then((on) => {
       if (!on || !alive) return;
-      const best = arenaScore(store.get());
-      const open = best !== null && best >= 70;
+      const s = store.get();
+      const best = arenaScore(s);
+      const thisYear = Number(new Intl.DateTimeFormat('en-US', { timeZone: config.TIME_ZONE, year: 'numeric' }).format(new Date()));
+      // Grown-ups skip the score gate and kids can also pass the Unit 2 checkpoint (the server checks both again).
+      const adult = Boolean(s.birthYear) && thisYear - Number(s.birthYear) >= 20;
+      const unitTwo = ['trader', 'builder'].some((x) => s.path?.[x]?.done?.['u2-c']);
+      const open = adult || unitTwo || (best !== null && best >= 70);
       arenaSlot.replaceChildren(
         h('section', { class: 'card arena-invite', 'aria-labelledby': 'arena-invite-title' }, [
           h('h2', { class: 'report-section__title', id: 'arena-invite-title', text: 'The Arena' }),
-          h('p', { text: open ? 'You qualify! Trade in one live market with real players and bots. Simulated L$ only.' : `Score 70 or more at Trader or Builder level to unlock a live market with real players. Your best so far: ${best ?? 'no finished market yet'}.` }),
+          h('p', { text: adult ? 'Grown-ups can enter any time: one live market with real players and bots. Simulated L$ only.' : open ? 'You qualify! Trade in one live market with real players and bots. Simulated L$ only.' : `Score 70 or more at Trader or Builder level to unlock a live market with real players. Your best so far: ${best ?? 'no finished market yet'}.` }),
           open ? h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: () => navigate('/arena') }, 'Enter the Arena') : null,
         ]),
       );

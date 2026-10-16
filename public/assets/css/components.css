@@ -2961,3 +2961,13 @@ svg.is-flipped {
 .path-node--coach {
   box-shadow: none;
 }
+
+.account__copies {
+  display: grid;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  list-style: none;
+}

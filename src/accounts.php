@@ -124,10 +124,13 @@ function end_session(PDO $db): void
     set_session_cookie('', -3600);
 }
 
-// One parent link per child: a new link replaces the old one. Only the token's hash is stored.
-function new_parent_token(PDO $db, int $userId): string
+// One parent link per child: a new link replaces the old one. Only the token's hash is stored. A child still waiting
+// for approval gets an extra link instead, so the one a parent may already have open keeps working.
+function new_parent_token(PDO $db, int $userId, bool $replace = true): string
 {
-    $db->prepare('DELETE FROM parent_links WHERE user_id = ?')->execute([$userId]);
+    if ($replace) {
+        $db->prepare('DELETE FROM parent_links WHERE user_id = ?')->execute([$userId]);
+    }
     $token = bin2hex(random_bytes(32));
     $db->prepare('INSERT INTO parent_links (token_hash, user_id) VALUES (?, ?)')->execute([hash('sha256', $token), $userId]);
     return $token;
@@ -226,8 +229,8 @@ function login(array $in): never
         send_error(401, 'BAD_LOGIN', 'That username and password don’t match.');
     }
     if ($user['approved_at'] === null) {
-        // Still waiting for a parent: hand the child a fresh link to show them (it replaces any earlier one).
-        send_json(['ok' => false, 'error' => ['code' => 'NEEDS_PARENT', 'message' => 'Your account is waiting for a parent to approve it. Show them your parent link. You can keep playing as a guest meanwhile.'], 'parentToken' => new_parent_token($db, (int) $user['id']), 'user' => public_user($user)], 403);
+        // Still waiting for a parent: hand the child a link to show them. Links shown before keep working.
+        send_json(['ok' => false, 'error' => ['code' => 'NEEDS_PARENT', 'message' => 'Your account is waiting for a parent to approve it. Show them your parent link. You can keep playing as a guest meanwhile.'], 'parentToken' => new_parent_token($db, (int) $user['id'], false), 'user' => public_user($user)], 403);
     }
     if (password_needs_rehash($user['password_hash'], password_algo())) {
         $db->prepare('UPDATE arena_users SET password_hash = ? WHERE id = ?')->execute([password_hash($password, password_algo()), $user['id']]);

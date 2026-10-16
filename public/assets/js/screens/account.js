@@ -57,8 +57,15 @@ export function mount(root, ctx) {
     try {
       const user = await sync.refreshMe();
       if (!alive) return;
+      if (user && sync.choicePending(store)) {
+        const loaded = await sync.loadAfterLogin(store);
+        if (!alive) return;
+        if (loaded?.ask) return choose(user, loaded);
+        sync.startAutoSave(store);
+        return signedIn(user);
+      }
       if (user) signedIn(user);
-      else auth('signup');
+      else auth(store.get().accountUser ? 'login' : 'signup');
     } catch (err) {
       if (alive) show(head('Your account'), stateView({ kind: 'error', title: 'Your account didn’t load', body: err.message, actions: [h('button', { class: 'btn', type: 'button', onClick: start }, 'Try again')] }), backToTown());
     }
@@ -104,7 +111,7 @@ export function mount(root, ctx) {
     ]);
     const form = h('form', { class: 'card arena-auth', novalidate: true, onSubmit: send }, [
       tabs,
-      h('p', { class: 'arena-auth__note', text: mode === 'signup' ? 'We keep only a username, a scrambled password and your birth year: no email, no phone, no real name.' : 'Welcome back!' }),
+      h('p', { class: 'arena-auth__note', text: mode === 'signup' ? 'We keep only a username, a scrambled password and your birth year: no email, no phone, no real name.' : store.get().accountUser ? `This device was saving to “${store.get().accountUser}”. Log in to keep saving.` : 'Welcome back!' }),
       ...fields,
       error,
       submit,
@@ -166,11 +173,16 @@ export function mount(root, ctx) {
     return h('div', { class: 'account__linkbox' }, [h('div', { class: 'account__qr' }, [qrSvg(url)]), h('p', { class: 'account__note', text: 'A parent can scan this with their phone camera, or use the link.' }), field, share, copy]);
   }
 
-  // Both this device and the account have progress: the player decides which to keep.
+  // Both this device and the account have progress: the player decides which to keep. Until then nothing is
+  // loaded or saved, even after a reload.
   function choose(u, loaded) {
     const when = new Date(loaded.ask).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
     show(
-      head('Which progress should we keep?', `This device has progress, and your account has some saved on ${when}.`),
+      head('Which progress should we keep?', 'This device and your account both have progress. The one you don’t keep is replaced.'),
+      h('ul', { class: 'account__copies' }, [
+        h('li', {}, [h('strong', { text: 'This device: ' }), sync.describe(store.get())]),
+        h('li', {}, [h('strong', { text: `Your account (saved ${when}): ` }), sync.describe(loaded.server?.state)]),
+      ]),
       h('div', { class: 'report-actions' }, [
         h('button', { class: 'btn btn--primary btn--block', type: 'button', onClick: () => { sync.useAccountCopy(store, loaded.server); sync.startAutoSave(store); done(u, 'Your account’s progress is on this device now.'); } }, 'Use my account’s progress'),
         h('button', { class: 'btn btn--block', type: 'button', onClick: async () => { await sync.saveNow(store).catch(() => {}); sync.startAutoSave(store); done(u, 'This device’s progress is saved to your account.'); } }, 'Keep this device’s progress'),
@@ -228,12 +240,13 @@ export function mount(root, ctx) {
         const { token } = await sync.call('parent_create', { method: 'POST' });
         const url = `${location.origin}${location.pathname}#/parent?t=${token}`;
         box.replaceChildren(h('p', { class: 'account__note', text: 'Send this link to a parent. Anyone with it can see your progress and reset your password, so share it only with them.' }), parentLinkBox(url), stopButton());
+        box.querySelector('.account__link')?.focus();
       } catch (err) {
         box.append(h('p', { class: 'arena-error', role: 'alert', text: err.message }));
       }
     }
     function stopButton() {
-      return h('button', { class: 'btn btn--ghost btn--block', type: 'button', onClick: async () => { await sync.call('parent_revoke', { method: 'POST' }).catch(() => {}); renderParent(box); } }, 'Stop sharing');
+      return h('button', { class: 'btn btn--ghost btn--block', type: 'button', onClick: async () => { await sync.call('parent_revoke', { method: 'POST' }).catch(() => {}); await renderParent(box); box.querySelector('button')?.focus(); } }, 'Stop sharing');
     }
   }
 
