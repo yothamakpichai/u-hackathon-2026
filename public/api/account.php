@@ -69,6 +69,10 @@ switch ($action) {
         require_method('POST');
         $user = require_user($db);
         $db->prepare('DELETE FROM arena_trades WHERE user_id = ?')->execute([$user['user_id']]);
+        if (arena_v2_ready()) {
+            // A launched coin outlives its creator, who is no longer named (there is no foreign key to cascade).
+            $db->prepare('UPDATE arena_coins SET creator_id = NULL WHERE creator_id = ?')->execute([$user['user_id']]);
+        }
         $db->prepare('DELETE FROM arena_users WHERE id = ?')->execute([$user['user_id']]);
         set_session_cookie('', -3600);
         send_json(['ok' => true]);
