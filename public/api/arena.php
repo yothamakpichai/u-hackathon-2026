@@ -42,9 +42,18 @@ switch ($action) {
         send_error(404, 'NOT_FOUND', 'Unknown Arena action.');
 }
 
+// Open only when switched on and the database matches this code (see accounts_ready()).
 function arena_on(): bool
 {
-    return env('ARENA_ENABLED') === '1';
+    if (env('ARENA_ENABLED') !== '1' || !accounts_ready()) {
+        return false;
+    }
+    try {
+        db()->query('SELECT 1 FROM arena_market, arena_coins, arena_holdings, arena_trades, arena_candles LIMIT 0');
+        return true;
+    } catch (Throwable) {
+        return false;
+    }
 }
 
 // A signed-in account that may enter. Every age decision uses the birth year stored with the account, never the

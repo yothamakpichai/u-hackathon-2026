@@ -18,18 +18,23 @@ const RESERVED_NAMES = ['admin', 'administrator', 'mod', 'moderator', 'support',
 // A small blocklist, stored ROT13 so the repo doesn't spell it out.
 const ROT13_BLOCK = ['shpx', 'fuvg', 'ovgpu', 'phag', 'qvpx', 'chffl', 'onfgneq', 'nffubyr', 'fyhg', 'juber', 'avttre', 'snttbg', 'encr', 'anmv', 'cbea', 'pbpx', 'gjng', 'jnax', 'cravf', 'frkl'];
 
-// Accounts need the database: DB_* set and bin/migrate.php run. Without it, everyone simply plays as a guest.
+// Accounts need the database: DB_* set and bin/migrate.php run since the last pull. One LIMIT 0 query names every
+// account table and the columns added later, so a schema older than this code fails it and everyone simply plays as
+// a guest (instead of every account request failing). Rerun bin/migrate.php after each pull to switch accounts on.
 function accounts_ready(): bool
 {
+    static $ready = null;
+    if ($ready !== null) {
+        return $ready;
+    }
     if (env('DB_NAME') === null || env('DB_USER') === null) {
-        return false;
+        return $ready = false;
     }
     try {
-        db()->query('SELECT 1 FROM arena_users LIMIT 1');
-        db()->query('SELECT 1 FROM account_state LIMIT 1');
-        return true;
+        db()->query('SELECT u.approved_at, u.arena_ok FROM arena_users u, arena_sessions, account_state, parent_links, piggy_confirmations LIMIT 0');
+        return $ready = true;
     } catch (Throwable) {
-        return false;
+        return $ready = false;
     }
 }
 
