@@ -78,6 +78,7 @@ export function mount(root, ctx) {
     try {
       data = await getJSON(`${config.DATA_BASE}money_check.json`);
     } catch (err) {
+      if (alive) queueMicrotask(() => view.querySelector('h1')?.focus({ preventScroll: true }));
       if (alive) view.replaceChildren(stateView({ kind: 'error', heading: 'h1', title: 'Your result didn’t load', body: err.message, actions: [h('button', { class: 'btn btn--primary', type: 'button', onClick: load }, 'Try again')] }));
       return;
     }

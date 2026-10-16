@@ -86,6 +86,7 @@ import('./sync.js')
 const router = createRouter({
   root: document.getElementById('main'),
   routes,
+  fallback: (state) => (state.tier ? '/town' : '/'),
   getState: () => store.get(),
   formatTitle: (route) => `${route.title} · ${config.PRODUCT_NAME}`,
   // The screen contract: ctx = { tier, store, audio, navigate, config }.

@@ -63,20 +63,23 @@ export function mount(root, ctx) {
       ]),
     );
   } else {
+    const resultCard = (typeName) =>
+      statusCard.replaceChildren(
+        h('a', { class: 'card town-result', href: '#/result' }, [
+          h('span', { class: 'town-result__score', text: String(a.score) }),
+          h('span', {}, [h('strong', { text: typeName ? `Money Health ${a.score} · ${typeName}` : `Money Health ${a.score}` }), h('span', { text: 'See your result' })]),
+          icon('chevron-right'),
+        ]),
+      );
+    resultCard(null);
     getJSON(`${config.DATA_BASE}money_check.json`)
       .then((data) => {
         if (!alive) return;
         startHere = data.types[a.type]?.building || null;
         renderTiles();
-        statusCard.replaceChildren(
-          h('a', { class: 'card town-result', href: '#/result' }, [
-            h('span', { class: 'town-result__score', text: String(a.score) }),
-            h('span', {}, [h('strong', { text: `Money Health ${a.score} · ${data.types[a.type]?.name || ''}` }), h('span', { text: 'See your result' })]),
-            icon('chevron-right'),
-          ]),
-        );
+        resultCard(data.types[a.type]?.name || null);
       })
-      .catch(() => {});
+      .catch(() => {}); // the score card above stays; only the type's name and "Start here" wait for the next visit
   }
 
   function renderTiles() {

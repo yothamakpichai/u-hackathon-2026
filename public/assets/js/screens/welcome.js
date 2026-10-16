@@ -87,8 +87,9 @@ export function mount(root, ctx) {
       outcome.replaceChildren();
       return;
     }
-    ageLine.replaceChildren(`You’re about ${age} `, h('span', { class: 'chip', text: 'self-declared' }));
     const tier = config.getTier(tierForAge(age));
+    const said = age < 8 ? 'Play with a grown-up in Explorer mode.' : age < 20 ? `${tier.name} level, ages ${tier.ages}.` : 'Welcome, grown-up.';
+    ageLine.replaceChildren(`You’re about ${age} `, h('span', { class: 'chip', text: 'self-declared' }), h('span', { class: 'visually-hidden', text: ` ${said}` }));
 
     if (age < 8) {
       outcome.replaceChildren(

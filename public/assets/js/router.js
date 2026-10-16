@@ -4,7 +4,9 @@ import { h, stateView } from './ui.js';
 
 const SLOW_MS = 200; // show the loading state only if a screen takes longer than this
 
+// fallback: the path for unknown routes, or a function of the state that returns it.
 export function createRouter({ root, routes, fallback = '/', makeCtx, getState, formatTitle }) {
+  const home = () => (typeof fallback === 'function' ? fallback(getState()) : fallback);
   let unmount = null;
   let seq = 0;
   let first = true;
@@ -46,8 +48,8 @@ export function createRouter({ root, routes, fallback = '/', makeCtx, getState, 
         body: 'Check your connection, then try again. If it keeps happening, go back to the start.',
         actions: [
           h('button', { class: 'btn btn--primary', type: 'button', onClick: () => location.reload() }, 'Try again'),
-          path !== fallback
-            ? h('button', { class: 'btn', type: 'button', onClick: () => navigate(fallback) }, 'Back to start')
+          path !== home()
+            ? h('button', { class: 'btn', type: 'button', onClick: () => navigate(home()) }, 'Back to start')
             : null,
         ],
       }),
@@ -74,7 +76,7 @@ export function createRouter({ root, routes, fallback = '/', makeCtx, getState, 
     const token = ++seq;
     const path = currentPath();
     const route = routes[path];
-    if (!route) return navigate(fallback, { replace: true });
+    if (!route) return navigate(home(), { replace: true });
 
     const redirect = route.guard ? route.guard(getState()) : null;
     if (redirect && redirect !== path) return navigate(redirect, { replace: true });
@@ -111,7 +113,7 @@ export function createRouter({ root, routes, fallback = '/', makeCtx, getState, 
     navigate,
     start() {
       addEventListener('hashchange', render);
-      if (!location.hash) history.replaceState(history.state, '', '#' + fallback);
+      if (!location.hash) history.replaceState(history.state, '', '#/');
       render();
     },
   };
