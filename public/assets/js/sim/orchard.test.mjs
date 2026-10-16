@@ -1,7 +1,7 @@
 // Unit checks for the Orchard and the Town wallet. Run: node public/assets/js/sim/orchard.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PLOTS, SEEDS, harvest, plant, plotState, revealedPreference } from './orchard.js';
+import { PLOTS, SEEDS, canPlant, harvest, perDay, plant, plotState, revealedPreference } from './orchard.js';
 import { CREDIT, STARTER_GRANT, adjustCredit, balance, creditScore, ensureStarter, ledger, post, rateFor } from '../../../js/wallet.js';
 
 const memStore = (init = {}) => {
@@ -40,6 +40,22 @@ test('choices reveal a time preference', () => {
   for (const s of ['big', 'big', 'fruit', 'sprout']) o = plant(o, 0, s, T0);
   assert.deepEqual(revealedPreference(o.choices), { count: 4, laterShare: 0.5, nowShare: 0.25, lean: 'Later' });
   assert.equal(revealedPreference([]), null);
+});
+
+test('per day of waiting the patient choice pays most, and sprouts are no coin loop', () => {
+  assert.ok(perDay('big') > perDay('fruit') && perDay('fruit') > perDay('sprout'), `${perDay('big')} ${perDay('fruit')} ${perDay('sprout')}`);
+  // A fruit tree replanted every day against one big mango tree, coins ahead after n days.
+  const fruitBy = (n) => n * (SEEDS.fruit.harvest - SEEDS.fruit.cost);
+  const bigBy = (n) => (n < 7 ? -SEEDS.big.cost : SEEDS.big.harvest - SEEDS.big.cost + (n - 7) * SEEDS.big.refruitHarvest);
+  assert.ok(bigBy(7) > fruitBy(7) && bigBy(14) > fruitBy(14), 'the big tree leads from day 7');
+  // A herb sprout grows once a day in each plot: no replanting all day for coins.
+  let o = plant({ plots: Array(PLOTS).fill(null) }, 0, 'sprout', T0);
+  assert.equal(canPlant(o, 0, 'fruit', T0).ok, false, 'the plot is busy');
+  o = harvest(o, 0, T0 + 2 * MIN).orchard;
+  assert.equal(canPlant(o, 0, 'sprout', T0 + 2 * MIN).ok, false, 'one sprout a day in this plot');
+  assert.equal(canPlant(o, 0, 'fruit', T0 + 2 * MIN).ok, true, 'other seeds can go in');
+  assert.equal(canPlant(o, 1, 'sprout', T0 + 2 * MIN).ok, true, 'other plots can grow a sprout');
+  assert.equal(canPlant(o, 0, 'sprout', T0 + DAY).ok, true, 'again tomorrow');
 });
 
 test('the wallet is an append-only ledger with a credit score', () => {

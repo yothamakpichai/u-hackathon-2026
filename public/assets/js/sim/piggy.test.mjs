@@ -78,7 +78,7 @@ test('goal progress and the emergency fund', () => {
 test('the farm: cows are earned from actions, grow, and give milk once a day', () => {
   const state = { piggy: { rewards: { '2026-10-16': { total: 12, counts: {} } } }, coach: { trader: { done: { candle: {}, tools: {} } } }, lesson: { trader: { done: true } }, lab: { trader: { metrics: { finalValue: 1000 } } } };
   const feed = feedFrom(state);
-  assert.deepEqual(feed, { total: 12 + 10 + 5 + 3, piggy: 12, coach: 2, lessons: 1, runs: 1 });
+  assert.deepEqual(feed, { total: 12 + 10 + 5 + 3, piggy: 12, coach: 2, lessons: 1, runs: 1, days: 0 });
   const { cows, born } = cowsDue({ cows: [] }, feed.total, day('2026-10-16'));
   assert.equal(cows.length, 1, `one cow at ${feed.total} feed (thresholds ${COW_AT})`);
   assert.equal(born.length, 1);

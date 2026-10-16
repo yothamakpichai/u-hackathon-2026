@@ -1,6 +1,7 @@
 // Farm rules (BRIEF §16; slice J11). Pure, no DOM. A cow is earned, never bought: it is born and
-// grows from real actions (lessons, Coach chapters, finished Lab runs and Piggy Bank actions) and
-// gives milk once a day, sold for farm coins. A productive asset pays you; a meme coin does not.
+// grows from real actions (Learning Path steps, Coach chapters, finished Lab runs, Piggy Bank actions
+// and the days that make your streak) and gives milk once a day, sold for farm coins. A productive
+// asset pays you; a meme coin does not.
 import { hashString, mulberry32 } from './prng.js';
 import { dayKey, totalPoints } from './piggy.js';
 
@@ -12,13 +13,27 @@ export const STAGES = [
 ];
 export const MILK_PRICE = 5; // farm coins per litre
 
-// Feed comes only from things the app can see the player do.
+// Feed comes only from things the app can see the player do: 5 for each finished Learning Path step
+// or Coach chapter, 3 for each Bangkok day with a finished market (per level), and 2 for each day with
+// any action, the days that make the streak (store.progress, progress.js).
 export function feedFrom(state) {
   const piggy = totalPoints(state.piggy || {});
-  const coach = Object.values(state.coach || {}).reduce((n, t) => n + Object.keys(t?.done || {}).length, 0);
-  const lessons = Object.values(state.lesson || {}).filter((l) => l?.done).length;
-  const runs = Object.values(state.lab || {}).filter((r) => r && typeof r === 'object' && 'finalValue' in (r.metrics || {})).length;
-  return { total: piggy + 5 * coach + 5 * lessons + 3 * runs, piggy, coach, lessons, runs };
+  const doneIn = (byTier) => Object.values(byTier || {}).reduce((n, t) => n + Object.keys(t?.done || {}).length, 0);
+  const coach = doneIn(state.coach);
+  // Lessons, missions and checkpoints on the Path, plus lessons from the older #/lesson screen in old saves.
+  const lessons = doneIn(state.path) + Object.values(state.lesson || {}).filter((l) => l?.done).length;
+  // The Lab keeps only its latest run per level, so earlier finishes come from the progress log.
+  const markets = new Set();
+  for (const [ref, day] of Object.entries(state.progress?.refs || {})) {
+    const [kind, tier] = ref.split(':');
+    if (kind === 'market') markets.add(`${tier}:${day}`);
+  }
+  for (const [tier, r] of Object.entries(state.lab || {})) {
+    if (r && typeof r === 'object' && 'finalValue' in (r.metrics || {})) markets.add(`${tier}:${r.at ? dayKey(r.at) : 'saved'}`);
+  }
+  const runs = markets.size;
+  const days = Object.values(state.progress?.days || {}).filter((d) => d?.actions > 0).length;
+  return { total: piggy + 5 * coach + 5 * lessons + 3 * runs + 2 * days, piggy, coach, lessons, runs, days };
 }
 
 const NAMES_A = ['Ma', 'Bu', 'Lo', 'Pi', 'Su', 'Da', 'Mi', 'No', 'Ki', 'Ro'];

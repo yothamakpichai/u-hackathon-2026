@@ -59,3 +59,32 @@ test('buying early and selling at the top wins; buying late and holding loses', 
   assert.equal(s.heldThroughCrash, 1);
   assert.equal(buyCard(f, late, hypedIds(f)[1]).ok, false, 'the fair is over');
 });
+
+test('prices start to climb right after the hype news', () => {
+  for (const seed of ['a', 'b', 'c', 'd']) {
+    const f = makeFair(seed);
+    assert.ok(hypeIndex(f, 5) > hypeIndex(f, 3) * 1.1, `${seed}: ${hypeIndex(f, 3)} then ${hypeIndex(f, 5)}`);
+  }
+});
+
+test('the summary tells buys in the crash and after it apart from buys near the top', () => {
+  const f = makeFair('z');
+  const [a, b, c] = hypedIds(f);
+  const play = (moves) => {
+    let r = newRound();
+    for (const [step, side, i] of moves) {
+      const next = (side === 'buy' ? buyCard : sellCard)(f, { ...r, step }, i);
+      assert.ok(next.ok, `${side} ${i} at step ${step}`);
+      r = next.round;
+    }
+    return summary(f, { ...r, step: FAIR.steps });
+  };
+  const s = play([[6, 'buy', a], [26, 'buy', c]]);
+  assert.deepEqual([s.early, s.late, s.crash, s.after, s.heldThroughCrash], [1, 0, 1, 0, 1], 'the crash buy was not held when the buyers vanished');
+  const top = play([[20, 'buy', b]]);
+  assert.deepEqual([top.late, top.heldThroughCrash], [1, 1]);
+  const after = play([[33, 'buy', a]]);
+  assert.deepEqual([after.late, after.crash, after.after, after.heldThroughCrash], [0, 0, 1, 0]);
+  const sold = play([[6, 'buy', a], [23, 'sell', a]]);
+  assert.deepEqual([sold.early, sold.heldThroughCrash], [1, 0], 'sold before the buyers vanished');
+});

@@ -2634,12 +2634,33 @@
   gap: var(--sp-3);
 }
 
+/* Four plots: one column on phones, 2 × 2 on tablets, one row of four on desktop. */
 .orchard-plots {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--sp-3);
   padding: 0;
   list-style: none;
+}
+
+@media (min-width: 36rem) {
+  .orchard-plots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 64rem) {
+  .orchard-plots {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.orchard-need {
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 4px solid var(--amber-500);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  font-weight: 700;
 }
 
 .orchard-plot {
@@ -2683,11 +2704,12 @@
   text-align: left;
 }
 
-.orchard-seed:hover:not(:disabled) {
+.orchard-seed:hover:not(:disabled, [aria-disabled="true"]) {
   border-color: var(--primary-600);
 }
 
-.orchard-seed:disabled {
+.orchard-seed:disabled,
+.orchard-seed[aria-disabled="true"] {
   opacity: 0.55;
 }
 
@@ -2726,6 +2748,15 @@
 .orchard-art.is-growing::after,
 .orchard-art.is-grown::after { bottom: 46%; width: 34px; height: 26px; margin-left: -17px; border-radius: 50%; background: var(--gain-500); }
 .orchard-art.is-ready::after { bottom: 44%; width: 40px; height: 30px; margin-left: -20px; border-radius: 50%; background: radial-gradient(circle at 30% 40%, var(--amber-500) 0 4px, transparent 5px), radial-gradient(circle at 65% 55%, var(--amber-500) 0 4px, transparent 5px), var(--gain-500); }
+/* Each plant looks like itself once it grows: a low leafy herb, and a big mango tree with a wide crown. */
+.orchard-art.plant-sprout.is-growing::before,
+.orchard-art.plant-sprout.is-ready::before { bottom: 18%; width: 4px; height: 16px; margin-left: -2px; background: var(--gain-600); }
+.orchard-art.plant-sprout.is-growing::after { bottom: 36%; width: 26px; height: 16px; margin-left: -13px; border-radius: 50% 50% 40% 40%; background: var(--gain-500); }
+.orchard-art.plant-sprout.is-ready::after { bottom: 34%; width: 32px; height: 20px; margin-left: -16px; border-radius: 50% 50% 40% 40%; background: radial-gradient(circle at 25% 60%, var(--gain-600) 0 5px, transparent 6px), radial-gradient(circle at 75% 60%, var(--gain-600) 0 5px, transparent 6px), var(--gain-500); }
+.orchard-art.plant-big.is-ready::before,
+.orchard-art.plant-big.is-grown::before { width: 8px; height: 30px; margin-left: -4px; }
+.orchard-art.plant-big.is-grown::after { bottom: 44%; width: 50px; height: 32px; margin-left: -25px; }
+.orchard-art.plant-big.is-ready::after { bottom: 42%; width: 52px; height: 34px; margin-left: -26px; background: radial-gradient(ellipse 4px 6px at 25% 45%, #F08A24 0 100%, transparent 110%), radial-gradient(ellipse 4px 6px at 50% 65%, #F08A24 0 100%, transparent 110%), radial-gradient(ellipse 4px 6px at 75% 40%, #F08A24 0 100%, transparent 110%), var(--gain-500); }
 
 /* ---- Daily Stall and Bank (BRIEF §16.1) ------------------------------------------------------- */
 
@@ -3205,6 +3236,32 @@
   gap: var(--sp-3);
 }
 
+.fair__status {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.fair__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+/* On a phone the eight cards are much taller than the screen: the time left, tickets and news stay in view. */
+@media (max-width: 40rem) {
+  .fair__status {
+    position: sticky;
+    top: var(--header-h);
+    z-index: 1;
+    margin-inline: calc(-1 * var(--sp-2));
+    padding: var(--sp-2);
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--surface);
+  }
+}
+
 .fair__tickets {
   font-size: var(--fs-lg);
   font-weight: 800;
@@ -3300,6 +3357,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-2);
+}
+
+/* Can't be used right now (no buyers, or not enough tickets), but keeps focus and says why when pressed. */
+.fair-card__actions .btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .fair__how {

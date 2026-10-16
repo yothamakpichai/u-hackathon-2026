@@ -1,14 +1,18 @@
 // Orchard rules (BRIEF §16.1; slice J11). Pure, no DOM. Seeds cost coins; growth runs in real time,
 // and the menu trades waiting for yield. Each planting is recorded as a revealed choice between
 // "now" and "later" (time preference), which the Money Type screen can compare with the quiz.
+// Per day of waiting the patient choice pays most: a herb sprout grows once a day in each plot
+// (+1), a fruit tree replanted daily makes +10 a day, and a big mango tree +80 in its first week,
+// then +15 every day.
+import { dayKey } from './piggy.js';
 
 const MIN = 60_000;
 const DAY = 86_400_000;
 
 export const SEEDS = Object.freeze({
-  sprout: { label: 'Herb sprout', cost: 5, grow: 2 * MIN, harvest: 6, refruit: 0, patience: 'now', wait: '2 minutes' },
+  sprout: { label: 'Herb sprout', cost: 5, grow: 2 * MIN, harvest: 6, refruit: 0, daily: true, patience: 'now', wait: '2 minutes' },
   fruit: { label: 'Fruit tree', cost: 10, grow: DAY, harvest: 20, refruit: 0, patience: 'soon', wait: '1 day' },
-  big: { label: 'Big mango tree', cost: 20, grow: 7 * DAY, harvest: 60, refruit: DAY, refruitHarvest: 12, patience: 'later', wait: '7 days, then fruit every day' },
+  big: { label: 'Big mango tree', cost: 20, grow: 7 * DAY, harvest: 100, refruit: DAY, refruitHarvest: 15, patience: 'later', wait: '7 days' },
 });
 export const PLOTS = 4;
 export const STAGES = ['seed', 'sprout', 'growing', 'ready'];
@@ -32,11 +36,22 @@ export function plotState(plot, now) {
   return { stage: 'ready', share: 1, readyAt: plot.plantedAt + seed.grow, harvest: seed.harvest };
 }
 
+// Whether a seed can go in a plot now. A herb sprout grows once a day in each plot, so quick sprouts
+// can't be replanted all day for coins.
+export function canPlant(orchard, index, seedId, now) {
+  if (orchard.plots?.[index]) return { ok: false, error: 'Something is already growing in this plot.' };
+  if (SEEDS[seedId].daily && orchard.sproutDay?.[index] === dayKey(now)) {
+    return { ok: false, error: `You can grow one ${SEEDS[seedId].label.toLowerCase()} a day in each plot. Plant another tomorrow.` };
+  }
+  return { ok: true };
+}
+
 export function plant(orchard, index, seedId, now) {
   const plots = [...(orchard.plots || Array(PLOTS).fill(null))];
   plots[index] = { seed: seedId, plantedAt: now, harvests: 0, lastHarvestAt: null };
   const choices = [...(orchard.choices || []), { at: now, seed: seedId, patience: SEEDS[seedId].patience }];
-  return { ...orchard, plots, choices };
+  const sproutDay = SEEDS[seedId].daily ? { ...orchard.sproutDay, [index]: dayKey(now) } : orchard.sproutDay;
+  return { ...orchard, plots, choices, ...(sproutDay ? { sproutDay } : {}) };
 }
 
 export function harvest(orchard, index, now) {
@@ -60,8 +75,9 @@ export function revealedPreference(choices = []) {
   return { count: choices.length, laterShare, nowShare, lean: laterShare > nowShare ? 'Later' : nowShare > laterShare ? 'Now' : 'Mixed' };
 }
 
-// Coins per day of waiting, so the menu can show what patience is worth.
+// Coins per day of waiting, so the menu can show what patience is worth. A once-a-day seed pays at most
+// one harvest a day.
 export const perDay = (id) => {
   const s = SEEDS[id];
-  return ((s.harvest - s.cost) / s.grow) * DAY;
+  return s.daily ? s.harvest - s.cost : ((s.harvest - s.cost) / s.grow) * DAY;
 };

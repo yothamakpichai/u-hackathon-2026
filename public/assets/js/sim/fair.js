@@ -7,7 +7,7 @@ import { hashString, mulberry32 } from './prng.js';
 import { cowTraits } from './farm.js';
 
 export const FAIR = Object.freeze({ steps: 40, stepMs: 1500, tickets: 100, spread: 0.06, cards: 8, hyped: 3 });
-const RISE = [5, 22]; // steps where the hype builds
+const RISE = [3, 22]; // steps where the hype builds, from the famous collector's buy (news at step 3)
 const CRASH = [25, 31]; // steps where it collapses
 const NO_BUYERS = [25, 29]; // nobody will buy the hyped cards
 const FLOOR = 0.35; // hyped cards end at about a third of their old price
@@ -113,11 +113,27 @@ export function roundValue(fair, round) {
   return round1(round.tickets + Object.keys(round.owned).reduce((v, i) => v + (bidOf(fair, Number(i), s) ?? 0), 0));
 }
 
-// Plain-language summary of how the player rode the hype.
+// Plain-language summary of how the player rode the hype: hyped buys before the crowd (early), after it
+// (late, up to the moment the buyers vanish), during the crash and after it, and the hyped cards still
+// held when the buyers vanished.
 export function summary(fair, round) {
   const hypedBuys = round.trades.filter((x) => x.side === 'buy' && fair.cards[x.i].hyped);
-  const late = hypedBuys.filter((x) => x.step >= 14 && x.step < CRASH[1]).length;
-  const early = hypedBuys.filter((x) => x.step < 14).length;
-  const held = Object.keys(round.owned).filter((i) => fair.cards[i].hyped).length;
-  return { end: roundValue(fair, round), start: FAIR.tickets, early, late, heldThroughCrash: held, floor: FLOOR };
+  const between = (from, to) => hypedBuys.filter((x) => x.step >= from && x.step < to).length;
+  const owned = new Set();
+  for (const x of round.trades) {
+    if (x.step >= NO_BUYERS[0]) break;
+    if (x.side === 'buy') owned.add(x.i);
+    else owned.delete(x.i);
+  }
+  const held = [...owned].filter((i) => fair.cards[i].hyped).length;
+  return {
+    end: roundValue(fair, round),
+    start: FAIR.tickets,
+    early: between(0, 14),
+    late: between(14, NO_BUYERS[0]),
+    crash: between(NO_BUYERS[0], CRASH[1]),
+    after: between(CRASH[1], Infinity),
+    heldThroughCrash: held,
+    floor: FLOOR,
+  };
 }
