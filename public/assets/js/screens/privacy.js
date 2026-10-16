@@ -23,7 +23,7 @@ export function mount(root, ctx) {
     ]),
     section('If you make an account (optional)', [
       'We keep your username, your password as an argon2id hash (a scrambled version that can’t be turned back into the password), and your birth year, to check your age for the Arena.',
-      'Your progress is saved to your account so it can follow you to another device. That includes the Piggy Bank amounts you record. Penny never touches real money.',
+      'Your progress is saved to your account so it can follow you to another device. That includes the Piggy Bank amounts you record and your answers to its “Think about it” questions. Penny never touches real money.',
       'In the Arena, other players see your username, your simulated trades and your place on the leaderboard.',
       'Children never give an email or a phone number. If a password is forgotten, a parent with the parent link can set a new one.',
       'Accounts for players under 13 stay switched off until a parent approves them through the parent link. Until then the child plays as a guest, and only the username, password hash and birth year wait on our server. A parent who declines removes them.',
