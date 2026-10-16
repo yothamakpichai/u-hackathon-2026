@@ -182,6 +182,7 @@ The sim records raw data; it does not compute the score.
   - Your avatar now and at the goal age, the P10/P50/P90 fan with a table fallback, and "Projection, not prediction" always visible.
   - Amounts are shown as "THB", because the baht sign (U+0E3F) is in the Thai Unicode block that `bin/check.mjs` rejects.
   - Inputs persist in `store.future`.
+  - Changing any input logs `logAction(store, { kind: 'future', xp: 5, ref: 'future:<Bangkok day>' })`, so planning counts once a day toward the streak and daily goal. Just opening the screen doesn't count.
 
 ## Piggy Bank and Farm (slice J11, BRIEF §16)
 

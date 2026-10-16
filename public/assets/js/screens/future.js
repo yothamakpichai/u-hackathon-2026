@@ -3,12 +3,15 @@
 // scenarios, and your avatar at the goal age (Hershfield et al. 2011). Projection, not prediction.
 import { dataUri } from '../../../js/avatar.js';
 import { project } from '../sim/future.js';
+import { dayOf, logAction } from '../progress.js';
 import { animate, getJSON, h, icon, number, stateView } from '../ui.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const DEFAULT_CHARACTER = { skin: 'tone3', hairStyle: 'short', hairColor: 'darkbrown', outfit: 'tee', glasses: 'none' };
 const thb = (n) => `THB ${number(Math.round(n), 0)}`;
 const DEPTHS = ['quick', 'standard', 'pro'];
+// Changing the plan is an action the app can see. It counts once a Bangkok day toward the streak and daily goal.
+const FUTURE_XP = 5;
 
 let dataPromise = null;
 
@@ -189,6 +192,7 @@ export function mount(root, ctx) {
       clearTimeout(timer);
       summary.replaceChildren(h('p', { class: 'future-working', text: 'Working it out…' }));
       timer = setTimeout(run, 250);
+      logAction(store, { kind: 'future', xp: FUTURE_XP, ref: `future:${dayOf()}` });
     }
 
     function run() {
